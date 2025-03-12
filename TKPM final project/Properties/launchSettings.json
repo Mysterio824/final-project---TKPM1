@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TKPM final project (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "TKPM final project (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

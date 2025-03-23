@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ASUS\\source\\repos\\TKPM final project\\TKPM final project\\TKPM final project.csproj": {}
+    "C:\\Users\\ASUS\\source\\repos\\Mysterio824\\final-project---TKPM1\\TKPM final project\\TKPM final project.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ASUS\\source\\repos\\TKPM final project\\TKPM final project\\TKPM final project.csproj": {
+    "C:\\Users\\ASUS\\source\\repos\\Mysterio824\\final-project---TKPM1\\TKPM final project\\TKPM final project.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\source\\repos\\TKPM final project\\TKPM final project\\TKPM final project.csproj",
+        "projectUniqueName": "C:\\Users\\ASUS\\source\\repos\\Mysterio824\\final-project---TKPM1\\TKPM final project\\TKPM final project.csproj",
         "projectName": "TKPM final project",
-        "projectPath": "C:\\Users\\ASUS\\source\\repos\\TKPM final project\\TKPM final project\\TKPM final project.csproj",
+        "projectPath": "C:\\Users\\ASUS\\source\\repos\\Mysterio824\\final-project---TKPM1\\TKPM final project\\TKPM final project.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\source\\repos\\TKPM final project\\TKPM final project\\obj\\",
+        "outputPath": "C:\\Users\\ASUS\\source\\repos\\Mysterio824\\final-project---TKPM1\\TKPM final project\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

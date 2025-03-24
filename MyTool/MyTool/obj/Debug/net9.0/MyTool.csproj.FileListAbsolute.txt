@@ -1,0 +1,11 @@
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\bin\Debug\net9.0\MyTool.deps.json
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\bin\Debug\net9.0\MyTool.dll
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\bin\Debug\net9.0\MyTool.pdb
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.AssemblyInfoInputs.cache
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.AssemblyInfo.cs
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.csproj.CoreCompileInputs.cache
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.dll
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\refint\MyTool.dll
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\MyTool.pdb
+C:\Users\ASUS\source\repos\Mysterio824\MyTool\MyTool\obj\Debug\net9.0\ref\MyTool.dll

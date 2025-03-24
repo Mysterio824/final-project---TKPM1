@@ -1,5 +1,6 @@
 ﻿// DevTools/Interfaces/Services/IAuthService.cs
-using DevTools.DTOs.UserDtos;
+using DevTools.DTOs.Request;
+using DevTools.DTOs.Response;
 
 namespace DevTools.Interfaces.Services;
 

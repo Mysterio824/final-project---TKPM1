@@ -1,4 +1,5 @@
 ﻿// DevTools/Middleware/JwtMiddleware.cs
+using DevTools.Enums;
 using Microsoft.Extensions.Logging; // Add for logging
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -26,17 +27,23 @@ public class JwtMiddleware
 
         if (!string.IsNullOrEmpty(token))
         {
-            AttachUserToContext(context, token);
+            if (!AttachUserToContext(context, token))
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync("Unauthorized");
+                return;
+            }
         }
         else
         {
-            _logger.LogDebug("No Authorization token provided in request to {Path}", context.Request.Path);
+            SetAnonymousUser(context);
+            _logger.LogInformation("No Authorization token provided in request to {Path}", context.Request.Path);
         }
 
         await _next(context);
     }
 
-    private void AttachUserToContext(HttpContext context, string token)
+    private bool AttachUserToContext(HttpContext context, string token)
     {
         try
         {
@@ -56,22 +63,43 @@ public class JwtMiddleware
             }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            var userId = jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
 
-            // Attach ClaimsPrincipal to context.User (standard approach)
-            context.User = principal;
+            var userId = jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value 
+                        ?? throw new SecurityTokenException("Invalid JWT token");
+           
+            var claims = new List<Claim> { 
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim(ClaimTypes.Name, jwtToken.Claims.First(x => x.Type == ClaimTypes.Name).Value),
+                new Claim(ClaimTypes.Role, jwtToken.Claims.First(x => x.Type == ClaimTypes.Role).Value)
+            };
 
-            // Optionally log successful validation
+            var identity = new ClaimsIdentity(claims, "jwt");
+            context.User = new ClaimsPrincipal(identity);
+            
             _logger.LogInformation("User {UserId} authenticated via JWT for request {Path}", userId, context.Request.Path);
+
+            return true;
         }
         catch (SecurityTokenException ex)
         {
             _logger.LogWarning(ex, "JWT validation failed for token: {Token}", token);
-            // Optionally set context.Response.StatusCode = 401 here if you want to reject
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error validating JWT for token: {Token}", token);
         }
+        return false;
+    }
+
+    private static void SetAnonymousUser(HttpContext context)
+    {
+        var anonymousIdentity = new ClaimsIdentity(new[]
+        {
+        new Claim(ClaimTypes.NameIdentifier, "0"),
+        new Claim(ClaimTypes.Name, "Anonymous"),
+        new Claim(ClaimTypes.Role, UserRole.Anonymous.ToString())
+    }, "Anonymous");
+
+        context.User = new ClaimsPrincipal(anonymousIdentity);
     }
 }

@@ -1,7 +1,9 @@
 ﻿// DevTools/Controllers/AccountController.cs
 using Microsoft.AspNetCore.Mvc;
 using DevTools.Interfaces.Services;
-using DevTools.DTOs.UserDtos;
+using System.Diagnostics;
+using DevTools.Exceptions;
+using DevTools.DTOs.Request;
 
 namespace DevTools.Controllers;
 
@@ -31,16 +33,31 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        var newToken = await _authService.RefreshTokenAsync(refreshToken);
-        return Ok(new { Token = newToken });
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return BadRequest(new { Message = "Refresh token is required" });
+        }
+
+        try
+        {
+            var newToken = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return Ok(new { Token = newToken });
+        }
+        catch (UnauthorizedException ex)
+        {
+            return Unauthorized(new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = "An error occurred", Error = ex.Message });
+        }
     }
 
     [HttpGet("verify-email")]
     public async Task<IActionResult> VerifyEmail(string token)
     {
-        // Ignore userId since it's "unverified" during registration
         var success = await _authService.VerifyEmailAsync(token);
         return success ? Ok(new { Message = "Email verified" }) : BadRequest(new { Message = "Invalid or expired token" });
     }

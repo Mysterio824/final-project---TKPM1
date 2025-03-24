@@ -1,15 +1,15 @@
 ﻿// DevTools/Services/AuthService.cs
 using DevTools.Interfaces.Services;
 using DevTools.Interfaces.Repositories;
-using DevTools.DTOs.UserDtos;
+using DevTools.DTOs.Response;
 using DevTools.Entities;
 using DevTools.Enums;
-using BCrypt.Net;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging; // Replace System.Diagnostics
+using DevTools.Exceptions;
+using DevTools.DTOs.Request;
 
 namespace DevTools.Services;
 
@@ -74,13 +74,9 @@ public class AuthService : IAuthService
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
             throw new Exception("Invalid email or password");
 
-        if (!user.IsEmailVerified)
-            throw new Exception("Email not verified");
+        var token = GenerateAccessToken(user);
+        var refreshToken = GenerateRefreshToken(user);
 
-        var token = GenerateJwtToken(user);
-        var refreshToken = GenerateRefreshToken();
-        user.RefreshToken = refreshToken;
-        await _userRepository.UpdateAsync(user);
         await _redisService.StoreRefreshTokenAsync(user.Id.ToString(), refreshToken, TimeSpan.FromDays(7));
 
         return new UserDto
@@ -97,27 +93,48 @@ public class AuthService : IAuthService
 
     public async Task<string> RefreshTokenAsync(string refreshToken)
     {
-        var user = await _userRepository.GetByRefreshTokenAsync(refreshToken);
-        if (user == null)
-            throw new Exception("Invalid refresh token");
+        var principal = DecodeJwtWithoutValidation(refreshToken);
+        var userIdClaim = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var storedRefreshToken = await _redisService.GetRefreshTokenAsync(user.Id.ToString());
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedException("Invalid refresh token");
+
+        var storedRefreshToken = await _redisService.GetRefreshTokenAsync(userIdClaim);
         if (storedRefreshToken != refreshToken)
-            throw new Exception("Refresh token mismatch");
+            throw new UnauthorizedException("Invalid or expired refresh token");
 
-        var newToken = GenerateJwtToken(user);
-        var newRefreshToken = GenerateRefreshToken();
-        user.RefreshToken = newRefreshToken;
-        await _userRepository.UpdateAsync(user);
+        var user = await _userRepository.GetByIdAsync(int.Parse(userIdClaim));
+        if (user == null)
+            throw new UnauthorizedException("User not found");
+
+        var newAccessToken = GenerateAccessToken(user);
+        var newRefreshToken = GenerateRefreshToken(user);
+
         await _redisService.StoreRefreshTokenAsync(user.Id.ToString(), newRefreshToken, TimeSpan.FromDays(7));
-        await _redisService.RemoveRefreshTokenAsync(user.Id.ToString()); // Remove old token
 
-        return newToken;
+        return newAccessToken;
     }
 
-    public async Task SendEmailVerificationAsync(string email, string token)
+    private ClaimsPrincipal? DecodeJwtWithoutValidation(string token)
     {
-        await _emailService.SendEmailVerificationAsync(email, token); // Implement missing method
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = false,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                SignatureValidator = (t, p) => tokenHandler.ReadToken(t)
+            }, out _);
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public async Task<bool> VerifyEmailAsync(string token)
@@ -143,12 +160,9 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
             Role = UserRole.User,
             IsPremium = false,
-            IsEmailVerified = true,
-            RefreshToken = GenerateRefreshToken()
         };
 
         await _userRepository.AddAsync(user);
-        await _redisService.StoreRefreshTokenAsync(user.Id.ToString(), user.RefreshToken, TimeSpan.FromDays(7));
         await _redisService.RemoveUnverifiedUserAsync(email);
         await _redisService.RemoveVerificationTokenAsync(email);
 
@@ -156,7 +170,7 @@ public class AuthService : IAuthService
         return true;
     }
 
-    private string GenerateJwtToken(User user)
+    private string GenerateAccessToken(User user)
     {
         var claims = new[]
         {
@@ -178,8 +192,23 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private string GenerateRefreshToken()
+    private string GenerateRefreshToken(User user)
     {
-        return Guid.NewGuid().ToString();
+        var claims = new[]
+        {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(7), // Longer expiration
+            signingCredentials: creds);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

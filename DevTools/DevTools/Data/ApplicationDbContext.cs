@@ -7,6 +7,7 @@ namespace DevTools.Data;
 public class ApplicationDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
+    public DbSet<Tool> Tools { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -15,10 +16,9 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Set default schema to 'auth'
         modelBuilder.HasDefaultSchema("public");
-
-        // Optional: Configure specific entity schema if different
         modelBuilder.Entity<User>().ToTable("Users", "public");
+        modelBuilder.Entity<Tool>().ToTable("Tools", "public");
+        base.OnModelCreating(modelBuilder);
     }
 }

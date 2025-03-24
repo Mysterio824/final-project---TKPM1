@@ -1,6 +1,6 @@
 ﻿using DevTools.Enums;
 
-namespace DevTools.DTOs.UserDtos;
+namespace DevTools.DTOs.Response;
 
 public class UserDto
 {

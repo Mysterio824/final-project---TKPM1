@@ -1,67 +1,69 @@
-﻿using DevTools.Exceptions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
-using System.Threading.Tasks;
+using DevTools.Exceptions;
 
-namespace DevTools.Middleware
+namespace DevTools.Middleware;
+
+public class ExceptionHandlingMiddleware
 {
-    public class ExceptionHandlingMiddleware
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+        _next = next;
+        _logger = logger;
+    }
 
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public async Task Invoke(HttpContext context)
+    {
+        try
         {
-            _next = next;
-            _logger = logger;
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private async Task HandleExceptionAsync(HttpContext context, Exception ex)
+    {
+        HttpStatusCode statusCode;
+        string message;
+
+        switch (ex)
+        {
+            case NotFoundException:
+                statusCode = HttpStatusCode.NotFound;
+                message = ex.Message;
+                break;
+
+            case UnauthorizedException:
+                statusCode = HttpStatusCode.Unauthorized;
+                message = ex.Message;
+                break;
+
+            case ValidationException:
+                statusCode = HttpStatusCode.BadRequest;
+                message = ex.Message;
+                break;
+
+            default:
+                statusCode = HttpStatusCode.InternalServerError;
+                message = "An unexpected error occurred.";
+                _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
+                break;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        var response = new
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An unhandled exception occurred.");
-                await HandleExceptionAsync(context, ex);
-            }
-        }
+            StatusCode = (int)statusCode,
+            Message = message
+        };
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
-        {
-            context.Response.ContentType = "application/json";
-
-            var statusCode = exception switch
-            {
-                UnauthorizedException => HttpStatusCode.Unauthorized,
-                NotFoundException => HttpStatusCode.NotFound,
-                Exceptions.ValidationException => HttpStatusCode.BadRequest,
-                _ => HttpStatusCode.InternalServerError
-            };
-
-            context.Response.StatusCode = (int)statusCode;
-
-            var response = new
-            {
-                context.Response.StatusCode,
-                exception.Message,
-                // Include more details in development environment only
-                // Detail = exception.StackTrace
-            };
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            var json = JsonSerializer.Serialize(response, options);
-            await context.Response.WriteAsync(json);
-        }
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)statusCode;
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

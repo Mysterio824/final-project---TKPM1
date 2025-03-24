@@ -1,4 +1,4 @@
-﻿namespace DevTools.DTOs.UserDtos;
+﻿namespace DevTools.DTOs.Request;
 
 public class LoginDto
 {

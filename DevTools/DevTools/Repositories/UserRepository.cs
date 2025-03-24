@@ -1,5 +1,4 @@
-﻿// DevTools/Repositories/UserRepository.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using DevTools.Data;
 using DevTools.Entities;
 using DevTools.Interfaces.Repositories;
@@ -20,9 +19,9 @@ public class UserRepository : IUserRepository
         return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
     }
 
-    public async Task<User> GetByRefreshTokenAsync(string refreshToken)
+    public async Task<User> GetByIdAsync(int id)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task AddAsync(User user)

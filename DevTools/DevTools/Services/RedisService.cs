@@ -2,7 +2,7 @@
 using StackExchange.Redis;
 using System.Text.Json;
 using DevTools.Interfaces.Services;
-using DevTools.DTOs.UserDtos;
+using DevTools.DTOs.Request;
 
 namespace DevTools.Services;
 

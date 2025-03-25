@@ -22,6 +22,19 @@ namespace DevTools.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("DevTools.Entities.FavoriteTool", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ToolId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "ToolId");
+
+                    b.ToTable("FavoriteTools", "public");
+                });
+
             modelBuilder.Entity("DevTools.Entities.Tool", b =>
                 {
                     b.Property<int>("Id")
@@ -31,7 +44,6 @@ namespace DevTools.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("DllPath")

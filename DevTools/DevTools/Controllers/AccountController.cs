@@ -1,64 +1,109 @@
-﻿// DevTools/Controllers/AccountController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using DevTools.Interfaces.Services;
 using System.Diagnostics;
 using DevTools.Exceptions;
-using DevTools.DTOs.Request;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
-namespace DevTools.Controllers;
-
-[Route("api/auth")]
-[ApiController]
-public class AccountController : ControllerBase
+namespace DevTools.Controllers
 {
-    private readonly IAuthService _authService;
-
-    public AccountController(IAuthService authService)
+    [Route("api/account")]
+    [ApiController]
+    public class AccountController : Controller
     {
-        _authService = authService;
-    }
+        private readonly IAccountService _accountService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
-    {
-        var userDto = await _authService.RegisterAsync(registerDto);
-        return Ok(new { Message = "Registration pending verification", User = userDto });
-    }
-
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-    {
-        var userDto = await _authService.LoginAsync(loginDto);
-        return Ok(new { Message = "Login successful", User = userDto });
-    }
-
-    [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        public AccountController(IAccountService accountService)
         {
-            return BadRequest(new { Message = "Refresh token is required" });
+            _accountService = accountService;
         }
 
-        try
+        [Authorize]
+        [HttpPost("favorite/{id}/add")]
+        public async Task<ActionResult> AddFavoriteTool(int id)
         {
-            var newToken = await _authService.RefreshTokenAsync(request.RefreshToken);
-            return Ok(new { Token = newToken });
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                await _accountService.AddFavoriteToolAsync(userId, id);
+                return Ok();
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(e.Message);
+            }
+            catch (UnauthorizedException e)
+            {
+                return Unauthorized(e.Message);
+            }
         }
-        catch (UnauthorizedException ex)
-        {
-            return Unauthorized(new { Message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { Message = "An error occurred", Error = ex.Message });
-        }
-    }
 
-    [HttpGet("verify-email")]
-    public async Task<IActionResult> VerifyEmail(string token)
-    {
-        var success = await _authService.VerifyEmailAsync(token);
-        return success ? Ok(new { Message = "Email verified" }) : BadRequest(new { Message = "Invalid or expired token" });
+        [Authorize]
+        [HttpPost("favorite/{id}/remove")]
+        public async Task<ActionResult> RemoveFavoriteTool(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                await _accountService.RemoveFavoriteToolAsync(userId, id);
+                return Ok();
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(e.Message);
+            }
+            catch (UnauthorizedException e)
+            {
+                return Unauthorized(e.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpPost("premium/request")]
+        public async Task<ActionResult> SendPremiumRequest()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                await _accountService.SendPremiumRequestAsync(userId);
+                return Ok();
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(e.Message);
+            }
+            catch (UnauthorizedException e)
+            {
+                return Unauthorized(e.Message);
+            }
+            catch (ValidationException e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpPost("premium/revoke")]
+        public async Task<ActionResult> SendRevokePremiumRequest()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                await _accountService.SendRevokePremiumRequestAsync(userId);
+                return Ok();
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(e.Message);
+            }
+            catch (UnauthorizedException e)
+            {
+                return Unauthorized(e.Message);
+            }
+            catch (ValidationException e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }

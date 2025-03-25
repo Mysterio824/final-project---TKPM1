@@ -1,5 +1,4 @@
-﻿// DevTools/Services/AuthService.cs
-using DevTools.Interfaces.Services;
+﻿using DevTools.Interfaces.Services;
 using DevTools.Interfaces.Repositories;
 using DevTools.DTOs.Response;
 using DevTools.Entities;
@@ -19,11 +18,15 @@ public class AuthService : IAuthService
     private readonly IRedisService _redisService;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<AuthService> _logger; // Add ILogger
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IUserRepository userRepository, IRedisService redisService,
-        IEmailService emailService, IConfiguration configuration, ILogger<AuthService> logger)
-    {
+    public AuthService(
+        IUserRepository userRepository, 
+        IRedisService redisService,
+        IEmailService emailService, 
+        IConfiguration configuration, 
+        ILogger<AuthService> logger
+    ){
         _userRepository = userRepository;
         _redisService = redisService;
         _emailService = emailService;
@@ -205,10 +208,33 @@ public class AuthService : IAuthService
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(7), // Longer expiration
+            expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public async Task LogOutAsync(int userId, string accessToken)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Logout failed: User with ID {UserId} not found", userId);
+                return;
+            }
+
+            await _redisService.BlacklistAccessTokenAsync(accessToken, TimeSpan.FromMinutes(30));
+            _logger.LogInformation("Access token blacklisted for user {UserId}", userId);
+
+            await _redisService.RemoveRefreshTokenAsync(userId.ToString());
+            _logger.LogInformation("Refresh token removed for user {UserId}", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout for user {UserId}", userId);
+            throw;
+        }
+    }
 }

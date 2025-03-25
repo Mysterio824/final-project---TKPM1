@@ -1,7 +1,9 @@
 ﻿using DevTools.Data;
 using DevTools.Entities;
+using DevTools.Enums;
 using DevTools.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace DevTools.Repositories
 {
@@ -14,9 +16,20 @@ namespace DevTools.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Tool>> GetAllAsync()
+        public async Task<IEnumerable<Tool>> GetAllAsync() => await _context.Tools.ToListAsync();
+
+        public async Task<IEnumerable<Tool>> GetFavoriteAsync(int userId)
         {
-            return await _context.Tools.ToListAsync();
+            var favoriteTools = await _context.Tools
+                .Join(_context.FavoriteTools,
+                      tool => tool.Id,
+                      favorite => favorite.ToolId,
+                      (tool, favorite) => new { Tool = tool, Favorite = favorite })
+                .Where(joinResult => joinResult.Favorite.UserId == userId)
+                .Select(joinResult => joinResult.Tool).ToListAsync();
+
+
+            return favoriteTools;
         }
 
         public async Task<Tool?> GetByIdAsync(int id)

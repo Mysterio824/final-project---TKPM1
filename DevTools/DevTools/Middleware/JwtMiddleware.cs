@@ -1,6 +1,6 @@
-﻿// DevTools/Middleware/JwtMiddleware.cs
-using DevTools.Enums;
-using Microsoft.Extensions.Logging; // Add for logging
+﻿using DevTools.Enums;
+using DevTools.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,7 +12,7 @@ public class JwtMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<JwtMiddleware> _logger; // Add logger
+    private readonly ILogger<JwtMiddleware> _logger;
 
     public JwtMiddleware(RequestDelegate next, IConfiguration configuration, ILogger<JwtMiddleware> logger)
     {
@@ -21,12 +21,20 @@ public class JwtMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, IRedisService redisService)
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
         if (!string.IsNullOrEmpty(token))
         {
+            if (await redisService.IsTokenBlacklistedAsync(token))
+            {
+                _logger.LogWarning("Blacklisted token used in request to {Path}", context.Request.Path);
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync("Access in blacklist");
+                return;
+            }
+
             if (!AttachUserToContext(context, token))
             {
                 context.Response.StatusCode = 401;
@@ -66,14 +74,16 @@ public class JwtMiddleware
 
             var userId = jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value 
                         ?? throw new SecurityTokenException("Invalid JWT token");
-           
+            var roleClaim = jwtToken.Claims.First(x => x.Type == ClaimTypes.Role).Value
+                     ?? throw new SecurityTokenException("Missing role");
+
             var claims = new List<Claim> { 
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Name, jwtToken.Claims.First(x => x.Type == ClaimTypes.Name).Value),
-                new Claim(ClaimTypes.Role, jwtToken.Claims.First(x => x.Type == ClaimTypes.Role).Value)
+                new Claim(ClaimTypes.Role, roleClaim)
             };
 
-            var identity = new ClaimsIdentity(claims, "jwt");
+            var identity = new ClaimsIdentity(claims, roleClaim);
             context.User = new ClaimsPrincipal(identity);
             
             _logger.LogInformation("User {UserId} authenticated via JWT for request {Path}", userId, context.Request.Path);
@@ -95,10 +105,10 @@ public class JwtMiddleware
     {
         var anonymousIdentity = new ClaimsIdentity(new[]
         {
-        new Claim(ClaimTypes.NameIdentifier, "0"),
+        new Claim(ClaimTypes.NameIdentifier, "-1"),
         new Claim(ClaimTypes.Name, "Anonymous"),
         new Claim(ClaimTypes.Role, UserRole.Anonymous.ToString())
-    }, "Anonymous");
+    });
 
         context.User = new ClaimsPrincipal(anonymousIdentity);
     }

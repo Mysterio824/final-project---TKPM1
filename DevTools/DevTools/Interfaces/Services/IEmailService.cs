@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using DevTools.Entities;
 
 namespace DevTools.Interfaces.Services
 {
@@ -6,5 +7,7 @@ namespace DevTools.Interfaces.Services
     {
         Task SendEmailVerificationAsync(string email, string verificationToken);
         Task SendPasswordResetAsync(string email, string resetToken);
+        Task SendUpgradePremiumRequestAsync(User user);
+        Task SendDowngradePremiumRequestAsync(User user);
     }
 }

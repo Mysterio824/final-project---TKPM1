@@ -10,7 +10,8 @@ using DevTools.Services;
 using DevTools.Interfaces.Repositories;
 using DevTools.Repositories;
 using StackExchange.Redis;
-using System.Diagnostics; // For Process
+using System.Diagnostics;
+using DevTools.Strategies; // For Process
 
 internal class Program
 {
@@ -48,83 +49,30 @@ internal class Program
         // Repositories
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IToolRepository, ToolRepository>();
+        builder.Services.AddScoped<IFavoriteToolRepository, FavoriteToolRepository>();
 
         // Services
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"] ?? "devtools-redis-1:6379"));
+
+        builder.Services.AddScoped<IRedisService, RedisService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmailService, EmailService>();
         builder.Services.AddScoped<IToolService, ToolService>();
 
+        builder.Services.AddScoped<ToolActionStrategyFactory>();
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]));
-        builder.Services.AddScoped<IRedisService, RedisService>();
-
-        string toolsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Tools");
-
-        builder.Services.AddSingleton(new ToolWatcher(toolsFolder));
-
         var app = builder.Build();
 
-        // Start Redis server
-        Process redisProcess = null;
         try
         {
-            app.Logger.LogInformation("Starting Redis server...");
-            redisProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = @"C:\Program Files\Redis\redis-server.exe",
-                    Arguments = "--port 6379", // Ensure it matches your config
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
-            redisProcess.Start();
-            app.Logger.LogInformation("Redis server started with PID: {PID}", redisProcess.Id);
+            var toolService = app.Services.CreateScope().ServiceProvider.GetRequiredService<IToolService>();
+            var toolWatcher = new ToolWatcher("Tools", toolService);
+            toolWatcher.StartWatching();
 
-            // Log Redis output
-            _ = Task.Run(async () =>
-            {
-                while (!redisProcess.StandardOutput.EndOfStream)
-                {
-                    var line = await redisProcess.StandardOutput.ReadLineAsync();
-                    app.Logger.LogInformation("Redis: {Output}", line);
-                }
-            });
-            _ = Task.Run(async () =>
-            {
-                while (!redisProcess.StandardError.EndOfStream)
-                {
-                    var line = await redisProcess.StandardError.ReadLineAsync();
-                    app.Logger.LogError("Redis Error: {Error}", line);
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            app.Logger.LogError(ex, "Failed to start Redis server");
-            throw;
-        }
-
-        // Hook into application shutdown
-        app.Lifetime.ApplicationStopping.Register(() =>
-        {
-            if (redisProcess != null && !redisProcess.HasExited)
-            {
-                app.Logger.LogInformation("Stopping Redis server...");
-                redisProcess.Kill(); // Forceful stop; use redis-cli shutdown for graceful stop if needed
-                redisProcess.WaitForExit();
-                app.Logger.LogInformation("Redis server stopped");
-            }
-        });
-
-        try
-        {
             app.Logger.LogInformation("Application starting on {Urls}",
                 builder.Configuration["applicationUrl"] ?? "http://localhost:5000");
 
@@ -154,15 +102,6 @@ internal class Program
         {
             app.Logger.LogError(ex, "Application failed to start. Details: {Message}", ex.Message);
             throw;
-        }
-        finally
-        {
-            // Ensure Redis stops even on unhandled exceptions
-            if (redisProcess != null && !redisProcess.HasExited)
-            {
-                redisProcess.Kill();
-                redisProcess.WaitForExit();
-            }
         }
     }
 }

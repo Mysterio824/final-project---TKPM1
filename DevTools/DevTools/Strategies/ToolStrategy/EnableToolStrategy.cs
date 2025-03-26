@@ -4,9 +4,16 @@ namespace DevTools.Strategies.ToolStrategy
 {
     public class EnableToolStrategy : IToolActionStrategy
     {
-        public string Execute(int id, IToolService toolService)
+        private readonly IToolService _toolService;
+
+        public EnableToolStrategy(IToolService toolService)
         {
-            toolService.EnableTool(id);
+            _toolService = toolService;
+        }
+
+        public async Task<string> ExecuteAsync(int id)
+        {
+            await _toolService.EnableTool(id);
             return SuccessMessage;
         }
 

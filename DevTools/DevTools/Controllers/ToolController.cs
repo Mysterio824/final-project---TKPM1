@@ -1,6 +1,7 @@
 ﻿using DevTools.DTOs.Request;
 using DevTools.Entities;
 using DevTools.Enums;
+using DevTools.Exceptions;
 using DevTools.Interfaces.Services;
 using DevTools.Strategies;
 using Microsoft.AspNetCore.Authorization;
@@ -16,8 +17,10 @@ namespace DevTools.Controllers
         private readonly IToolService _toolService;
         private readonly ToolActionStrategyFactory _strategyFactory;
 
-        public ToolController(IToolService toolService, ToolActionStrategyFactory strategyFactory)
-        {
+        public ToolController(
+            IToolService toolService, 
+            ToolActionStrategyFactory strategyFactory
+        ){
             _toolService = toolService;
             _strategyFactory = strategyFactory;
         }
@@ -78,13 +81,21 @@ namespace DevTools.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/{actionName}")]
-        public ActionResult<string> UpdateTool(int id, string actionName)
+        public async Task<ActionResult<string>> UpdateTool(int id, string actionName)
         {
             try
             {
                 var strategy = _strategyFactory.GetStrategy(actionName);
-                var result = strategy.Execute(id, _toolService);
+                var result = await strategy.ExecuteAsync(id);
                 return Ok(result);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
             }
             catch (ArgumentException ex)
             {
@@ -92,6 +103,7 @@ namespace DevTools.Controllers
             }
             catch (Exception ex)
             {
+                // Consider logging the exception
                 return StatusCode(500, new { Message = $"Failed to {actionName.ToLower()} tool", Detail = ex.Message });
             }
         }

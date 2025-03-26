@@ -4,6 +4,6 @@ namespace DevTools.Strategies.ToolStrategy;
 
 public interface IToolActionStrategy
 {
-    string Execute(int id, IToolService toolService);
+    Task<string> ExecuteAsync(int id);
     string SuccessMessage { get; }
 }

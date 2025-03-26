@@ -1,6 +1,7 @@
 ﻿using DevTools.DTOs.Response;
 using DevTools.Entities;
 using DevTools.Enums;
+using DevTools.Exceptions;
 using DevTools.Interfaces;
 using DevTools.Interfaces.Repositories;
 using DevTools.Interfaces.Services;
@@ -192,7 +193,7 @@ namespace DevTools.Services
             var tool = await _toolRepository.GetByIdAsync(id);
             if(tool == null)
             {
-                throw new ArgumentException("Tool not found.", nameof(id));
+                throw new NotFoundException("Tool " + nameof(id) + " not found.");
             }
             if (!tool.IsEnabled)
             {
@@ -207,7 +208,7 @@ namespace DevTools.Services
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null)
             {
-                throw new ArgumentException("Tool not found.", nameof(id));
+                throw new NotFoundException("Tool " + nameof(id) + " not found.");
             }
             if (tool.IsEnabled)
             {
@@ -222,11 +223,11 @@ namespace DevTools.Services
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null)
             {
-                throw new ArgumentException("Tool not found.", nameof(id));
+                throw new NotFoundException("Tool " + nameof(id) + " not found.");
             }
             if (tool.IsPremium)
             {
-                throw new Exception("Tool is already premium.");
+                throw new InvalidOperationException("Tool is already premium.");
             }
             tool.IsPremium = true;
             await _toolRepository.UpdateAsync(tool);
@@ -237,11 +238,11 @@ namespace DevTools.Services
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null)
             {
-                throw new ArgumentException("Tool not found.", nameof(id));
+                throw new NotFoundException("Tool " + nameof(id) + " not found.");
             }
             if (!tool.IsPremium)
             {
-                throw new Exception("Tool is already free.");
+                throw new InvalidOperationException("Tool is already free.");
             }
             tool.IsPremium = false;
             await _toolRepository.UpdateAsync(tool);

@@ -1,5 +1,6 @@
 ﻿using DevTools.Data;
 using DevTools.Entities;
+using DevTools.Exceptions;
 using DevTools.Interfaces.Repositories;
 using DevTools.Interfaces.Services;
 using DevTools.Repositories;
@@ -12,25 +13,29 @@ namespace DevTools.Services
         private readonly IUserRepository _userRepository;
         private readonly IToolRepository _toolRepository;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AccountService> _logger;
 
         public AccountService(
             IFavoriteToolRepository favoriteToolRepository,
             IUserRepository userRepository,
             IToolRepository toolRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<AccountService> logger)
         {
             _favoriteToolRepository = favoriteToolRepository;
             _userRepository = userRepository;
             _toolRepository = toolRepository;
             _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task AddFavoriteToolAsync(int userId, int toolId)
         {
+            _logger.LogInformation("Start add favorite");
             var toolExists = await _toolRepository.GetByIdAsync(toolId);
             if (toolExists == null)
             {
-                throw new ArgumentException("Tool not found.", nameof(toolId));
+                throw new NotFoundException("Tool " + nameof(toolId) +" not found." );
             }
 
             var existingFavorite = await _favoriteToolRepository.GetAsync(userId, toolId);
@@ -50,7 +55,7 @@ namespace DevTools.Services
 
             if (user == null)
             {
-                throw new ArgumentException("User not found.", nameof(userId));
+                throw new NotFoundException("User " +  nameof(userId) + " not found.");
             }
 
             if (user.IsPremium)
@@ -60,7 +65,7 @@ namespace DevTools.Services
 
             user.IsPremium = true;
             await _userRepository.UpdateAsync(user);
-            await _emailService.SendUpgradePremiumRequestAsync(user);
+            _ = Task.Run(async () => await _emailService.SendUpgradePremiumRequestAsync(user));
         }
 
         public async Task SendRevokePremiumRequestAsync(int userId)
@@ -69,7 +74,7 @@ namespace DevTools.Services
 
             if (user == null)
             {
-                throw new ArgumentException("User not found.", nameof(userId));
+                throw new NotFoundException("User " + nameof(userId) + " not found.");
             }
 
             if (!user.IsPremium)
@@ -77,9 +82,9 @@ namespace DevTools.Services
                 throw new InvalidOperationException("User is not premium member.");
             }
 
-            user.IsPremium = true;
+            user.IsPremium = false;
             await _userRepository.UpdateAsync(user);
-            await _emailService.SendDowngradePremiumRequestAsync(user);
+            _ = Task.Run(async () => await _emailService.SendDowngradePremiumRequestAsync(user));
         }
     }
 }

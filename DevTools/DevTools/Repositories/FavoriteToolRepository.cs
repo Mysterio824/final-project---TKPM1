@@ -33,12 +33,7 @@ namespace DevTools.Repositories
 
         public async Task DeleteAsync(int userId, int toolId)
         {
-            var tmp = new FavoriteTool
-            {
-                UserId = userId,
-                ToolId = toolId
-            };
-            var tool = await _context.FavoriteTools.FindAsync(tmp);
+            var tool = await _context.FavoriteTools.FindAsync(userId, toolId);
             if (tool != null)
             {
                 _context.FavoriteTools.Remove(tool);
@@ -46,15 +41,6 @@ namespace DevTools.Repositories
             }
         }
 
-        public async Task<FavoriteTool?> GetAsync(int userId, int toolId)
-        {
-            var tool = new FavoriteTool
-            {
-                UserId = userId,
-                ToolId = toolId
-            };
-            var existedTool = await _context.FavoriteTools.FindAsync(tool);
-            return existedTool;
-        }
+        public async Task<FavoriteTool?> GetAsync(int userId, int toolId) => await _context.FavoriteTools.FindAsync(userId, toolId);
     }
 }

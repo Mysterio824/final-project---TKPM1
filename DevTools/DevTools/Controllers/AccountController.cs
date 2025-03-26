@@ -4,6 +4,7 @@ using System.Diagnostics;
 using DevTools.Exceptions;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using System.Net;
 
 namespace DevTools.Controllers
 {
@@ -13,8 +14,9 @@ namespace DevTools.Controllers
     {
         private readonly IAccountService _accountService;
 
-        public AccountController(IAccountService accountService)
-        {
+        public AccountController(
+            IAccountService accountService
+            ){
             _accountService = accountService;
         }
 
@@ -23,19 +25,9 @@ namespace DevTools.Controllers
         public async Task<ActionResult> AddFavoriteTool(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            try
-            {
-                await _accountService.AddFavoriteToolAsync(userId, id);
-                return Ok();
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (UnauthorizedException e)
-            {
-                return Unauthorized(e.Message);
-            }
+
+            await _accountService.AddFavoriteToolAsync(userId, id);
+            return Ok();
         }
 
         [Authorize]
@@ -43,19 +35,9 @@ namespace DevTools.Controllers
         public async Task<ActionResult> RemoveFavoriteTool(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            try
-            {
-                await _accountService.RemoveFavoriteToolAsync(userId, id);
-                return Ok();
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (UnauthorizedException e)
-            {
-                return Unauthorized(e.Message);
-            }
+
+            await _accountService.RemoveFavoriteToolAsync(userId, id);
+            return Ok();
         }
 
         [Authorize]
@@ -63,23 +45,9 @@ namespace DevTools.Controllers
         public async Task<ActionResult> SendPremiumRequest()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            try
-            {
-                await _accountService.SendPremiumRequestAsync(userId);
-                return Ok();
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (UnauthorizedException e)
-            {
-                return Unauthorized(e.Message);
-            }
-            catch (ValidationException e)
-            {
-                return BadRequest(e.Message);
-            }
+
+            await _accountService.SendPremiumRequestAsync(userId);
+            return Ok();
         }
 
         [Authorize]
@@ -87,23 +55,9 @@ namespace DevTools.Controllers
         public async Task<ActionResult> SendRevokePremiumRequest()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            try
-            {
-                await _accountService.SendRevokePremiumRequestAsync(userId);
-                return Ok();
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (UnauthorizedException e)
-            {
-                return Unauthorized(e.Message);
-            }
-            catch (ValidationException e)
-            {
-                return BadRequest(e.Message);
-            }
+
+            await _accountService.SendRevokePremiumRequestAsync(userId);
+            return Ok();
         }
     }
 }

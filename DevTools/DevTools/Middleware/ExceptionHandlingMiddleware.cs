@@ -49,6 +49,11 @@ public class ExceptionHandlingMiddleware
                 message = ex.Message;
                 break;
 
+            case InvalidOperationException:
+                statusCode = HttpStatusCode.BadRequest;
+                message = ex.Message;
+                break;
+
             default:
                 statusCode = HttpStatusCode.InternalServerError;
                 message = "An unexpected error occurred.";

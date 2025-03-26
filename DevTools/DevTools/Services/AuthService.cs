@@ -54,7 +54,7 @@ public class AuthService : IAuthService
 
             var verificationToken = Guid.NewGuid().ToString();
             await _redisService.StoreVerificationTokenAsync(registerDto.Email, verificationToken, TimeSpan.FromHours(24));
-            await _emailService.SendEmailVerificationAsync(registerDto.Email, verificationToken); // Fix: Add userId
+            await _emailService.SendEmailVerificationAsync(registerDto.Email, verificationToken);
 
             return new UserDto
             {

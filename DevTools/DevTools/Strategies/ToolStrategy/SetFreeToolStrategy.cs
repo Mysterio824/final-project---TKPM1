@@ -4,12 +4,19 @@ namespace DevTools.Strategies.ToolStrategy
 {
     public class SetFreeToolStrategy : IToolActionStrategy
     {
-        public string Execute(int id, IToolService toolService)
+        private readonly IToolService _toolService;
+
+        public SetFreeToolStrategy(IToolService toolService)
         {
-            toolService.SetFree(id);
+            _toolService = toolService;
+        }
+
+        public async Task<string> ExecuteAsync(int id)
+        {
+            await _toolService.SetFree(id);
             return SuccessMessage;
         }
 
-        public string SuccessMessage => "Tool is set free successfully";
+        public string SuccessMessage => "Tool set to free successfully";
     }
 }

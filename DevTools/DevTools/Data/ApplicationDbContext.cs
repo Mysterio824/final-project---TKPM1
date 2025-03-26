@@ -18,11 +18,19 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");
-        modelBuilder.Entity<User>().ToTable("Users", "public");
-        modelBuilder.Entity<Tool>().ToTable("Tools", "public");
+
+        modelBuilder.Entity<User>()
+            .ToTable("Users", "public")
+            .HasKey(e => e.Id);
+
+        modelBuilder.Entity<Tool>()
+            .ToTable("Tools", "public")
+            .HasKey(e => e.Id);
+
         modelBuilder.Entity<FavoriteTool>()
             .ToTable("FavoriteTools", "public")
             .HasKey(ft => new { ft.UserId, ft.ToolId });
+
         base.OnModelCreating(modelBuilder);
     }
 }

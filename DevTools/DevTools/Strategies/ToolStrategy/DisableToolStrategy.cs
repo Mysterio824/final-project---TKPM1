@@ -1,12 +1,20 @@
 ﻿using DevTools.Interfaces.Services;
+using DevTools.Services;
 
 namespace DevTools.Strategies.ToolStrategy
 {
     public class DisableToolStrategy : IToolActionStrategy
     {
-        public string Execute(int id, IToolService toolService)
+        private readonly IToolService _toolService;
+
+        public DisableToolStrategy(IToolService toolService)
         {
-            toolService.DisableTool(id);
+            _toolService = toolService;
+        }
+
+        public async Task<string> ExecuteAsync(int id)
+        {
+            await _toolService.DisableTool(id);
             return SuccessMessage;
         }
 

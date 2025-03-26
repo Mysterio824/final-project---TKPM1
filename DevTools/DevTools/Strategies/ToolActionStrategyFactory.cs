@@ -1,31 +1,26 @@
-﻿using DevTools.Interfaces.Services;
-using DevTools.Strategies.ToolStrategy;
+﻿using DevTools.Strategies.ToolStrategy;
 
-namespace DevTools.Strategies;
-
-public class ToolActionStrategyFactory
+namespace DevTools.Strategies
 {
-    private readonly IToolService _toolService;
-    private readonly IDictionary<string, IToolActionStrategy> _strategies;
-
-    public ToolActionStrategyFactory(IToolService toolService)
+    public class ToolActionStrategyFactory
     {
-        _toolService = toolService;
-        _strategies = new Dictionary<string, IToolActionStrategy>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "disable", new DisableToolStrategy() },
-            { "enable", new EnableToolStrategy() },
-            { "setpremium", new SetPremiumToolStrategy() },
-            { "setfree", new SetFreeToolStrategy() }
-        };
-    }
+        private readonly Dictionary<string, IToolActionStrategy> _strategies;
 
-    public IToolActionStrategy GetStrategy(string actionName)
-    {
-        if (string.IsNullOrEmpty(actionName) || !_strategies.TryGetValue(actionName, out var strategy))
+        public ToolActionStrategyFactory(IEnumerable<IToolActionStrategy> strategies)
         {
-            throw new ArgumentException("Invalid action. Use 'disable', 'enable', 'setpremium', or 'setfree'.");
+            _strategies = strategies.ToDictionary(
+                strategy => strategy.GetType().Name.Replace("ToolStrategy", "").ToLower(),
+                strategy => strategy,
+                StringComparer.OrdinalIgnoreCase);
         }
-        return strategy;
+
+        public IToolActionStrategy GetStrategy(string actionName)
+        {
+            if (!_strategies.TryGetValue(actionName.ToLower(), out var strategy))
+            {
+                throw new ArgumentException("Invalid action. Use 'disable', 'enable', 'setpremium', or 'setfree'.");
+            }
+            return strategy;
+        }
     }
 }

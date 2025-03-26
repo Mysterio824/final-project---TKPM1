@@ -28,7 +28,7 @@ services:
       - db
       - redis
     volumes:
-      - ./DevTools:/app  # Mount source code for live updates
+      # - ./DevTools:/app  # Mount source code for live updates
       - ./logs:/app/logs
       - ./DevTools/Tools:/app/Tools
 

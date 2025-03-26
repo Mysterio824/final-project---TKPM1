@@ -23,11 +23,11 @@ public class RedisService : IRedisService
         await _redisDb.StringSetAsync(key, json, expiration);
     }
 
-    public async Task<RegisterDto> GetUnverifiedUserAsync(string email)
+    public async Task<RegisterDto?> GetUnverifiedUserAsync(string email)
     {
         var key = $"{_instanceName}:unverified:user:{email}";
         var json = await _redisDb.StringGetAsync(key);
-        return json.HasValue ? JsonSerializer.Deserialize<RegisterDto>(json) : null;
+        return json.HasValue ? JsonSerializer.Deserialize<RegisterDto>(json.ToString()) : null;
     }
 
     public async Task RemoveUnverifiedUserAsync(string email)
@@ -42,7 +42,7 @@ public class RedisService : IRedisService
         await _redisDb.StringSetAsync(key, token, expiration);
     }
 
-    public async Task<string> GetVerificationTokenAsync(string email)
+    public async Task<string?> GetVerificationTokenAsync(string email)
     {
         var key = $"{_instanceName}:verification:token:{email}";
         var token = await _redisDb.StringGetAsync(key);
@@ -61,7 +61,7 @@ public class RedisService : IRedisService
         await _redisDb.StringSetAsync(key, refreshToken, expiration);
     }
 
-    public async Task<string> GetRefreshTokenAsync(string userId)
+    public async Task<string?> GetRefreshTokenAsync(string userId)
     {
         var key = $"{_instanceName}:refresh:token:{userId}";
         var token = await _redisDb.StringGetAsync(key);
@@ -87,7 +87,7 @@ public class RedisService : IRedisService
         return value.HasValue;
     }
 
-    public async Task<string> GetEmailByVerificationTokenAsync(string token)
+    public async Task<string?> GetEmailByVerificationTokenAsync(string token)
     {
         var server = _redisDb.Multiplexer.GetServer(_redisDb.Multiplexer.GetEndPoints().First());
         var pattern = $"{_instanceName}:verification:token:*";

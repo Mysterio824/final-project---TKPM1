@@ -1,4 +1,5 @@
 ﻿using DevTools.DTOs.Request;
+using DevTools.DTOs.Response;
 using DevTools.Entities;
 using DevTools.Enums;
 using DevTools.Exceptions;
@@ -26,7 +27,7 @@ namespace DevTools.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<IEnumerable<Tool>>> GetTools()
+        public async Task<ActionResult<IEnumerable<ToolDTO>>> GetTools()
         {
             var roleClaim = User.FindFirst(ClaimTypes.Role)!.Value;
             var userRole = Enum.Parse<UserRole>(roleClaim, true);
@@ -37,7 +38,7 @@ namespace DevTools.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Tool>> GetToolById(int id)
+        public async Task<ActionResult<ToolDTO>> GetToolById(int id)
         {
             var roleClaim = User.FindFirst(ClaimTypes.Role)!.Value;
             var userRole = Enum.Parse<UserRole>(roleClaim, true);
@@ -52,9 +53,20 @@ namespace DevTools.Controllers
             return Ok(tool);
         }
 
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ToolDTO>>> GetToolsByName([FromQuery] string name)
+        {
+            var roleClaim = User.FindFirst(ClaimTypes.Role)!.Value;
+            var userRole = Enum.Parse<UserRole>(roleClaim, true);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            await _toolService.UpdateToolList();
+            return Ok(await _toolService.GetToolsByNameAsync(name, userRole, userId));
+        }
+
         [Authorize]
         [HttpGet("favorite/all")]
-        public async Task<ActionResult<IEnumerable<Tool>>> GetFavoriteTools()
+        public async Task<ActionResult<IEnumerable<ToolDTO>>> GetFavoriteTools()
         {
             var roleClaim = User.FindFirst(ClaimTypes.Role)!.Value;
             var userRole = Enum.Parse<UserRole>(roleClaim, true);
@@ -64,20 +76,43 @@ namespace DevTools.Controllers
             return Ok(await _toolService.GetToolFavoriteAsync(userRole, userId));
         }
 
-        [HttpPost("{id}/execute")]
-        public ActionResult<string> ExecuteTool(int id, [FromBody] ToolRequest request)
+        [HttpPost("execute")]
+        public async Task<ActionResult<ToolResponse>> ExecuteTool([FromForm] ToolRequest request)
         {
             var roleClaim = User.FindFirst(ClaimTypes.Role)!.Value;
             var userRole = Enum.Parse<UserRole>(roleClaim, true);
+
             try
             {
-                return Ok(new { result = _toolService.ExecuteTool(id, request.inputString) });
+                var result = await _toolService.ExecuteToolAsync(request.ToolId, request.InputText, request.UploadedFile, userRole);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { Message = ex.Message });
             }
         }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("add")]
+        public async Task<ActionResult> AddTool([FromForm] IFormFile tool)
+        {
+            try
+            {
+                await _toolService.AddToolAsync(tool);
+                return Ok();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500);
+            }
+        }
+
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/{actionName}")]
@@ -103,7 +138,6 @@ namespace DevTools.Controllers
             }
             catch (Exception ex)
             {
-                // Consider logging the exception
                 return StatusCode(500, new { Message = $"Failed to {actionName.ToLower()} tool", Detail = ex.Message });
             }
         }
@@ -121,7 +155,7 @@ namespace DevTools.Controllers
             {
                 return BadRequest(new { Message = ex.Message });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500);
             }

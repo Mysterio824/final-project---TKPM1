@@ -1,6 +1,7 @@
 ﻿using DevTools.DTOs.Response;
 using DevTools.Entities;
 using DevTools.Enums;
+using StackExchange.Redis;
 
 namespace DevTools.Interfaces.Services
 {
@@ -9,7 +10,8 @@ namespace DevTools.Interfaces.Services
         Task<IEnumerable<ToolDTO>> GetToolsAsync(UserRole role, int userId = -1);
         Task<IEnumerable<ToolDTO>> GetToolFavoriteAsync(UserRole role, int userId);
         Task<ToolDTO?> GetToolByIdAsync(int id, UserRole role, int userId = -1);
-        Task AddToolAsync(Tool tool);
+        Task<IEnumerable<ToolDTO>> GetToolsByNameAsync(String name, UserRole role, int userId = -1);
+        Task AddToolAsync(IFormFile file);
         Task DisableTool(int id);
         Task EnableTool(int id);
         Task SetPremium(int id);
@@ -17,6 +19,6 @@ namespace DevTools.Interfaces.Services
         Task UpdateToolAsync(Tool tool);
         Task DeleteToolAsync(int id);
         Task UpdateToolList();
-        string ExecuteTool(int toolId, string input, UserRole role = UserRole.User);
+        Task<ToolResponse> ExecuteToolAsync(int toolId, string? input, IFormFile? file, UserRole role);
     }
 }

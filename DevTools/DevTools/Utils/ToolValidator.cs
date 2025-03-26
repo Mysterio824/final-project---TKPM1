@@ -1,0 +1,36 @@
+﻿using System.Reflection;
+using DevTools.Interfaces;
+
+namespace DevTools.Utils
+{
+    public static class ToolValidator
+    {
+        public static bool IsValidTool(string dllPath, out Type? toolType)
+        {
+            toolType = null;
+
+            if (!File.Exists(dllPath) || Path.GetExtension(dllPath).ToLower() != ".dll")
+                return false;
+
+            try
+            {
+                var assembly = Assembly.LoadFrom(dllPath);
+                toolType = assembly.GetTypes()
+                    .FirstOrDefault(t =>
+                        typeof(ITool).IsAssignableFrom(t) &&
+                        !t.IsInterface &&
+                        !t.IsAbstract);
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                return false;
+            }
+            catch (BadImageFormatException)
+            {
+                return false;
+            }
+
+            return toolType != null;
+        }
+    }
+}

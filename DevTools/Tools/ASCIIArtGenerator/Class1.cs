@@ -1,5 +1,8 @@
-﻿using DevTools.Enums;
+﻿using DevTools.DTOs.Response;
+using DevTools.Enums;
 using DevTools.Interfaces;
+using DevTools.Repositories;
+using Microsoft.AspNetCore.Http;
 using System.Text;
 
 namespace ASCIIArtGenerator
@@ -10,11 +13,16 @@ namespace ASCIIArtGenerator
         public string Description => "Converts input text into simple ASCII art";
         public ToolType Type => ToolType.String;
 
-        public string Execute(string input)
+        public ToolResponse Execute(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                return "Please provide text to convert to ASCII art.";
+                new ToolResponse
+                {
+                    Status = 500,
+                    Output = "Please provide text to convert to ASCII art.",
+                    ResultType = "text/plain"
+                };
             }
 
             input = input.ToUpper();
@@ -27,8 +35,16 @@ namespace ASCIIArtGenerator
             output.AppendLine(" *");
             output.AppendLine(new string('*', input.Length + 4));
 
-            return output.ToString();
-        }
-    }
+            output.ToString();
 
+            return new ToolResponse
+            {
+                Status = 200,
+                Output = output.ToString(),
+                ResultType = "text/plain"
+            };
+        }
+
+        public ToolResponse Execute(byte[] fileBytes) { return new ToolResponse(); }
+    }
 }

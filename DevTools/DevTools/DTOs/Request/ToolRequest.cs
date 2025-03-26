@@ -2,6 +2,8 @@
 {
     public class ToolRequest
     {
-        public String inputString { get; set; }
+        public int ToolId { get; set; }
+        public string? InputText { get; set; }
+        public IFormFile? UploadedFile { get; set; }
     }
 }

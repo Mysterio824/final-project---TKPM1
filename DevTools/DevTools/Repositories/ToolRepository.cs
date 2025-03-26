@@ -37,6 +37,11 @@ namespace DevTools.Repositories
             return await _context.Tools.FindAsync(id);
         }
 
+        public async Task<IEnumerable<Tool>> GetByNameAsync(string name)
+        {
+            return await _context.Tools.Where(tool => tool.Name.ToLower().Contains(name.ToLower())) .ToListAsync();
+        }
+
         public async Task AddAsync(Tool tool)
         {
             _context.Tools.Add(tool);

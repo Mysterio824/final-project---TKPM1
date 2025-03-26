@@ -290,3 +290,4 @@ C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\o
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.pdb
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.genruntimeconfig.cache
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\ref\DevTools.dll
+C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

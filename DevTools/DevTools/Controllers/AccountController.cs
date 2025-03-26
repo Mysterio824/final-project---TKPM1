@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using DevTools.Interfaces.Services;
-using System.Diagnostics;
-using DevTools.Exceptions;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using System.Net;
 
 namespace DevTools.Controllers
 {

@@ -1,22 +1,14 @@
 ﻿using DevTools.Entities;
 using DevTools.Interfaces.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Net;
 using System.Net.Mail;
-using System.Threading.Tasks;
 
 namespace DevTools.Services
 {
-    public class EmailService : IEmailService
+    public class EmailService(IConfiguration configuration) : IEmailService
     {
-        private readonly IConfiguration _configuration;
-
-        public EmailService(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
+        private readonly IConfiguration _configuration = configuration;
 
         public async Task SendEmailVerificationAsync(string email, string verificationToken)
         {
@@ -102,19 +94,30 @@ namespace DevTools.Services
 
         private async Task SendEmailAsync(string email, string subject, string body)
         {
+            var smtpHost = _configuration["EmailSettings:SmtpHost"];
+            var smtpPort = _configuration["EmailSettings:SmtpPort"];
+            var enableSsl = _configuration["EmailSettings:EnableSsl"];
+            var username = _configuration["EmailSettings:Username"];
+            var password = _configuration["EmailSettings:Password"];
+            var fromEmail = _configuration["EmailSettings:FromEmail"];
+            var fromName = _configuration["EmailSettings:FromName"];
+
+            if (smtpHost == null || smtpPort == null || enableSsl == null || username == null || password == null || fromEmail == null || fromName == null)
+            {
+                throw new InvalidOperationException("Email settings are not configured properly.");
+            }
+
             using var client = new SmtpClient
             {
-                Host = _configuration["EmailSettings:SmtpHost"],
-                Port = int.Parse(_configuration["EmailSettings:SmtpPort"]),
-                EnableSsl = bool.Parse(_configuration["EmailSettings:EnableSsl"]),
-                Credentials = new NetworkCredential(
-                    _configuration["EmailSettings:Username"],
-                    _configuration["EmailSettings:Password"])
+                Host = smtpHost,
+                Port = int.Parse(smtpPort),
+                EnableSsl = bool.Parse(enableSsl),
+                Credentials = new NetworkCredential(username, password)
             };
 
             using var message = new MailMessage
             {
-                From = new MailAddress(_configuration["EmailSettings:FromEmail"], _configuration["EmailSettings:FromName"]),
+                From = new MailAddress(fromEmail, fromName),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true

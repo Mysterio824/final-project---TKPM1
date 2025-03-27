@@ -1,6 +1,5 @@
 ﻿using DevTools.DTOs.Request;
 using DevTools.DTOs.Response;
-using DevTools.Entities;
 using DevTools.Enums;
 using DevTools.Exceptions;
 using DevTools.Interfaces.Services;
@@ -13,18 +12,15 @@ namespace DevTools.Controllers
 {
     [Route("api/tools")]
     [ApiController]
-    public class ToolController : ControllerBase
+    public class ToolController(
+        IToolService toolService,
+        ToolActionStrategyFactory strategyFactory,
+        ILogger<ToolController> logger
+        ) : ControllerBase
     {
-        private readonly IToolService _toolService;
-        private readonly ToolActionStrategyFactory _strategyFactory;
-
-        public ToolController(
-            IToolService toolService, 
-            ToolActionStrategyFactory strategyFactory
-        ){
-            _toolService = toolService;
-            _strategyFactory = strategyFactory;
-        }
+        private readonly IToolService _toolService = toolService;
+        private readonly ToolActionStrategyFactory _strategyFactory = strategyFactory;
+        private readonly ILogger<ToolController> _logger = logger;
 
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<ToolDTO>>> GetTools()
@@ -96,23 +92,36 @@ namespace DevTools.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("add")]
-        public async Task<ActionResult> AddTool([FromForm] IFormFile tool)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> AddTool(IFormFile tool)
         {
             try
             {
+                if (tool == null)
+                {
+                    _logger.LogError("No file received.");
+                    return BadRequest(new { Message = "No file uploaded." });
+                }
+
+                if (Path.GetExtension(tool.FileName)?.ToLower() != ".dll")
+                {
+                    return BadRequest(new { Message = "Invalid file type. Only DLL files are allowed." });
+                }
+
                 await _toolService.AddToolAsync(tool);
                 return Ok();
             }
             catch (ArgumentException ex)
             {
+                _logger.LogWarning(ex, "Argument error in AddTool.");
                 return BadRequest(new { Message = ex.Message });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                _logger.LogError(ex, "An unexpected error occurred while adding the tool.");
+                return StatusCode(500, new { Message = ex.Message });
             }
         }
-
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/{actionName}")]

@@ -1,5 +1,5 @@
-﻿using DevTools.Interfaces.Services;
-using DevTools.Services;
+﻿using DevTools.Interfaces;
+using DevTools.Interfaces.Services;
 
 namespace DevTools.Strategies.ToolStrategy
 {

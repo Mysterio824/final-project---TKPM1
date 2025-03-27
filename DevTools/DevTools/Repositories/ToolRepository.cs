@@ -1,20 +1,13 @@
 ﻿using DevTools.Data;
 using DevTools.Entities;
-using DevTools.Enums;
 using DevTools.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace DevTools.Repositories
 {
-    public class ToolRepository : IToolRepository
+    public class ToolRepository(ApplicationDbContext context) : IToolRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public ToolRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+        private readonly ApplicationDbContext _context = context;
 
         public async Task<IEnumerable<Tool>> GetAllAsync() => await _context.Tools.ToListAsync();
 

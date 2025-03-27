@@ -1,14 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
-using System;
 using System.Text;
 using DevTools.Data;
 using DevTools.Middleware;
@@ -22,6 +16,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using DevTools.Entities;
 using DevTools.Enums;
 using DevTools.Strategies.ToolStrategy;
+using DevTools.Interfaces;
 
 namespace DevTools;
 
@@ -95,7 +90,39 @@ public class Program
         // Swagger configuration
         builder.Services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "DevTools API", Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo 
+            { Title = "DevTools API", 
+                Version = "v1",
+                Description = "API for managing DevTools application."
+            });
+
+            //c.OperationFilter<FileUploadOperationFilter>();
+
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Description = "Please enter your token with this format: ''Bearer YOUR_TOKEN''",
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                BearerFormat = "JWT",
+                Scheme = "bearer"
+            });
+            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Name = "Bearer",
+                        In = ParameterLocation.Header,
+                        Reference = new OpenApiReference
+                        {
+                            Id = "Bearer",
+                            Type = ReferenceType.SecurityScheme
+                        }
+                    },
+                    new List<string>()
+                }
+            });
         });
 
         // JWT Authentication
@@ -131,6 +158,12 @@ public class Program
 
     private static void ConfigureJwtAuthentication(WebApplicationBuilder builder)
     {
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("JWT Key is not configured.");
+        }
+
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -142,8 +175,7 @@ public class Program
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
         builder.Services.AddAuthorization();
@@ -296,7 +328,7 @@ public class Program
         };
 
         // 🛠 Fix Identity Column Syntax
-        if (property.IsPrimaryKey() && clrType == typeof(int) && property.DeclaringEntityType.FindPrimaryKey()?.Properties.Count == 1)
+        if (property.IsPrimaryKey() && clrType == typeof(int) && ((IEntityType)property.DeclaringType).FindPrimaryKey()?.Properties.Count == 1)
         {
             return "INTEGER GENERATED ALWAYS AS IDENTITY";
         }

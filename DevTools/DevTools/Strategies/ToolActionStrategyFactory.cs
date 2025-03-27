@@ -1,4 +1,4 @@
-﻿using DevTools.Strategies.ToolStrategy;
+﻿using DevTools.Interfaces;
 
 namespace DevTools.Strategies
 {

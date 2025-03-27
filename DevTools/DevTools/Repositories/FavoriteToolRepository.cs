@@ -1,19 +1,13 @@
 ﻿using DevTools.Data;
 using DevTools.Entities;
-using DevTools.Interfaces;
 using DevTools.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevTools.Repositories
 {
-    public class FavoriteToolRepository : IFavoriteToolRepository
+    public class FavoriteToolRepository(ApplicationDbContext context) : IFavoriteToolRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public FavoriteToolRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+        private readonly ApplicationDbContext _context = context;
 
         public async Task<IEnumerable<FavoriteTool>> GetAll(int userId) => 
             await _context.FavoriteTools

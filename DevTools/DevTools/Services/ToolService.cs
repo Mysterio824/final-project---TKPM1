@@ -6,8 +6,7 @@ using DevTools.Interfaces;
 using DevTools.Interfaces.Repositories;
 using DevTools.Interfaces.Services;
 using DevTools.Utils;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using StackExchange.Redis;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 
 namespace DevTools.Services
@@ -15,121 +14,136 @@ namespace DevTools.Services
     public class ToolService : IToolService
     {
         private readonly IToolRepository _toolRepository;
-        private readonly string _toolDirectory = "Tools";
         private readonly IFavoriteToolRepository _favoriteToolRepository;
         private readonly ILogger<ToolService> _logger;
+        private readonly string _toolDirectory;
+        private readonly SemaphoreSlim _toolLock;
 
         public ToolService(
             IToolRepository toolRepository,
             IFavoriteToolRepository favoriteToolRepository,
-            ILogger<ToolService> logger
-        ){
-            _toolRepository = toolRepository;
-            _favoriteToolRepository = favoriteToolRepository;
-            _logger = logger;
+            ILogger<ToolService> logger,
+            string toolDirectory = "Tools")
+        {
+            _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
+            _favoriteToolRepository = favoriteToolRepository ?? throw new ArgumentNullException(nameof(favoriteToolRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _toolDirectory = toolDirectory;
+            _toolLock = new SemaphoreSlim(1, 1);
 
-            if (!Directory.Exists(_toolDirectory))
-                Directory.CreateDirectory(_toolDirectory);
+            EnsureToolDirectoryExists();
+        }
+
+        private void EnsureToolDirectoryExists()
+        {
+            Directory.CreateDirectory(_toolDirectory);
         }
 
         public async Task<IEnumerable<ToolDTO>> GetToolsAsync(UserRole role, int userId = -1)
         {
             var toolList = await _toolRepository.GetAllAsync();
-            var favoriteToolIds = userId != -1
-                ? (await _favoriteToolRepository.GetAll(userId))?.Select(f => f.ToolId).ToHashSet() ?? new HashSet<int>()
-                : new HashSet<int>();
+            var favoriteToolIds = await GetFavoriteToolIds(userId);
 
-            var toolDTOs = toolList.Select(t => new ToolDTO
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                IsEnabled = !t.IsPremium || (role != UserRole.User && role != UserRole.Anonymous) && t.IsEnabled,
-                IsPremium = t.IsPremium,
-                Type = t.Type,
-                IsFavorite = favoriteToolIds.Contains(t.Id)
-            });
-
-            return toolDTOs;
+            return MapToToolDTOs(toolList, role, favoriteToolIds);
         }
 
-        public async Task<IEnumerable<ToolDTO>> GetToolFavoriteAsync(UserRole role, int userId) { 
-            var tools = await _toolRepository.GetFavoriteAsync(userId); 
-            var toolDTOs = tools.Select(t => new ToolDTO
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                IsEnabled = !t.IsPremium || (role != UserRole.User && role != UserRole.Anonymous) && t.IsEnabled,
-                IsPremium = t.IsPremium,
-                Type = t.Type,
-                IsFavorite = true
-            });
-            
-            return toolDTOs;
+        public async Task<IEnumerable<ToolDTO>> GetToolFavoriteAsync(UserRole role, int userId)
+        {
+            var tools = await _toolRepository.GetFavoriteAsync(userId);
+            return MapToToolDTOs(tools, role, tools.Select(t => t.Id).ToHashSet());
         }
 
-        public async Task<ToolDTO?> GetToolByIdAsync(int id, UserRole role, int userId = -1) { 
+        public async Task<ToolDTO?> GetToolByIdAsync(int id, UserRole role, int userId = -1)
+        {
             var tool = await _toolRepository.GetByIdAsync(id);
-            if (tool == null)
-            {
-                return null;
-            }
+            if (tool == null) return null;
 
-            var favTool = userId != -1 
-                ? await _favoriteToolRepository.GetAsync(userId, id)
-                : null;
+            var isFavorite = userId != -1 && await _favoriteToolRepository.GetAsync(userId, id) != null;
 
-            var toolDTO = new ToolDTO
+            return MapToToolDTO(tool, role, isFavorite);
+        }
+
+        public async Task<IEnumerable<ToolDTO>> GetToolsByNameAsync(string name, UserRole role, int userId = -1)
+        {
+            var toolList = await _toolRepository.GetByNameAsync(name);
+            var favoriteToolIds = await GetFavoriteToolIds(userId);
+
+            return MapToToolDTOs(toolList, role, favoriteToolIds);
+        }
+
+        private async Task<HashSet<int>> GetFavoriteToolIds(int userId)
+        {
+            return userId != -1
+                ? (await _favoriteToolRepository.GetAll(userId))?.Select(f => f.ToolId).ToHashSet()
+                ?? new HashSet<int>()
+                : new HashSet<int>();
+        }
+
+        private IEnumerable<ToolDTO> MapToToolDTOs(IEnumerable<Tool> tools, UserRole role, HashSet<int> favoriteToolIds)
+        {
+            return tools.Select(t => MapToToolDTO(t, role, favoriteToolIds.Contains(t.Id)));
+        }
+
+        private ToolDTO MapToToolDTO(Tool tool, UserRole role, bool isFavorite)
+        {
+            return new ToolDTO
             {
                 Id = tool.Id,
                 Name = tool.Name,
                 Description = tool.Description,
-                IsEnabled = !tool.IsPremium || (role != UserRole.User && role != UserRole.Anonymous) && tool.IsEnabled,
+                IsEnabled = IsToolAccessible(tool, role),
                 IsPremium = tool.IsPremium,
                 Type = tool.Type,
-                IsFavorite = (favTool != null)
+                IsFavorite = isFavorite
             };
-            return toolDTO;
         }
 
-        public async Task<IEnumerable<ToolDTO>> GetToolsByNameAsync(String name, UserRole role, int userId = -1)
+        private bool IsToolAccessible(Tool tool, UserRole role)
         {
-            var toolList = await _toolRepository.GetByNameAsync(name);
-            var favoriteToolIds = userId != -1
-                ? (await _favoriteToolRepository.GetAll(userId))?.Select(f => f.ToolId).ToHashSet() ?? new HashSet<int>()
-                : new HashSet<int>();
-
-            var toolDTOs = toolList.Select(t => new ToolDTO
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                IsEnabled = !t.IsPremium || (role != UserRole.User && role != UserRole.Anonymous) && t.IsEnabled,
-                IsPremium = t.IsPremium,
-                Type = t.Type,
-                IsFavorite = favoriteToolIds.Contains(t.Id)
-            });
-
-            return toolDTOs;
+            return !tool.IsPremium || (role != UserRole.User && role != UserRole.Anonymous) && tool.IsEnabled;
         }
 
         public async Task AddToolAsync(IFormFile file)
         {
-            _logger.LogInformation("Adding tool...");
+            await _toolLock.WaitAsync();
+            try
+            {
+                ValidateToolFile(file);
+                string filePath = SaveToolFile(file);
+
+                var (toolType, toolInstance) = ValidateAndCreateToolInstance(filePath);
+                var newTool = CreateToolEntity(toolInstance, filePath);
+
+                await EnsureToolIsUnique(newTool, filePath);
+                await _toolRepository.AddAsync(newTool);
+
+                _logger.LogInformation($"Tool {newTool.Name} added successfully.");
+            }
+            finally
+            {
+                _toolLock.Release();
+            }
+        }
+
+        private void ValidateToolFile(IFormFile file)
+        {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("No file uploaded.");
 
             if (Path.GetExtension(file.FileName)?.ToLower() != ".dll")
                 throw new ArgumentException("Only DLL files are allowed.");
+        }
 
+        private string SaveToolFile(IFormFile file)
+        {
             string filePath = Path.Combine(_toolDirectory, file.FileName);
+            using var stream = new FileStream(filePath, FileMode.Create);
+            file.CopyTo(stream);
+            return filePath;
+        }
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
+        private (Type, ITool) ValidateAndCreateToolInstance(string filePath)
+        {
             if (!ToolValidator.IsValidTool(filePath, out Type? toolType) || toolType == null)
             {
                 File.Delete(filePath);
@@ -139,7 +153,12 @@ namespace DevTools.Services
             var toolInstance = (ITool?)Activator.CreateInstance(toolType)
                 ?? throw new InvalidCastException("Failed to create tool instance.");
 
-            var newTool = new Tool
+            return (toolType, toolInstance);
+        }
+
+        private Tool CreateToolEntity(ITool toolInstance, string filePath)
+        {
+            return new Tool
             {
                 Name = toolInstance.Name,
                 Description = toolInstance.Description,
@@ -148,16 +167,16 @@ namespace DevTools.Services
                 IsPremium = false,
                 Type = toolInstance.Type
             };
+        }
 
+        private async Task EnsureToolIsUnique(Tool newTool, string filePath)
+        {
             var existingTools = await _toolRepository.GetAllAsync();
             if (existingTools.Contains(newTool, new ToolComparer()))
             {
                 File.Delete(filePath);
                 throw new InvalidOperationException("A tool with the same name already exists.");
             }
-
-            await _toolRepository.AddAsync(newTool);
-            _logger.LogInformation($"Tool {newTool.Name} added successfully.");
         }
 
         public async Task UpdateToolAsync(Tool tool) => await _toolRepository.UpdateAsync(tool);
@@ -171,6 +190,13 @@ namespace DevTools.Services
                 return;
             }
 
+            DeleteToolDllFile(tool);
+            await _toolRepository.DeleteAsync(id);
+            _logger.LogInformation($"Deleted tool with ID {id}.");
+        }
+
+        private void DeleteToolDllFile(Tool tool)
+        {
             var dllPath = tool.DllPath;
             if (!string.IsNullOrEmpty(dllPath) && File.Exists(dllPath))
             {
@@ -184,56 +210,85 @@ namespace DevTools.Services
                     _logger.LogError($"Failed to delete DLL {dllPath}: {ex.Message}");
                 }
             }
-            await _toolRepository.DeleteAsync(id);
-            _logger.LogInformation($"Deleted tool with ID {id}.");
         }
 
-        /// Fetch tool DLLs and update DB
         public async Task UpdateToolList()
         {
-            var dllFiles = Directory.GetFiles(_toolDirectory, "*.dll")
-                .Select(Path.GetFileName)
-                .ToHashSet();
+            await _toolLock.WaitAsync();
+            try
+            {
+                var discoveredToolPaths = new HashSet<string>();
+                var existingTools = await _toolRepository.GetAllAsync();
 
-            var existingTools = await _toolRepository.GetAllAsync();
-            var discoveredToolPaths = new HashSet<string>();
+                await ProcessDiscoveredDlls(discoveredToolPaths, existingTools);
+                await RemoveUnusedTools(existingTools, discoveredToolPaths);
+            }
+            finally
+            {
+                _toolLock.Release();
+            }
+        }
 
+        private async Task ProcessDiscoveredDlls(HashSet<string> discoveredToolPaths, IEnumerable<Tool> existingTools)
+        {
             foreach (var dllPath in Directory.GetFiles(_toolDirectory, "*.dll"))
             {
                 try
                 {
+                    var fileName = Path.GetFileName(dllPath);
                     if (!ToolValidator.IsValidTool(dllPath, out Type? toolType) || toolType == null)
                         continue;
 
-                    var toolInstance = (ITool?)Activator.CreateInstance(toolType)
-                        ?? throw new InvalidCastException("Failed to create tool instance.");
-
-                    var fileName = Path.GetFileName(dllPath);
+                    var toolInstance = CreateToolInstance(toolType);
                     discoveredToolPaths.Add(fileName);
 
-                    if (existingTools.Any(t => t.Name.Equals(toolInstance.Name, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        _logger.LogWarning($"Skipping {toolInstance.Name}: A tool with the same name already exists.");
+                    if (ExistingToolWithSameName(existingTools, toolInstance))
                         continue;
-                    }
 
-                    var newTool = new Tool
-                    {
-                        Name = toolInstance.Name,
-                        Description = toolInstance.Description,
-                        DllPath = dllPath,
-                        IsEnabled = true,
-                        IsPremium = false,
-                        Type = toolInstance.Type
-                    };
-                    await _toolRepository.AddAsync(newTool);
+                    await AddNewTool(dllPath, toolInstance);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error processing DLL {dllPath}: {ex.Message}");
                 }
             }
+        }
 
+        private ITool CreateToolInstance(Type toolType)
+        {
+            return (ITool?)Activator.CreateInstance(toolType)
+                ?? throw new InvalidCastException("Failed to create tool instance.");
+        }
+
+        private bool ExistingToolWithSameName(IEnumerable<Tool> existingTools, ITool toolInstance)
+        {
+            var duplicate = existingTools.Any(t =>
+                t.Name.Equals(toolInstance.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (duplicate)
+            {
+                _logger.LogWarning($"Skipping {toolInstance.Name}: A tool with the same name already exists.");
+                return true;
+            }
+            return false;
+        }
+
+        private async Task AddNewTool(string dllPath, ITool toolInstance)
+        {
+            var newTool = new Tool
+            {
+                Name = toolInstance.Name,
+                Description = toolInstance.Description,
+                DllPath = dllPath,
+                IsEnabled = true,
+                IsPremium = false,
+                Type = toolInstance.Type
+            };
+            await _toolRepository.AddAsync(newTool);
+        }
+
+        private async Task RemoveUnusedTools(IEnumerable<Tool> existingTools, HashSet<string> discoveredToolPaths)
+        {
             var toolsToRemove = existingTools
                 .Where(t => !discoveredToolPaths.Contains(Path.GetFileName(t.DllPath)))
                 .ToList();
@@ -246,105 +301,102 @@ namespace DevTools.Services
 
         public async Task<ToolResponse> ExecuteToolAsync(int toolId, string? input, IFormFile? file, UserRole role)
         {
+            ValidateToolExecution(input, file);
+            var tool = await GetAndValidateTool(toolId, role);
+
+            var assembly = Assembly.LoadFrom(tool.DllPath);
+            var toolType = GetToolType(assembly);
+            var toolInstance = CreateToolInstance(toolType);
+
+            return await ExecuteTool(toolInstance, input, file, toolId);
+        }
+
+        private void ValidateToolExecution(string? input, IFormFile? file)
+        {
             if (input == null && file == null)
                 throw new ArgumentException("No input provided.");
+        }
 
+        private async Task<Tool> GetAndValidateTool(int toolId, UserRole role)
+        {
             var tool = await _toolRepository.GetByIdAsync(toolId);
             if (tool == null || !File.Exists(tool.DllPath))
                 throw new ArgumentException("Tool not found or missing DLL.");
 
+            ValidateToolAccess(tool, role);
+            return tool;
+        }
+
+        private void ValidateToolAccess(Tool tool, UserRole role)
+        {
             if (!tool.IsEnabled)
                 throw new UnauthorizedAccessException("Tool is disabled.");
 
             if (tool.IsPremium && (role == UserRole.User || role == UserRole.Anonymous))
                 throw new UnauthorizedAccessException("Tool is premium.");
+        }
 
-            var assembly = Assembly.LoadFrom(tool.DllPath);
-            var toolType = assembly.GetTypes()
+        private Type GetToolType(Assembly assembly)
+        {
+            return assembly.GetTypes()
                 .FirstOrDefault(t => typeof(ITool).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
                 ?? throw new InvalidOperationException("Invalid tool DLL: No ITool implementation found.");
+        }
 
-            var toolInstance = (ITool?)Activator.CreateInstance(toolType)
-                ?? throw new InvalidCastException("Failed to create tool instance.");
-
-            ToolResponse response;
-            if (file != null)
-            {
-                using var memoryStream = new MemoryStream();
-                await file.CopyToAsync(memoryStream);
-                byte[] fileBytes = memoryStream.ToArray();
-
-                response = toolInstance.Execute(fileBytes);
-            }
-            else
-            {
-                response = toolInstance.Execute(input!);
-            }
+        private async Task<ToolResponse> ExecuteTool(ITool toolInstance, string? input, IFormFile? file, int toolId)
+        {
+            ToolResponse response = file != null
+                ? await ExecuteToolWithFile(toolInstance, file)
+                : ExecuteToolWithInput(toolInstance, input!);
 
             response.ToolId = toolId;
-
             return response;
         }
 
-        public async Task DisableTool(int id)
+        private async Task<ToolResponse> ExecuteToolWithFile(ITool toolInstance, IFormFile file)
         {
-            var tool = await _toolRepository.GetByIdAsync(id);
-            if(tool == null)
-            {
-                throw new NotFoundException("Tool " + nameof(id) + " not found.");
-            }
-            if (!tool.IsEnabled)
-            {
-                throw new InvalidOperationException("Tool is already disabled.");
-            }
-            tool.IsEnabled = false;
-            await _toolRepository.UpdateAsync(tool);
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            byte[] fileBytes = memoryStream.ToArray();
+
+            return toolInstance.Execute(fileBytes);
         }
 
-        public async Task EnableTool(int id)
+        private ToolResponse ExecuteToolWithInput(ITool toolInstance, string input)
         {
-            var tool = await _toolRepository.GetByIdAsync(id);
-            if (tool == null)
-            {
-                throw new NotFoundException("Tool " + nameof(id) + " not found.");
-            }
-            if (tool.IsEnabled)
-            {
-                throw new InvalidOperationException("Tool is already enabled.");
-            }
-            tool.IsEnabled = true;
-            await _toolRepository.UpdateAsync(tool);
+            return toolInstance.Execute(input);
         }
 
-        public async Task SetPremium(int id)
+        public async Task DisableTool(int id) => await ToggleToolStatus(id, false);
+        public async Task EnableTool(int id) => await ToggleToolStatus(id, true);
+
+        private async Task ToggleToolStatus(int id, bool enable)
         {
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null)
-            {
-                throw new NotFoundException("Tool " + nameof(id) + " not found.");
-            }
-            if (tool.IsPremium)
-            {
-                throw new InvalidOperationException("Tool is already premium.");
-            }
-            tool.IsPremium = true;
+                throw new NotFoundException($"Tool {id} not found.");
+
+            if (tool.IsEnabled == enable)
+                throw new InvalidOperationException($"Tool is already {(enable ? "enabled" : "disabled")}.");
+
+            tool.IsEnabled = enable;
             await _toolRepository.UpdateAsync(tool);
         }
 
-        public async Task SetFree(int id)
+        public async Task SetPremium(int id) => await TogglePremiumStatus(id, true);
+        public async Task SetFree(int id) => await TogglePremiumStatus(id, false);
+
+        private async Task TogglePremiumStatus(int id, bool isPremium)
         {
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null)
-            {
-                throw new NotFoundException("Tool " + nameof(id) + " not found.");
-            }
-            if (!tool.IsPremium)
-            {
-                throw new InvalidOperationException("Tool is already free.");
-            }
-            tool.IsPremium = false;
+                throw new NotFoundException($"Tool {id} not found.");
+
+            if (tool.IsPremium == isPremium)
+                throw new InvalidOperationException($"Tool is already {(isPremium ? "premium" : "free")}.");
+
+            tool.IsPremium = isPremium;
             await _toolRepository.UpdateAsync(tool);
         }
-
     }
 }

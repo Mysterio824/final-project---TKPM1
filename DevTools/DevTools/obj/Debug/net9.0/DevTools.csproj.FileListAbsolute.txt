@@ -284,10 +284,10 @@ C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\o
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets\msbuild.buildMultiTargeting.DevTools.props
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets\msbuild.buildTransitive.DevTools.props
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets.pack.json
+C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.csproj.Up2Date
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.dll
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\refint\DevTools.dll
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.pdb
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\DevTools.genruntimeconfig.cache
 C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\ref\DevTools.dll
-C:\Users\ASUS\source\repos\Mysterio824\final-project---TKPM1\DevTools\DevTools\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

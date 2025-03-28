@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using DevTools.Interfaces.Core;
+using DevTools.Application.Common;
 
 namespace DevTools.Utils
 {

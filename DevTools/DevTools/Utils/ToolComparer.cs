@@ -1,4 +1,4 @@
-﻿using DevTools.Entities;
+﻿using DevTools.Domain.Entities;
 
 namespace DevTools.Utils
 {

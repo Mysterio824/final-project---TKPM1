@@ -1,7 +1,4 @@
-﻿using DevTools.Entities;
-using System.Threading.Tasks;
-
-namespace DevTools.Interfaces.Services
+﻿namespace DevTools.Interfaces.Services
 {
     public interface IAccountService
     {

@@ -1,7 +1,4 @@
 ﻿using DevTools.Entities;
-using DevTools.Enums;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace DevTools.Interfaces.Repositories
 {

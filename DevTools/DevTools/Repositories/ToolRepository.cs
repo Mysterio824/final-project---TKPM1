@@ -9,7 +9,8 @@ namespace DevTools.Repositories
     {
         private readonly ApplicationDbContext _context = context;
 
-        public async Task<IEnumerable<Tool>> GetAllAsync() => await _context.Tools.ToListAsync();
+        public async Task<IEnumerable<Tool>> GetAllAsync() 
+            => await _context.Tools.ToListAsync();
 
         public async Task<IEnumerable<Tool>> GetFavoriteAsync(int userId)
         {
@@ -26,14 +27,12 @@ namespace DevTools.Repositories
         }
 
         public async Task<Tool?> GetByIdAsync(int id)
-        {
-            return await _context.Tools.FindAsync(id);
-        }
+            => await _context.Tools.FindAsync(id);
+        
 
         public async Task<IEnumerable<Tool>> GetByNameAsync(string name)
-        {
-            return await _context.Tools.Where(tool => tool.Name.ToLower().Contains(name.ToLower())) .ToListAsync();
-        }
+            => await _context.Tools.Where(tool => tool.Name.Contains(name, StringComparison.CurrentCultureIgnoreCase)) .ToListAsync();
+        
 
         public async Task AddAsync(Tool tool)
         {

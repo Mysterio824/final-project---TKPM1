@@ -35,6 +35,7 @@ namespace DevTools.Repositories
             }
         }
 
-        public async Task<FavoriteTool?> GetAsync(int userId, int toolId) => await _context.FavoriteTools.FindAsync(userId, toolId);
+        public async Task<FavoriteTool?> GetAsync(int userId, int toolId) 
+            => await _context.FavoriteTools.FindAsync(userId, toolId);
     }
 }

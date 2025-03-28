@@ -11,12 +11,9 @@ using DevTools.Services;
 using DevTools.Interfaces.Repositories;
 using DevTools.Repositories;
 using DevTools.Strategies;
+using DevTools.Strategies.ToolStrategies;
+using DevTools.Interfaces.Core;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Metadata;
-using DevTools.Entities;
-using DevTools.Enums;
-using DevTools.Strategies.ToolStrategy;
-using DevTools.Interfaces;
 
 namespace DevTools;
 
@@ -49,7 +46,7 @@ public class Program
             ConfigureMiddleware(app);
 
             app.Logger.LogInformation("Application fully started. Listening on {Urls}",
-                string.Join(", ", app.Urls.Any() ? app.Urls : new[] { $"http://0.0.0.0:{builder.Configuration["APP_PORT"] ?? "5000"}" }));
+                string.Join(", ", app.Urls.Count != 0 ? app.Urls : [$"http://0.0.0.0:{builder.Configuration["APP_PORT"] ?? "5000"}"]));
 
             await app.RunAsync();
         }
@@ -90,24 +87,23 @@ public class Program
         // Swagger configuration
         builder.Services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo 
-            { Title = "DevTools API", 
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "DevTools API",
                 Version = "v1",
                 Description = "API for managing DevTools application."
             });
 
-            //c.OperationFilter<FileUploadOperationFilter>();
-
-            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                In = ParameterLocation.Header,
                 Description = "Please enter your token with this format: ''Bearer YOUR_TOKEN''",
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                Type = SecuritySchemeType.ApiKey,
                 BearerFormat = "JWT",
                 Scheme = "bearer"
             });
-            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
                     new OpenApiSecurityScheme
@@ -151,6 +147,9 @@ public class Program
         builder.Services.AddScoped<IToolActionStrategy, EnableToolStrategy>();
 
         builder.Services.AddScoped<ToolActionStrategyFactory>();
+
+        // Database Initializer
+        builder.Services.AddScoped<DatabaseInitializer>();
 
         // DbContext Configuration
         ConfigureDbContext(builder);
@@ -201,27 +200,9 @@ public class Program
 
     private static async Task InitializeDatabaseSchemaAsync(WebApplication app)
     {
-        using (var scope = app.Services.CreateScope())
-        {
-            var services = scope.ServiceProvider;
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            var context = services.GetRequiredService<ApplicationDbContext>();
-
-            try
-            {
-                logger.LogInformation("Dynamically initializing database schema...");
-                await CreateDatabaseSchemaAsync(context, logger);
-                logger.LogInformation("Database schema initialized successfully.");
-
-                var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-                await EnsureDefaultAdminExistsAsync(userRepository, logger);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred while initializing the database schema.");
-                throw;
-            }
-        }
+        using var scope = app.Services.CreateScope();
+        var databaseInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        await databaseInitializer.InitializeDatabaseSchemaAsync();
     }
 
     private static void ConfigureToolWatcher(WebApplication app)
@@ -246,124 +227,5 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-    }
-
-    // Method moved from original code to match the previous implementation
-    private static async Task CreateDatabaseSchemaAsync(ApplicationDbContext context, ILogger<Program> logger)
-    {
-        var model = context.Model;
-        var sqlBuilder = new StringBuilder();
-
-        // Ensure public schema exists
-        sqlBuilder.AppendLine("CREATE SCHEMA IF NOT EXISTS public;");
-
-        // Iterate over all entity types in the DbContext
-        foreach (var entityType in model.GetEntityTypes())
-        {
-            var tableName = entityType.GetTableName();
-            if (string.IsNullOrEmpty(tableName))
-                continue;
-
-            sqlBuilder.AppendLine($"CREATE TABLE IF NOT EXISTS public.\"{tableName}\" (");
-
-            // Columns
-            var columns = new List<string>();
-            var storeObject = StoreObjectIdentifier.Table(tableName, "public");
-
-            foreach (var property in entityType.GetProperties())
-            {
-                var columnName = property.GetColumnName(storeObject);
-                var columnType = GetPostgresType(property);
-                var isNullable = property.IsNullable ? "NULL" : "NOT NULL";
-
-                var columnDefinition = $"\"{columnName}\" {columnType} {isNullable}";
-                columns.Add(columnDefinition);
-            }
-
-            sqlBuilder.AppendLine(string.Join(",\n", columns));
-
-            // Add primary key constraint (single or composite)
-            var primaryKey = entityType.FindPrimaryKey();
-            if (primaryKey != null)
-            {
-                var pkColumns = string.Join(", ", primaryKey.Properties.Select(p => $"\"{p.GetColumnName(storeObject)}\""));
-                sqlBuilder.AppendLine($", PRIMARY KEY ({pkColumns})");
-            }
-
-            sqlBuilder.AppendLine(");");
-        }
-
-        // Execute the generated SQL
-        var sql = sqlBuilder.ToString();
-        logger.LogDebug("Generated SQL:\n{0}", sql);
-
-        try
-        {
-            await context.Database.ExecuteSqlRawAsync(sql);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to execute SQL: {Sql}", sql);
-            throw;
-        }
-    }
-
-    // 🛠 Fixed Identity Column Handling
-    private static string GetPostgresType(IProperty property)
-    {
-        var clrType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
-
-        if (clrType.IsEnum) return "INTEGER"; // Handle enums as INTEGER
-
-        string baseType = clrType switch
-        {
-            Type t when t == typeof(int) => "INTEGER",
-            Type t when t == typeof(long) => "BIGINT",
-            Type t when t == typeof(string) => $"VARCHAR({property.GetMaxLength() ?? 255})",
-            Type t when t == typeof(bool) => "BOOLEAN",
-            Type t when t == typeof(DateTime) => "TIMESTAMP WITH TIME ZONE",
-            Type t when t == typeof(decimal) => "NUMERIC",
-            Type t when t == typeof(Guid) => "UUID",
-            _ => throw new NotSupportedException($"Type {clrType.Name} is not supported for PostgreSQL mapping.")
-        };
-
-        // 🛠 Fix Identity Column Syntax
-        if (property.IsPrimaryKey() && clrType == typeof(int) && ((IEntityType)property.DeclaringType).FindPrimaryKey()?.Properties.Count == 1)
-        {
-            return "INTEGER GENERATED ALWAYS AS IDENTITY";
-        }
-
-        return baseType;
-    }
-
-    // Create default admin account
-    private static async Task EnsureDefaultAdminExistsAsync(IUserRepository userRepository, ILogger logger)
-    {
-        const string adminEmail = "admin@devtools.com";
-        const string adminUsername = "admin";
-        const string adminPassword = "Admin@123"; // ❗ Change this in production
-
-        var existingAdmin = await userRepository.GetByEmailAsync(adminEmail);
-
-        if (existingAdmin == null)
-        {
-            logger.LogInformation("Creating default admin account...");
-
-            var adminUser = new User
-            {
-                Username = adminUsername,
-                Email = adminEmail,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword), // ✅ Secure hashing
-                Role = UserRole.Admin,
-                IsPremium = true
-            };
-
-            await userRepository.AddAsync(adminUser);
-            logger.LogInformation("Default admin account created successfully.");
-        }
-        else
-        {
-            logger.LogInformation("Default admin already exists.");
-        }
     }
 }

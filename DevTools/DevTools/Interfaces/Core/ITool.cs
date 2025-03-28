@@ -1,7 +1,7 @@
 ﻿using DevTools.DTOs.Response;
 using DevTools.Enums;
 
-namespace DevTools.Interfaces
+namespace DevTools.Interfaces.Core
 {
     public interface ITool
     {

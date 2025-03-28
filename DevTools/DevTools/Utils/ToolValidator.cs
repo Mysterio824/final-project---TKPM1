@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using DevTools.Interfaces;
+using DevTools.Interfaces.Core;
 
 namespace DevTools.Utils
 {
@@ -9,7 +9,7 @@ namespace DevTools.Utils
         {
             toolType = null;
 
-            if (!File.Exists(dllPath) || Path.GetExtension(dllPath).ToLower() != ".dll")
+            if (!File.Exists(dllPath) || !Path.GetExtension(dllPath).Equals(".dll", StringComparison.CurrentCultureIgnoreCase))
                 return false;
 
             try

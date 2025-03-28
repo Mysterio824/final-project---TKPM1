@@ -8,22 +8,15 @@ using System.Text;
 
 namespace DevTools.Middleware;
 
-public class JwtMiddleware
+public class JwtMiddleware(RequestDelegate next, IConfiguration configuration, ILogger<JwtMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<JwtMiddleware> _logger;
-
-    public JwtMiddleware(RequestDelegate next, IConfiguration configuration, ILogger<JwtMiddleware> logger)
-    {
-        _next = next;
-        _configuration = configuration;
-        _logger = logger;
-    }
+    private readonly RequestDelegate _next = next;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly ILogger<JwtMiddleware> _logger = logger;
 
     public async Task InvokeAsync(HttpContext context, IRedisService redisService)
     {
-        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
 
         if (!string.IsNullOrEmpty(token))
         {
@@ -56,7 +49,8 @@ public class JwtMiddleware
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] 
+                ?? throw new InvalidOperationException("JWT Key is not configured."));
 
             var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
@@ -78,9 +72,9 @@ public class JwtMiddleware
                      ?? throw new SecurityTokenException("Missing role");
 
             var claims = new List<Claim> { 
-                new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Name, jwtToken.Claims.First(x => x.Type == ClaimTypes.Name).Value),
-                new Claim(ClaimTypes.Role, roleClaim)
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Name, jwtToken.Claims.First(x => x.Type == ClaimTypes.Name).Value),
+                new(ClaimTypes.Role, roleClaim),
             };
 
             var identity = new ClaimsIdentity(claims, roleClaim);
@@ -103,12 +97,12 @@ public class JwtMiddleware
 
     private static void SetAnonymousUser(HttpContext context)
     {
-        var anonymousIdentity = new ClaimsIdentity(new[]
-        {
-        new Claim(ClaimTypes.NameIdentifier, "-1"),
-        new Claim(ClaimTypes.Name, "Anonymous"),
-        new Claim(ClaimTypes.Role, UserRole.Anonymous.ToString())
-    });
+        var anonymousIdentity = new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.NameIdentifier, "-1"),
+            new Claim(ClaimTypes.Name, "Anonymous"),
+            new Claim(ClaimTypes.Role, UserRole.Anonymous.ToString()),
+        ]);
 
         context.User = new ClaimsPrincipal(anonymousIdentity);
     }

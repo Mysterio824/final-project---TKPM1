@@ -85,7 +85,7 @@ namespace DevTools.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { ex.Message });
             }
         }
 
@@ -114,12 +114,12 @@ namespace DevTools.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Argument error in AddTool.");
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { ex.Message });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred while adding the tool.");
-                return StatusCode(500, new { Message = ex.Message });
+                return StatusCode(500, new { ex.Message });
             }
         }
 
@@ -135,15 +135,15 @@ namespace DevTools.Controllers
             }
             catch (NotFoundException ex)
             {
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { ex.Message });
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { ex.Message });
             }
             catch (Exception ex)
             {
@@ -162,7 +162,7 @@ namespace DevTools.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { ex.Message });
             }
             catch (Exception)
             {

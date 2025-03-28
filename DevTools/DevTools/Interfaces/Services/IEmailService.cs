@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using DevTools.Entities;
+﻿using DevTools.Entities;
 
 namespace DevTools.Interfaces.Services
 {

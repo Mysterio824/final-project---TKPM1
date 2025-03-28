@@ -1,7 +1,6 @@
 ﻿using DevTools.DTOs.Response;
 using DevTools.Entities;
 using DevTools.Enums;
-using StackExchange.Redis;
 
 namespace DevTools.Interfaces.Services
 {

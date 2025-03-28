@@ -1,18 +1,13 @@
-﻿using DevTools.Interfaces;
+﻿using DevTools.Interfaces.Core;
 
 namespace DevTools.Strategies
 {
-    public class ToolActionStrategyFactory
+    public class ToolActionStrategyFactory(IEnumerable<IToolActionStrategy> strategies)
     {
-        private readonly Dictionary<string, IToolActionStrategy> _strategies;
-
-        public ToolActionStrategyFactory(IEnumerable<IToolActionStrategy> strategies)
-        {
-            _strategies = strategies.ToDictionary(
+        private readonly Dictionary<string, IToolActionStrategy> _strategies = strategies.ToDictionary(
                 strategy => strategy.GetType().Name.Replace("ToolStrategy", "").ToLower(),
                 strategy => strategy,
                 StringComparer.OrdinalIgnoreCase);
-        }
 
         public IToolActionStrategy GetStrategy(string actionName)
         {

@@ -1,8 +1,7 @@
-﻿using System.IO.IsolatedStorage;
-using System.Text;
+﻿using System.Text;
 using DevTools.DTOs.Response;
 using DevTools.Enums;
-using DevTools.Interfaces;
+using DevTools.Interfaces.Core;
 
 namespace ToolGenerate
 {
@@ -25,7 +24,7 @@ namespace ToolGenerate
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                new ToolResponse
+                return new ToolResponse
                 {
                     Output = "Please provide text to convert to ASCII art.",
                     IsFile = false

@@ -1,5 +1,4 @@
-﻿// DevTools/Entities/Tool.cs
-using DevTools.Enums;
+﻿using DevTools.Enums;
 
 namespace DevTools.Entities;
 

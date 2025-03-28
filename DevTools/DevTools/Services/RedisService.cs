@@ -5,16 +5,10 @@ using DevTools.DTOs.Request;
 
 namespace DevTools.Services;
 
-public class RedisService : IRedisService
+public class RedisService(IConnectionMultiplexer redis, IConfiguration configuration) : IRedisService
 {
-    private readonly IDatabase _redisDb;
-    private readonly string _instanceName;
-
-    public RedisService(IConnectionMultiplexer redis, IConfiguration configuration)
-    {
-        _redisDb = redis.GetDatabase();
-        _instanceName = configuration["Redis:InstanceName"] ?? "DevTools";
-    }
+    private readonly IDatabase _redisDb = redis.GetDatabase();
+    private readonly string _instanceName = configuration["Redis:InstanceName"] ?? "DevTools";
 
     public async Task StoreUnverifiedUserAsync(string email, RegisterDto registerDto, TimeSpan expiration)
     {

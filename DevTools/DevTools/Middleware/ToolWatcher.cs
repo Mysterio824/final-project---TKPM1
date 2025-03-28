@@ -4,21 +4,17 @@ using DevTools.Interfaces.Services;
 
 namespace DevTools.Middleware
 {
-    public class ToolWatcher
+    public class ToolWatcher(string folderPath, IToolService toolService)
     {
-        private readonly string _folderPath;
-        private readonly IToolService _toolService;
-
-        public ToolWatcher(string folderPath, IToolService toolService)
-        {
-            _folderPath = folderPath;
-            _toolService = toolService;
-        }
+        private readonly string _folderPath = folderPath;
+        private readonly IToolService _toolService = toolService;
 
         public void StartWatching()
         {
-            FileSystemWatcher watcher = new FileSystemWatcher(_folderPath, "*.dll");
-            watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime;
+            FileSystemWatcher watcher = new(_folderPath, "*.dll")
+            {
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime
+            };
 
             watcher.Created += async (s, e) => await OnChanged(e.FullPath);
             watcher.Changed += async (s, e) => await OnChanged(e.FullPath);

@@ -7,15 +7,11 @@ namespace DevTools.Controllers
 {
     [Route("api/account")]
     [ApiController]
-    public class AccountController : Controller
+    public class AccountController(
+        IAccountService accountService
+            ) : Controller
     {
-        private readonly IAccountService _accountService;
-
-        public AccountController(
-            IAccountService accountService
-            ){
-            _accountService = accountService;
-        }
+        private readonly IAccountService _accountService = accountService;
 
         [Authorize]
         [HttpPost("favorite/{id}/add")]

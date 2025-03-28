@@ -85,7 +85,6 @@ public class AuthService(
             throw new ArgumentNullException(nameof(email), "Email cannot be null");
         }
 
-        var isValid= new EmailAddressAttribute().IsValid(email);
         if (!(new EmailAddressAttribute().IsValid(email)))
         {
             throw new ArgumentException("Invalid email address", nameof(email));
@@ -107,6 +106,9 @@ public class AuthService(
     private async Task<User> AuthenticateUser(LoginDto loginDto)
     {
         ValidateEmail(loginDto.Email);
+        if (loginDto.Email == null)
+            throw new ArgumentNullException(nameof(loginDto.Email), "Email cannot be null");
+
         var user = await _userRepository.GetByEmailAsync(loginDto.Email);
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
             throw new Exception("Invalid email or password");
@@ -115,8 +117,7 @@ public class AuthService(
     }
 
     private static UserDto CreateLoggedInUserDto(User user, string token, string refreshToken)
-    {
-        return new UserDto
+        => new()
         {
             Id = user.Id,
             Username = user.Username,
@@ -126,7 +127,7 @@ public class AuthService(
             Role = user.Role,
             IsPremium = user.IsPremium
         };
-    }
+    
 
     public async Task<string> RefreshTokenAsync(string refreshToken)
     {
@@ -152,9 +153,8 @@ public class AuthService(
         if (storedRefreshToken != refreshToken)
             throw new UnauthorizedException("Invalid or expired refresh token");
 
-        var user = await _userRepository.GetByIdAsync(int.Parse(userIdClaim));
-        if (user == null)
-            throw new UnauthorizedException("User not found");
+        var user = await _userRepository.GetByIdAsync(int.Parse(userIdClaim))
+                    ?? throw new UnauthorizedException("User not found");
 
         return (user, userIdClaim);
     }
@@ -217,8 +217,7 @@ public class AuthService(
     }
 
     private static User CreateVerifiedUser(RegisterDto registerDto)
-    {
-        return new User
+        => new()
         {
             Username = registerDto.Username,
             Email = registerDto.Email,
@@ -226,7 +225,6 @@ public class AuthService(
             Role = UserRole.User,
             IsPremium = false,
         };
-    }
 
     private async Task CleanupVerificationData(string email)
     {
@@ -251,13 +249,14 @@ public class AuthService(
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private static Claim[] CreateUserClaims(User user) => new[]
-        {
+    private static Claim[] CreateUserClaims(User user) 
+        =>
+        [
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString())
-        };
+        ];
 
     private JwtSecurityToken CreateJwtToken(Claim[] claims, DateTime expiration)
     {

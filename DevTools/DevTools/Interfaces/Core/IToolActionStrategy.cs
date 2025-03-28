@@ -1,6 +1,4 @@
-﻿using DevTools.Interfaces.Services;
-
-namespace DevTools.Interfaces;
+﻿namespace DevTools.Interfaces.Core;
 
 public interface IToolActionStrategy
 {

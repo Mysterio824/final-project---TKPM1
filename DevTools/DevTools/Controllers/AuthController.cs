@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using DevTools.Interfaces.Services;
-using System.Diagnostics;
 using DevTools.Exceptions;
 using DevTools.DTOs.Request;
 using DevTools.Enums;

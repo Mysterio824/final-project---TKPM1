@@ -29,7 +29,7 @@ services:
       - redis
     volumes:
       - ./certificates:/app/certificates:ro
-      - ./DevTools/Tools:/app/Tools
+      - ./src/DevTools.Application/Tools:/app/Tools
 
   db:
     image: postgres:15

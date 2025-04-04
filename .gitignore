@@ -1,1 +1,71 @@
-.vs
+# Visual Studio Specific
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build Folders
+bin/
+obj/
+out/
+Debug/
+Release/
+
+# Package Management
+*.nuget/
+packages/
+project.lock.json
+package-lock.json
+npm-debug.log
+yarn.lock
+
+# Publish & Deployment
+*.publish/
+*.deploy/
+.publishsettings
+
+# Logs & Database
+*.log
+*.sql
+*.sqlite
+*.mdf
+*.ldf
+
+# Generated Files
+GeneratedFiles/
+ServiceFabricBackup/
+
+# Resharper & Rider
+.idea/
+*.DotSettings.user
+_ReSharper*/
+
+# Azure
+app.publish/
+azds.yaml
+
+# C# Compiled Files
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.obj
+*.pdb
+*.ipch
+*.iobj
+*.idb
+*.tlog
+*.tlb
+*.tli
+*.tlh
+*.log
+
+# Rider & VS Code
+*.code-workspace
+.vscode/
+
+# Other
+Thumbs.db
+.DS_Store

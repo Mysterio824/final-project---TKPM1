@@ -1,1 +1,7 @@
 .vs
+/HashGeneratorTool/HashGeneratorTool/bin/Debug/net8.0-windows10.0.19041.0
+/HashGeneratorTool/HashGeneratorTool/obj
+/ITToolsApp/IToolsApp.Core/bin/Debug/net8.0-windows10.0.19041.0
+/ITToolsApp/IToolsApp.Core/obj
+/ITToolsApp/IToolsApp.UI/bin/x64/Debug/net8.0-windows10.0.19041.0/win-x64
+/ITToolsApp/IToolsApp.UI/obj

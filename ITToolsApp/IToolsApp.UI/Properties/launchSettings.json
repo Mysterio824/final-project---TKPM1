@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "IToolsApp.UI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "IToolsApp.UI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

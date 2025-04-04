@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IToolsApp.Core", "IToolsApp.Core\IToolsApp.Core.csproj", "{FA22C07F-8630-4B48-B19B-99E0B49CE4FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IToolsApp.UI", "IToolsApp.UI\IToolsApp.UI.csproj", "{BCC5728E-D407-4046-844B-03367140AF19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA22C07F-8630-4B48-B19B-99E0B49CE4FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA22C07F-8630-4B48-B19B-99E0B49CE4FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA22C07F-8630-4B48-B19B-99E0B49CE4FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA22C07F-8630-4B48-B19B-99E0B49CE4FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCC5728E-D407-4046-844B-03367140AF19}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{BCC5728E-D407-4046-844B-03367140AF19}.Debug|Any CPU.Build.0 = Debug|x64
+		{BCC5728E-D407-4046-844B-03367140AF19}.Debug|Any CPU.Deploy.0 = Debug|x64
+		{BCC5728E-D407-4046-844B-03367140AF19}.Release|Any CPU.ActiveCfg = Release|x64
+		{BCC5728E-D407-4046-844B-03367140AF19}.Release|Any CPU.Build.0 = Release|x64
+		{BCC5728E-D407-4046-844B-03367140AF19}.Release|Any CPU.Deploy.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ECFFA5F6-C782-4056-BA43-F1CCA585C797}
+	EndGlobalSection
+EndGlobal

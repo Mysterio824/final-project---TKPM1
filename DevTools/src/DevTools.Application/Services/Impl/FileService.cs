@@ -17,9 +17,9 @@ namespace DevTools.Application.Services.Impl
             Directory.CreateDirectory(_toolDirectory);
         }
 
-        public string SaveFile(IFormFile file)
+        public string SaveFile(IFormFile file, String name)
         {
-            string filePath = Path.Combine(_toolDirectory, file.FileName);
+            string filePath = Path.Combine(_toolDirectory, name);
             using var stream = new FileStream(filePath, FileMode.Create);
             file.CopyTo(stream);
             _logger.LogInformation("Saved file to {FilePath}", filePath);

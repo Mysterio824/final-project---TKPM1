@@ -1,10 +1,7 @@
-﻿using DevTools.Domain.Enums;
-
-namespace DevTools.Application.DTOs.Response
+﻿namespace DevTools.Application.DTOs.Response.Tool
 {
-    public class ToolDto
+    public class ToolItemResponseDto : BaseResponseDto
     {
-        public int Id { get; set; }
         public required string Name { get; set; }
         public string? Description { get; set; }
         public required bool IsPremium { get; set; }

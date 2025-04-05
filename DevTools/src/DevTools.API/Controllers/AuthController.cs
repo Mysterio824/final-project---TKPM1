@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using DevTools.Application.DTOs.Request;
 using DevTools.Domain.Enums;
 using DevTools.Application.Services;
 using DevTools.Application.DTOs.Response;
+using DevTools.Application.DTOs.Request.User;
+using DevTools.Application.DTOs.Response.User;
 
 namespace DevTools.API.Controllers
 {
@@ -30,22 +31,20 @@ namespace DevTools.API.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<ApiResult<String>>> RefreshToken([FromBody] RefreshTokenRequest request)
+        public async Task<ActionResult<ApiResult<RefreshTokenResponseDto>>> RefreshToken([FromBody] RefreshTokenRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest(new { Message = "Refresh token is required" });
-
-            var newToken = await _authenticationService.RefreshTokenAsync(request.RefreshToken);
-            return Ok(ApiResult<String>.Success(newToken));
+            var newToken = await _authenticationService.RefreshTokenAsync(request);
+            return Ok(ApiResult<RefreshTokenResponseDto>.Success(newToken));
             
         }
 
         [HttpGet("verify-email")]
         public async Task<IActionResult> VerifyEmail(string token)
         {
-            var success = await _registrationService.VerifyEmailAsync(token);
-            return success ? Ok(new { Message = "Email verified" }) : BadRequest(new { Message = "Invalid or expired token" });
+            var htmlContent = await _registrationService.VerifyEmailAsync(token);
+            return Content(htmlContent, "text/html");
         }
+
 
         [Authorize]
         [HttpPost("logout")]

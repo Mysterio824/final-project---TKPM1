@@ -24,7 +24,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
 
         modelBuilder.Entity<FavoriteTool>()
             .ToTable("FavoriteTools", "public")
-            .HasKey(ft => new { ft.UserId, ft.ToolId });
+            .HasKey(e => e.Id);
 
         modelBuilder.Entity<ToolGroup>()
             .ToTable("ToolGroup", "public")

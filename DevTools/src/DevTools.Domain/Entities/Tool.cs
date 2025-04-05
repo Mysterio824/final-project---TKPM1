@@ -1,10 +1,9 @@
-﻿using DevTools.Domain.Enums;
+﻿using DevTools.Domain.Common;
 
 namespace DevTools.Domain.Entities;
 
-public class Tool
+public class Tool : BaseEntity
 {
-    public int Id { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
     public virtual ToolGroup Group { get; set; }

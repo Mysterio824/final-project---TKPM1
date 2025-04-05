@@ -1,5 +1,5 @@
-﻿using DevTools.Application.DTOs.Response;
-using DevTools.Domain.Enums;
+﻿using DevTools.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace DevTools.Application.Common
 {
@@ -9,10 +9,8 @@ namespace DevTools.Application.Common
 
         string Description { get; }
 
-        ToolType Type { get; }
+        ToolGroup Group{ get; }
 
-        ToolResponseDto Execute(string input);
-
-        ToolResponseDto Execute(byte[] fileBytes);
+        FormFile Body { get; set; }
     }
 }

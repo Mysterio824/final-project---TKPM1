@@ -5,6 +5,10 @@ using DevTools.Application.Exceptions;
 using DevTools.Application.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using DevTools.Application.DTOs.Response.Tool;
+using DevTools.Application.DTOs.Request.Tool;
+using AutoMapper;
+using DevTools.Application.DTOs.Response;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -15,16 +19,19 @@ namespace DevTools.Application.Services.Impl
         private readonly ILogger<ToolCommandService> _logger;
         private readonly string _toolDirectory;
         private readonly SemaphoreSlim _toolLock;
+        private readonly IMapper _mapper;
 
         public ToolCommandService(
             IToolRepository toolRepository,
             IFileService fileService,
             ILogger<ToolCommandService> logger,
+            IMapper mapper,
             string toolDirectory = "Tools")
         {
             _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _toolDirectory = toolDirectory;
             _toolLock = new SemaphoreSlim(1, 1);
 
@@ -34,13 +41,13 @@ namespace DevTools.Application.Services.Impl
         private void EnsureToolDirectoryExists()
             => Directory.CreateDirectory(_toolDirectory);
 
-        public async Task AddToolAsync(IFormFile file)
+        public async Task<CreateToolResponseDto> AddToolAsync(CreateToolDto request)
         {
             await _toolLock.WaitAsync();
             try
             {
-                ValidateToolFile(file);
-                string filePath = _fileService.SaveFile(file);
+                ValidateToolFile(request.File);
+                string filePath = _fileService.SaveFile(request.File, request.Name);
 
                 var (toolType, toolInstance) = ValidateAndCreateToolInstance(filePath);
                 var newTool = CreateToolEntity(toolInstance, filePath);
@@ -49,6 +56,7 @@ namespace DevTools.Application.Services.Impl
                 await _toolRepository.AddAsync(newTool);
 
                 _logger.LogInformation("Tool {ToolName} added successfully.", newTool.Name);
+                return _mapper.Map<CreateToolResponseDto>(newTool);
             }
             finally
             {
@@ -56,7 +64,53 @@ namespace DevTools.Application.Services.Impl
             }
         }
 
-        private static void ValidateToolFile(IFormFile file)
+        public async Task<UpdateToolResponseDto> UpdateToolAsync(UpdateToolDto request)
+        {
+            await _toolLock.WaitAsync();
+            try
+            {
+                var tool = await _toolRepository.GetByIdAsync(request.Id);
+                if (tool == null)
+                {
+                    _logger.LogWarning("Tool with ID {ToolId} not found.", request.Id);
+                    throw new NotFoundException($"Tool {request.Id} not found.");
+                }
+
+                ValidateToolFile(request.File);
+                string oldFilePath = tool.DllPath;
+                _fileService.DeleteFile(oldFilePath);
+                string filePath = _fileService.SaveFile(request.File, request.Name);
+
+                tool = _mapper.Map<Tool>(request);
+                tool.DllPath = filePath;
+
+                await _toolRepository.UpdateAsync(tool);
+
+                return _mapper.Map<UpdateToolResponseDto>(tool);
+            }
+            finally
+            {
+                _toolLock.Release();
+            }
+        }
+
+        public async Task<BaseResponseDto> DeleteToolAsync(int id)
+        {
+            var tool = await _toolRepository.GetByIdAsync(id);
+            if (tool == null)
+            {
+                _logger.LogWarning("Tool with ID {ToolId} not found.", id);
+                throw new NotFoundException($"Tool {id} not found.");
+            }
+
+            _fileService.DeleteFile(tool.DllPath);
+            await _toolRepository.DeleteAsync(tool);
+
+            _logger.LogInformation("Deleted tool with ID {ToolId}.", id);
+            return _mapper.Map<BaseResponseDto>(tool);
+        }
+
+        private static void ValidateToolFile(FormFile file)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("No file uploaded.");
@@ -91,7 +145,7 @@ namespace DevTools.Application.Services.Impl
 
         private async Task EnsureToolIsUnique(Tool newTool, string filePath)
         {
-            var existingTools = await _toolRepository.GetAllAsync();
+            var existingTools = await _toolRepository.GetAll();
             if (existingTools.Contains(newTool, new ToolComparer()))
             {
                 _fileService.DeleteFile(filePath);
@@ -99,21 +153,42 @@ namespace DevTools.Application.Services.Impl
             }
         }
 
-        public async Task UpdateToolAsync(Tool tool)
-            => await _toolRepository.UpdateAsync(tool);
+        public async Task<UpdateToolResponseDto> DisableTool(int id)
+            => await ToggleToolStatus(id, false);
 
-        public async Task DeleteToolAsync(int id)
+        public async Task<UpdateToolResponseDto> EnableTool(int id)
+            => await ToggleToolStatus(id, true);
+
+        private async Task<UpdateToolResponseDto> ToggleToolStatus(int id, bool enable)
         {
-            var tool = await _toolRepository.GetByIdAsync(id);
-            if (tool == null)
-            {
-                _logger.LogWarning("Tool with ID {ToolId} not found.", id);
-                return;
-            }
+            var tool = await _toolRepository.GetByIdAsync(id)
+                ?? throw new NotFoundException($"Tool {id} not found.");
 
-            _fileService.DeleteFile(tool.DllPath);
-            await _toolRepository.DeleteAsync(id);
-            _logger.LogInformation("Deleted tool with ID {ToolId}.", id);
+            if (tool.IsEnabled == enable)
+                throw new BadRequestException($"Tool is already {(enable ? "enabled" : "disabled")}.");
+
+            tool.IsEnabled = enable;
+            await _toolRepository.UpdateAsync(tool);
+            return _mapper.Map<UpdateToolResponseDto>(tool);
+        }
+
+        public async Task<UpdateToolResponseDto> SetPremium(int id)
+            => await TogglePremiumStatus(id, true);
+
+        public async Task<UpdateToolResponseDto> SetFree(int id)
+            => await TogglePremiumStatus(id, false);
+
+        private async Task<UpdateToolResponseDto> TogglePremiumStatus(int id, bool isPremium)
+        {
+            var tool = await _toolRepository.GetByIdAsync(id)
+                        ?? throw new NotFoundException($"Tool {id} not found.");
+
+            if (tool.IsPremium == isPremium)
+                throw new BadRequestException($"Tool is already {(isPremium ? "premium" : "free")}.");
+
+            tool.IsPremium = isPremium;
+            await _toolRepository.UpdateAsync(tool);
+            return _mapper.Map<UpdateToolResponseDto>(tool);
         }
 
         public async Task UpdateToolList()
@@ -122,7 +197,7 @@ namespace DevTools.Application.Services.Impl
             try
             {
                 var discoveredToolPaths = new HashSet<string>();
-                var existingTools = await _toolRepository.GetAllAsync();
+                var existingTools = await _toolRepository.GetAll();
 
                 await ProcessDiscoveredDlls(discoveredToolPaths, existingTools);
                 await RemoveUnusedTools(existingTools, discoveredToolPaths);
@@ -131,7 +206,7 @@ namespace DevTools.Application.Services.Impl
             {
                 _toolLock.Release();
             }
-        }
+        }   
 
         private async Task ProcessDiscoveredDlls(HashSet<string> discoveredToolPaths, IEnumerable<Tool> existingTools)
         {
@@ -196,45 +271,8 @@ namespace DevTools.Application.Services.Impl
 
             foreach (var toolToRemove in toolsToRemove)
             {
-                await _toolRepository.DeleteAsync(toolToRemove.Id);
+                await _toolRepository.DeleteAsync(toolToRemove);
             }
-        }
-
-        public async Task DisableTool(int id)
-            => await ToggleToolStatus(id, false);
-
-        public async Task EnableTool(int id)
-            => await ToggleToolStatus(id, true);
-
-        private async Task ToggleToolStatus(int id, bool enable)
-        {
-            var tool = await _toolRepository.GetByIdAsync(id);
-            if (tool == null)
-                throw new NotFoundException($"Tool {id} not found.");
-
-            if (tool.IsEnabled == enable)
-                throw new BadRequestException($"Tool is already {(enable ? "enabled" : "disabled")}.");
-
-            tool.IsEnabled = enable;
-            await _toolRepository.UpdateAsync(tool);
-        }
-
-        public async Task SetPremium(int id)
-            => await TogglePremiumStatus(id, true);
-
-        public async Task SetFree(int id)
-            => await TogglePremiumStatus(id, false);
-
-        private async Task TogglePremiumStatus(int id, bool isPremium)
-        {
-            var tool = await _toolRepository.GetByIdAsync(id)
-                        ?? throw new NotFoundException($"Tool {id} not found.");
-
-            if (tool.IsPremium == isPremium)
-                throw new BadRequestException($"Tool is already {(isPremium ? "premium" : "free")}.");
-
-            tool.IsPremium = isPremium;
-            await _toolRepository.UpdateAsync(tool);
         }
     }
 }

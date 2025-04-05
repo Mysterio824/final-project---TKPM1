@@ -1,131 +1,123 @@
 ﻿using DevTools.Domain.Entities;
 using DevTools.Application.Exceptions;
-using Microsoft.Extensions.Configuration;
+using MailKit.Net.Smtp;
 using System.Net;
-using System.Net.Mail;
+using DevTools.Application.Common.Email;
+using MimeKit;
+using DevTools.Application.Templates;
 
 namespace DevTools.Application.Services.Impl
 {
-    public class EmailService(IConfiguration configuration) : IEmailService
+    public class EmailService(
+        SmtpSettings smtpSettings,
+        ITemplateService templateService
+        ) : IEmailService
     {
-        private readonly IConfiguration _configuration = configuration;
+        private readonly SmtpSettings _smtpSettings = smtpSettings;
+        private readonly ITemplateService _templateService = templateService;
 
-        public async Task SendEmailVerificationAsync(string email, string verificationToken)
+        public async Task SendEmailVerificationAsync(string email, string verificationLink)
         {
             var subject = "DevTools - Email Verification";
-            var verificationLink = $"{_configuration["applicationUrl"]}/api/auth/verify-email?token={verificationToken}";
-            var body = $@"
-                <html>
-                <body>
-                    <h2>DevTools Email Verification</h2>
-                    <p>Thank you for registering with DevTools. Please click the link below to verify your email address:</p>
-                    <p><a href='{verificationLink}'>Verify Email</a></p>
-                    <p>If you did not request this verification, please ignore this email.</p>
-                    <p>This link will expire in 24 hours.</p>
-                </body>
-                </html>";
 
-            await SendEmailAsync(email, subject, body);
+            var emailTemplate = await _templateService.GetTemplateAsync(TemplateConstants.ConfirmationEmail);
+            var emailBody = _templateService.ReplaceInTemplate(emailTemplate,
+                new Dictionary<string, string> { { "{verificationLink}", verificationLink } });
+
+            await SendEmailAsync(email, subject, emailBody);
         }
 
-        public async Task SendPasswordResetAsync(string email, string resetToken)
+        public async Task SendPasswordResetAsync(string email, string resetLink)
         {
             var subject = "DevTools - Password Reset";
 
-            var resetLink = $"{_configuration["applicationUrl"]}/reset-password?&code={WebUtility.UrlEncode(resetToken)}";
-            var body = $@"
-                <html>
-                <body>
-                    <h2>DevTools Password Reset</h2>
-                    <p>You have requested to reset your password. Please click the link below to reset your password:</p>
-                    <p><a href='{resetLink}'>Reset Password</a></p>
-                    <p>If you did not request this reset, please ignore this email and ensure your account is secure.</p>
-                    <p>This link will expire in 24 hours.</p>
-                </body>
-                </html>";
+            var emailTemplate = await _templateService.GetTemplateAsync(TemplateConstants.ResetPassword);
+            var emailBody = _templateService.ReplaceInTemplate(emailTemplate,
+                new Dictionary<string, string> { { "{resetLink}", resetLink } });
 
-            await SendEmailAsync(email, subject, body);
+            await SendEmailAsync(email, subject, emailBody);
         }
+
         public async Task SendUpgradePremiumRequestAsync(User user)
         {
             var subject = "DevTools - Your Premium Membership is Active!";
-            var body = $@"
-                <html>
-                <body style='font-family: Arial, sans-serif; color: #333;'>
-                    <h2 style='color: #1a73e8;'>Welcome to DevTools Premium!</h2>
-                    <p>Hello {user.Username},</p>
-                    <p>We’re excited to let you know that your DevTools Premium membership is now active! You can now enjoy exclusive access to premium tools and features.</p>
-                    <p><strong>Account Details:</strong></p>
-                    <ul>
-                        <li>User ID: {user.Id}</li>
-                        <li>Email: {user.Email}</li>
-                    </ul>
-                    <p>Get started by exploring your new tools today. If you have any questions, feel free to reach out to our support team.</p>
-                    <p>Thank you for choosing DevTools!</p>
-                    <p style='font-size: 0.9em; color: #777;'>The DevTools Team</p>
-                </body>
-                </html>";
 
-            await SendEmailAsync(user.Email, subject, body);
+            var emailTemplate = await _templateService.GetTemplateAsync(TemplateConstants.UpgradePremiumRequest);
+            var emailBody = _templateService.ReplaceInTemplate(emailTemplate,
+                new Dictionary<string, string> {
+                    { "{Username}", user.Username }, 
+                    { "{Id}", user.Id.ToString() }, 
+                    { "{Email}", user.Email } 
+                });
+
+            await SendEmailAsync(user.Email, subject, emailBody);
         }
 
         public async Task SendDowngradePremiumRequestAsync(User user)
         {
             var subject = "DevTools - Your Premium Membership Has Ended";
-            var body = $@"
-                    <html>
-                    <body style='font-family: Arial, sans-serif; color: #333;'>
-                        <h2 style='color: #1a73e8;'>DevTools Membership Update</h2>
-                        <p>Hello {user.Username},</p>
-                        <p>Your DevTools Premium membership has been deactivated as per your request. You will no longer have access to premium tools and features.</p>
-                        <p><strong>Account Details:</strong></p>
-                        <ul>
-                            <li>User ID: {user.Id}</li>
-                            <li>Email: {user.Email}</li>
-                        </ul>
-                        <p>If this was a mistake or you’d like to reactivate your premium status, please let us know. We’re here to help!</p>
-                        <p>Thank you for being part of DevTools.</p>
-                        <p style='font-size: 0.9em; color: #777;'>The DevTools Team</p>
-                    </body>
-                    </html>";
 
-            await SendEmailAsync(user.Email, subject, body);
+            var emailTemplate = await _templateService.GetTemplateAsync(TemplateConstants.UpgradePremiumRequest);
+            var emailBody = _templateService.ReplaceInTemplate(emailTemplate,
+                new Dictionary<string, string> {
+                    { "{Username}", user.Username },
+                    { "{Id}", user.Id.ToString() },
+                    { "{Email}", user.Email }
+                });
+
+            await SendEmailAsync(user.Email, subject, emailBody);
+        }
+
+        private MimeMessage CreateEmail(EmailMessage emailMessage)
+        {
+            var builder = new BodyBuilder { HtmlBody = emailMessage.Body };
+
+            if (emailMessage.Attachments.Count > 0)
+                foreach (var attachment in emailMessage.Attachments)
+                    builder.Attachments.Add(attachment.Name, attachment.Value);
+
+            var email = new MimeMessage
+            {
+                Subject = emailMessage.Subject,
+                Body = builder.ToMessageBody()
+            };
+
+            email.From.Add(new MailboxAddress(_smtpSettings.SenderName, _smtpSettings.SenderEmail));
+            email.To.Add(new MailboxAddress(emailMessage.ToAddress.Split("@")[0], emailMessage.ToAddress));
+
+            return email;
         }
 
         private async Task SendEmailAsync(string email, string subject, string body)
         {
-            var smtpHost = _configuration["EmailSettings:SmtpHost"];
-            var smtpPort = _configuration["EmailSettings:SmtpPort"];
-            var enableSsl = _configuration["EmailSettings:EnableSsl"];
-            var username = _configuration["EmailSettings:Username"];
-            var password = _configuration["EmailSettings:Password"];
-            var fromEmail = _configuration["EmailSettings:FromEmail"];
-            var fromName = _configuration["EmailSettings:FromName"];
+            var emailMessage = EmailMessage.Create(
+                toAddress: email,
+                body: body,
+                subject: subject
+            );
 
-            if (smtpHost == null || smtpPort == null || enableSsl == null || username == null || password == null || fromEmail == null || fromName == null)
+            await SendAsync(CreateEmail(emailMessage));
+        }
+
+        private async Task SendAsync(MimeMessage message)
+        {
+            using var client = new SmtpClient();
+
+            try
             {
-                throw new BadRequestException("Email settings are not configured properly.");
+                await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, true);
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
+
+                await client.SendAsync(message);
             }
-
-            using var client = new SmtpClient
+            catch
             {
-                Host = smtpHost,
-                Port = int.Parse(smtpPort),
-                EnableSsl = bool.Parse(enableSsl),
-                Credentials = new NetworkCredential(username, password)
-            };
+                await client.DisconnectAsync(true);
+                client.Dispose();
 
-            using var message = new MailMessage
-            {
-                From = new MailAddress(fromEmail, fromName),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            message.To.Add(email);
-
-            await client.SendMailAsync(message);
+                throw;
+            }
         }
     }
 }

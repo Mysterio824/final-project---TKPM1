@@ -1,7 +1,7 @@
 ﻿using StackExchange.Redis;
 using System.Text.Json;
-using DevTools.Application.DTOs.Request;
 using Microsoft.Extensions.Configuration;
+using DevTools.Application.DTOs.Request.User;
 
 namespace DevTools.Application.Services.Impl;
 

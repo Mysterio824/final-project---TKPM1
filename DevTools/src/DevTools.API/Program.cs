@@ -20,10 +20,12 @@ public class Program
 
         // Register Services
         builder.Services.AddDataAccess(builder.Configuration, builder.Environment);
-        builder.Services.AddApplicationServices();
+        builder.Services.AddApplication();
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddSwaggerServices();
         builder.Services.AddRedisConfiguration(builder.Configuration);
+        builder.Services.AddEmailConfiguration(builder.Configuration);
+        builder.Services.AddLinkGeneratorConfiguration(builder.Configuration);
 
         var app = builder.Build();
 

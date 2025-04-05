@@ -1,10 +1,11 @@
-﻿using DevTools.Application.DTOs.Request;
-using DevTools.Application.DTOs.Response;
-using DevTools.Infrastructure.Repositories;
+﻿using DevTools.Infrastructure.Repositories;
 using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
 using DevTools.Application.Utils;
 using Microsoft.Extensions.Logging;
+using DevTools.Application.Templates;
+using DevTools.Application.DTOs.Request.User;
+using DevTools.Application.DTOs.Response.User;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -12,11 +13,15 @@ namespace DevTools.Application.Services.Impl
         IUserRepository userRepository,
         IRedisService redisService,
         IEmailService emailService,
+        ILinkGeneratorService linkGeneratorService,
+        ITemplateService templateService,
         ILogger<RegistrationService> logger) : IRegistrationService
     {
         private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         private readonly IRedisService _redisService = redisService ?? throw new ArgumentNullException(nameof(redisService));
         private readonly IEmailService _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+        private readonly ILinkGeneratorService _linkGeneratorService = linkGeneratorService ?? throw new ArgumentNullException(nameof(linkGeneratorService));
+        private readonly ITemplateService _templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
         private readonly ILogger<RegistrationService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         public async Task<UserDto?> RegisterAsync(RegisterDto registerDto)
@@ -56,7 +61,8 @@ namespace DevTools.Application.Services.Impl
         {
             var verificationToken = Guid.NewGuid().ToString();
             await _redisService.StoreVerificationTokenAsync(registerDto.Email, verificationToken, TimeSpan.FromHours(24));
-            await _emailService.SendEmailVerificationAsync(registerDto.Email, verificationToken);
+            var verificationLink = _linkGeneratorService.GenerateEmailVerificationLink(verificationToken);
+            await _emailService.SendEmailVerificationAsync(registerDto.Email, verificationLink);
             return verificationToken;
         }
 
@@ -67,18 +73,26 @@ namespace DevTools.Application.Services.Impl
             Role = UserRole.User,
         };
 
-        public async Task<bool> VerifyEmailAsync(string token)
+        public async Task<string> VerifyEmailAsync(string token)
         {
             var (email, registerDto) = await ValidateVerificationToken(token);
             if (email == null || registerDto == null)
-                return false;
+            {
+                var notFoundTemplate = await _templateService.GetTemplateAsync(TemplateConstants.NotFound);
+                return notFoundTemplate;
+            }
 
             var user = CreateVerifiedUser(registerDto);
             await _userRepository.AddAsync(user);
             await CleanupVerificationData(email);
 
             _logger.LogInformation("Email verified for {Email}", email);
-            return true;
+
+            var template = await _templateService.GetTemplateAsync(TemplateConstants.EmailVerified);
+            var body = _templateService.ReplaceInTemplate(template,
+                new Dictionary<string, string> { { "{name}", user.Username } });
+
+            return body;
         }
 
         private async Task<(string? email, RegisterDto? registerDto)> ValidateVerificationToken(string token)

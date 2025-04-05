@@ -1,0 +1,17 @@
+﻿using Microsoft.AspNetCore.Http;
+
+namespace DevTools.Application.DTOs.Request.Tool
+{
+    public class CreateToolDto
+    {
+        public required string Name { get; set; }
+
+        public string? Description { get; set; }
+
+        public bool IsPremium { get; set; } = false;
+
+        public bool IsEnabled { get; set; } = true;
+
+        public FormFile File { get; set; }
+    }
+}

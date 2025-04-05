@@ -1,34 +1,35 @@
-﻿using DevTools.Application.DTOs.Response;
+﻿using AutoMapper;
 using DevTools.Infrastructure.Repositories;
 using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
-using Microsoft.Extensions.Logging;
+using DevTools.Application.DTOs.Response.Tool;
 
 namespace DevTools.Application.Services.Impl
 {
     public class ToolQueryService(
         IToolRepository toolRepository,
         IFavoriteToolRepository favoriteToolRepository,
-        ILogger<ToolQueryService> logger) : IToolQueryService
+        IMapper mapper) : IToolQueryService
     {
         private readonly IToolRepository _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
         private readonly IFavoriteToolRepository _favoriteToolRepository = favoriteToolRepository ?? throw new ArgumentNullException(nameof(favoriteToolRepository));
-        private readonly ILogger<ToolQueryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IMapper _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 
-        public async Task<IEnumerable<ToolDto>> GetToolsAsync(UserRole role, int userId = -1)
+        public async Task<IEnumerable<ToolItemResponseDto>> GetToolsAsync(UserRole role, int userId = -1)
         {
-            var toolList = await _toolRepository.GetAllAsync();
+            var toolList = await _toolRepository.GetAll();
             var favoriteToolIds = await GetFavoriteToolIds(userId);
+
             return MapToToolDTOs(toolList, role, favoriteToolIds);
         }
 
-        public async Task<IEnumerable<ToolDto>> GetToolFavoriteAsync(UserRole role, int userId)
+        public async Task<IEnumerable<ToolItemResponseDto>> GetToolFavoriteAsync(UserRole role, int userId)
         {
             var tools = await _toolRepository.GetFavoriteAsync(userId);
             return MapToToolDTOs(tools, role, tools.Select(t => t.Id).ToHashSet());
         }
 
-        public async Task<ToolDto?> GetToolByIdAsync(int id, UserRole role, int userId = -1)
+        public async Task<ToolItemResponseDto?> GetToolByIdAsync(int id, UserRole role, int userId = -1)
         {
             var tool = await _toolRepository.GetByIdAsync(id);
             if (tool == null) return null;
@@ -37,7 +38,7 @@ namespace DevTools.Application.Services.Impl
             return MapToToolDTO(tool, role, isFavorite);
         }
 
-        public async Task<IEnumerable<ToolDto>> GetToolsByNameAsync(string name, UserRole role, int userId = -1)
+        public async Task<IEnumerable<ToolItemResponseDto>> GetToolsByNameAsync(string name, UserRole role, int userId = -1)
         {
             var toolList = await _toolRepository.GetByNameAsync(name);
             var favoriteToolIds = await GetFavoriteToolIds(userId);
@@ -46,24 +47,18 @@ namespace DevTools.Application.Services.Impl
 
         private async Task<HashSet<int>> GetFavoriteToolIds(int userId)
             => userId != -1
-                ? (await _favoriteToolRepository.GetAll(userId))?.Select(f => f.ToolId).ToHashSet() ?? []
-                : [];
+                ? (await _favoriteToolRepository.GetAll(userId))?.Select(f => f.ToolId).ToHashSet() ?? new HashSet<int>()
+                : new HashSet<int>();
 
-        private static IEnumerable<ToolDto> MapToToolDTOs(IEnumerable<Tool> tools, UserRole role, HashSet<int> favoriteToolIds)
+        private IEnumerable<ToolItemResponseDto> MapToToolDTOs(IEnumerable<Tool> tools, UserRole role, HashSet<int> favoriteToolIds)
             => tools.Select(t => MapToToolDTO(t, role, favoriteToolIds.Contains(t.Id)));
 
-        private static ToolDto MapToToolDTO(Tool tool, UserRole role, bool isFavorite)
-            => new()
-            {
-                Id = tool.Id,
-                Name = tool.Name,
-                Description = tool.Description,
-                IsEnabled = IsToolAccessible(tool, role),
-                IsPremium = tool.IsPremium,
-                IsFavorite = isFavorite
-            };
+        private ToolItemResponseDto MapToToolDTO(Tool tool, UserRole role, bool isFavorite)
+        {
+            var toolDto = _mapper.Map<ToolItemResponseDto>(tool, opt => opt.Items["UserRole"] = role);
 
-        private static bool IsToolAccessible(Tool tool, UserRole role)
-            => !tool.IsPremium || role != UserRole.User && role != UserRole.Anonymous && tool.IsEnabled;
+            toolDto.IsFavorite = isFavorite;
+            return toolDto;
+        }
     }
 }

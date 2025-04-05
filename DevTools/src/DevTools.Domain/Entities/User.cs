@@ -1,9 +1,9 @@
-﻿using DevTools.Domain.Enums;
+﻿using DevTools.Domain.Common;
+using DevTools.Domain.Enums;
 
 namespace DevTools.Domain.Entities;
-public class User
+public class User : BaseEntity
 {
-    public int Id { get; set; }
     public required string Username { get; set; }
     public required string Email { get; set; }
     public required string PasswordHash { get; set; }

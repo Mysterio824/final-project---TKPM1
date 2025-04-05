@@ -1,4 +1,4 @@
-﻿namespace DevTools.Application.DTOs.Request;
+﻿namespace DevTools.Application.DTOs.Request.User;
 
 public class RegisterDto
 {

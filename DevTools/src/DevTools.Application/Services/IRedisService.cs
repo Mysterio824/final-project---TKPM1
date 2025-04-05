@@ -1,4 +1,4 @@
-﻿using DevTools.Application.DTOs.Request;
+﻿using DevTools.Application.DTOs.Request.User;
 
 namespace DevTools.Application.Services
 {

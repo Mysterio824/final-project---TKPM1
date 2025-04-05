@@ -5,11 +5,28 @@ using DevTools.Application.Strategies.ToolStrategies;
 using DevTools.Application.Strategies;
 using DevTools.Infrastructure.Strategies.ToolStrategies;
 using Microsoft.Extensions.DependencyInjection;
+using DevTools.Application.Common.Email;
+using Microsoft.Extensions.Configuration;
+using DevTools.Application.Common.LinkGenerator;
+using DevTools.Application.MappingProfiles;
+using Microsoft.AspNetCore.Hosting;
 namespace DevTools.Application;
 
 public static class ApplicationDependencyInjection
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        services.AddServices();
+
+        services.RegisterAutoMapper();
+
+        services.AddStrategies();
+
+        return services;
+    }
+
+    public static void AddServices(this IServiceCollection services)
     {
         // Services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -17,24 +34,38 @@ public static class ApplicationDependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRedisService, RedisService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<ILinkGeneratorService, LinkGeneratorService>();
+        services.AddScoped<ITemplateService, TemplateService>();
 
         services.AddScoped<IFavoriteToolService, FavoriteToolService>();
         services.AddScoped<IPremiumService, PremiumService>();
 
         services.AddScoped<IToolCommandService, ToolCommandService>();
-        services.AddScoped<IToolExecutionService, ToolExecutionService>();
         services.AddScoped<IToolQueryService, ToolQueryService>();
         services.AddScoped<IFileService, FileService>();
+    }
 
-
-        // Tool Actions Strategies
+    public static void AddStrategies(this IServiceCollection services)
+    {
         services.AddScoped<IToolActionStrategy, SetPremiumToolStrategy>();
         services.AddScoped<IToolActionStrategy, SetFreeToolStrategy>();
         services.AddScoped<IToolActionStrategy, DisableToolStrategy>();
         services.AddScoped<IToolActionStrategy, EnableToolStrategy>();
-
         services.AddScoped<ToolActionStrategyFactory>();
+    }
 
-        return services;
+    private static void RegisterAutoMapper(this IServiceCollection services)
+    {
+        services.AddAutoMapper(typeof(IMappingProfilesMarker));
+    }
+
+    public static void AddEmailConfiguration(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton(configuration.GetSection("EmailSettings").Get<SmtpSettings>());
+    }
+
+    public static void AddLinkGeneratorConfiguration(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton(configuration.GetSection("applicationUrl").Get<LinkGenerateSettings>());
     }
 }

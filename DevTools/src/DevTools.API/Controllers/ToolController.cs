@@ -1,40 +1,39 @@
-﻿using DevTools.Application.DTOs.Request;
-using DevTools.Application.DTOs.Response;
+﻿using DevTools.Application.DTOs.Response;
 using DevTools.Application.Services;
 using DevTools.Domain.Enums;
 using DevTools.Application.Strategies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using DevTools.Application.DTOs.Request.Tool;
+using DevTools.Application.DTOs.Response.Tool;
 
 namespace DevTools.API.Controllers
 {
     public class ToolController(
         IToolQueryService toolQueryService,
         IToolCommandService toolCommandService,
-        IToolExecutionService toolExecutionService,
         ToolActionStrategyFactory strategyFactory,
         ILogger<ToolController> logger) : ApiController
     {
         private readonly IToolQueryService _toolQueryService = toolQueryService ?? throw new ArgumentNullException(nameof(toolQueryService));
         private readonly IToolCommandService _toolCommandService = toolCommandService ?? throw new ArgumentNullException(nameof(toolCommandService));
-        private readonly IToolExecutionService _toolExecutionService = toolExecutionService ?? throw new ArgumentNullException(nameof(toolExecutionService));
         private readonly ToolActionStrategyFactory _strategyFactory = strategyFactory ?? throw new ArgumentNullException(nameof(strategyFactory));
         private readonly ILogger<ToolController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         [HttpGet("all")]
-        public async Task<ActionResult<ApiResult<IEnumerable<ToolDto>>>> GetTools()
+        public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetTools()
         {
             var userRole = GetUserRole();
             var userId = GetUserId();
 
             await _toolCommandService.UpdateToolList();
             var tools = await _toolQueryService.GetToolsAsync(userRole, userId);
-            return Ok(ApiResult<IEnumerable<ToolDto>>.Success(tools));
+            return Ok(ApiResult<IEnumerable<ToolItemResponseDto>>.Success(tools));
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResult<ToolDto>>> GetToolById(int id)
+        public async Task<ActionResult<ApiResult<CreateToolResponseDto>>> GetToolById(int id)
         {
             var userRole = GetUserRole();
             var userId = GetUserId();
@@ -43,23 +42,23 @@ namespace DevTools.API.Controllers
             if (tool == null)
                 return NotFound();
 
-            return Ok(ApiResult<ToolDto>.Success(tool));
+            return Ok(ApiResult<CreateToolResponseDto>.Success(tool));
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<ApiResult<IEnumerable<ToolDto>>>> GetToolsByName([FromQuery] string name)
+        public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetToolsByName([FromQuery] string name)
         {
             var userRole = GetUserRole();
             var userId = GetUserId();
 
             await _toolCommandService.UpdateToolList();
             var tools = await _toolQueryService.GetToolsByNameAsync(name, userRole, userId);
-            return Ok( ApiResult<IEnumerable<ToolDto>>.Success(tools) );
+            return Ok( ApiResult<IEnumerable<ToolItemResponseDto>>.Success(tools) );
         }
 
         [Authorize]
         [HttpGet("favorite/all")]
-        public async Task<ActionResult<ApiResult<IEnumerable<ToolDto>>>> GetFavoriteTools()
+        public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetFavoriteTools()
         {
             var userRole = GetUserRole();
             var userId = GetUserId();
@@ -67,39 +66,16 @@ namespace DevTools.API.Controllers
             await _toolCommandService.UpdateToolList();
             var favoriteTools = await _toolQueryService.GetToolFavoriteAsync(userRole, userId);
 
-            return Ok( ApiResult<IEnumerable<ToolDto>>.Success(favoriteTools) );
-        }
-
-        [HttpPost("execute")]
-        public async Task<ActionResult<ApiResult<ToolResponseDto>>> ExecuteTool([FromForm] ToolRequest request)
-        {
-            var userRole = GetUserRole();
-
-            return Ok(ApiResult<ToolResponseDto>
-                .Success(await _toolExecutionService
-                                .ExecuteToolAsync(request.ToolId, 
-                                                  request.InputText, 
-                                                  request.UploadedFile, 
-                                                  userRole
-                                                 )
-                                )
-                );
+            return Ok( ApiResult<IEnumerable<ToolItemResponseDto>>.Success(favoriteTools) );
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost("add")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult> AddTool(IFormFile tool)
+        public async Task<ActionResult> AddTool(CreateToolDto request)
         {
-            if (tool == null)
-            {
-                _logger.LogError("No file received.");
-                return BadRequest(new { Message = "No file uploaded." });
-            }
-
-            await _toolCommandService.AddToolAsync(tool);
-            _logger.LogInformation("Tool {ToolName} added successfully.", tool.FileName);
-            return Ok(ApiResult<String>.Success($"Tool {tool.FileName} added successfully."));
+            return Ok(ApiResult<CreateToolResponseDto>
+                .Success(await _toolCommandService.AddToolAsync(request)));
         }
 
         [Authorize(Roles = "Admin")]
@@ -108,17 +84,14 @@ namespace DevTools.API.Controllers
         {
             var strategy = _strategyFactory.GetStrategy(actionName);
             var result = await strategy.ExecuteAsync(id);
-            _logger.LogInformation("Tool {ToolId} updated with action {ActionName}.", id, actionName);
-            return Ok(ApiResult<String>.Success(result));
+            return Ok(ApiResult<BaseResponseDto>.Success(result));
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteTool(int id)
+        public async Task<IActionResult> DeleteTool(int id)
         {
-            await _toolCommandService.DeleteToolAsync(id);
-            _logger.LogInformation("Tool {ToolId} deleted successfully.", id);
-            return Ok(ApiResult<String>.Success($"Tool {id} deleted successfully."));
+            return Ok(ApiResult<BaseResponseDto>.Success(await _toolCommandService.DeleteToolAsync(id));
         }
 
 

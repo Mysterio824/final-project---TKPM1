@@ -1,11 +1,11 @@
-﻿using DevTools.Application.DTOs.Request;
-using DevTools.Application.DTOs.Response;
+﻿using DevTools.Application.DTOs.Request.User;
+using DevTools.Application.DTOs.Response.User;
 
 namespace DevTools.Application.Services
 {
     public interface IRegistrationService
     {
         Task<UserDto?> RegisterAsync(RegisterDto registerDto);
-        Task<bool> VerifyEmailAsync(string token);
+        Task<string> VerifyEmailAsync(string token);
     }
 }

@@ -2,10 +2,8 @@
 
 namespace DevTools.Infrastructure.Repositories;
 
-public interface IUserRepository
+public interface IUserRepository : IBaseRepository<User>
 {
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByIdAsync(int id);
-    Task AddAsync(User user);
-    Task UpdateAsync(User user);
 }

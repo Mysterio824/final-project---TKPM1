@@ -28,10 +28,18 @@ namespace DevTools.Application.Services.Impl
             {
                 throw new BadRequestException("Tool group name cannot be null or empty.");
             }
+            var existingToolGroup = await _toolGroupRepository.GetByNameAsync(request.Name);
+            if (existingToolGroup != null)
+            {
+                throw new BadRequestException($"Tool group with name {request.Name} already exists.");
+            }
 
             var toolGroup = _mapper.Map<ToolGroup>(request);
             var result = await _toolGroupRepository.AddAsync(toolGroup);
-            return _mapper.Map<CreateToolGroupResponseDto>(result);
+            return new CreateToolGroupResponseDto
+            {
+                Id = result.Id
+            };
         }
 
         public async Task<BaseResponseDto> DeleteAsync(int id)
@@ -59,7 +67,10 @@ namespace DevTools.Application.Services.Impl
             }
             toolGroup = _mapper.Map<ToolGroup>(request);
             var result = await _toolGroupRepository.UpdateAsync(toolGroup);
-            return _mapper.Map<UpdateToolGroupResponseDto>(result);
+            return new UpdateToolGroupResponseDto
+            {
+                Id = result.Id
+            };
         }
     }
 }

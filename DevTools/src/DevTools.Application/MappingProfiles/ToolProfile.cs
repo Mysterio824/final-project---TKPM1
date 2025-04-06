@@ -10,7 +10,8 @@ namespace DevTools.Application.MappingProfiles
     {
         public ToolProfile()
         {
-            CreateMap<CreateToolDto, Tool>();
+            CreateMap<CreateToolDto, Tool>()
+                .ForMember(dest => dest.DllPath, opt => opt.Ignore());
 
             CreateMap<UpdateToolDto, Tool>();
 

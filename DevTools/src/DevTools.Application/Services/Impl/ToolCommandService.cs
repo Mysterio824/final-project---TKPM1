@@ -7,6 +7,9 @@ using DevTools.Application.Helpers;
 using Microsoft.Extensions.Logging;
 using AutoMapper;
 using DevTools.Application.Exceptions;
+using DevTools.Application.Utils;
+using DevTools.Infrastructure.Repositories.impl;
+using DevTools.Application.DTOs.Response.ToolGroup;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -14,6 +17,7 @@ namespace DevTools.Application.Services.Impl
     {
         private readonly IToolRepository _toolRepository;
         private readonly IFileService _fileService;
+        private readonly IToolGroupRepository _toolGroupRepository;
         private readonly ILogger<ToolCommandService> _logger;
         private readonly string _toolDirectory;
         private readonly SemaphoreSlim _toolLock;
@@ -22,12 +26,14 @@ namespace DevTools.Application.Services.Impl
         public ToolCommandService(
             IToolRepository toolRepository,
             IFileService fileService,
+            IToolGroupRepository toolGroupRepository,
             ILogger<ToolCommandService> logger,
             IMapper mapper,
             string toolDirectory = "Tools")
         {
             _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+            _toolGroupRepository = toolGroupRepository ?? throw new ArgumentNullException(nameof(toolGroupRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _toolDirectory = toolDirectory;
@@ -47,15 +53,45 @@ namespace DevTools.Application.Services.Impl
                 FileHelper.ValidateToolFile(request.File);
                 string filePath = _fileService.SaveFile(request.File, request.Name);
 
-                var (toolType, toolInstance) = ToolHelper.ValidateAndCreateToolInstance(filePath);
-                var newTool = ToolHelper.CreateToolEntity(toolInstance, filePath);
+                if (!ToolValidator.IsValidTool(filePath))
+                {
+                    FileHelper.DeleteFile(filePath);
+                    throw new BadRequestException("Invalid tool DLL. No valid implementation of ITool found.");
+                }
 
-                await ToolUniquenessHelper.EnsureToolIsUnique(newTool, filePath, _toolRepository, _fileService);
+                var newTool = _mapper.Map<Tool>(request);
+                var toolGroup = await _toolGroupRepository.GetByIdAsync(request.GroupId);
+                if (toolGroup == null)
+                {
+                    FileHelper.DeleteFile(filePath);
+                    throw new NotFoundException($"Tool group {request.GroupId} not found.");
+                }
+                newTool.Group = toolGroup;
 
-                await _toolRepository.AddAsync(newTool);
+                var existingTool = await _toolRepository.GetByNameAsync(request.Name);
+                if (existingTool != null && toolGroup == existingTool.Group)
+                {
+                    _fileService.DeleteFile(filePath);
+                    throw new BadRequestException("A tool with the same name already exists.");
+                }
+
+                newTool.DllPath = filePath;
+
+
+                var existingTools = await _toolRepository.GetAll();
+                if (existingTools.Contains(newTool, new ToolComparer()))
+                {
+                    _fileService.DeleteFile(filePath);
+                    throw new BadRequestException("A tool with the same name already exists.");
+                }
+
+                newTool = await _toolRepository.AddAsync(newTool);
 
                 _logger.LogInformation("Tool {ToolName} added successfully.", newTool.Name);
-                return _mapper.Map<CreateToolResponseDto>(newTool);
+                return new CreateToolResponseDto
+                {
+                    Id = newTool.Id
+                };
             }
             finally
             {
@@ -78,14 +114,22 @@ namespace DevTools.Application.Services.Impl
                 FileHelper.ValidateToolFile(request.File);
                 string oldFilePath = tool.DllPath;
                 _fileService.DeleteFile(oldFilePath);
+
+                var toolGroup = await _toolGroupRepository.GetByIdAsync(request.GroupId)
+                    ?? throw new NotFoundException($"Tool group {request.GroupId} not found.");
+
                 string filePath = _fileService.SaveFile(request.File, request.Name);
 
                 tool = _mapper.Map<Tool>(request);
                 tool.DllPath = filePath;
+                tool.Group = toolGroup;
 
                 await _toolRepository.UpdateAsync(tool);
 
-                return _mapper.Map<UpdateToolResponseDto>(tool);
+                return new UpdateToolResponseDto
+                {
+                    Id = tool.Id
+                };
             }
             finally
             {
@@ -125,7 +169,7 @@ namespace DevTools.Application.Services.Impl
 
             tool.IsEnabled = enable;
             await _toolRepository.UpdateAsync(tool);
-            return _mapper.Map<UpdateToolResponseDto>(tool);
+            return new UpdateToolResponseDto { Id = tool.Id };
         }
 
         public async Task<UpdateToolResponseDto> SetPremium(int id)
@@ -144,7 +188,10 @@ namespace DevTools.Application.Services.Impl
 
             tool.IsPremium = isPremium;
             await _toolRepository.UpdateAsync(tool);
-            return _mapper.Map<UpdateToolResponseDto>(tool);
+            return new UpdateToolResponseDto
+            {
+                Id = tool.Id
+            };
         }
 
         public async Task UpdateToolList()
@@ -155,7 +202,7 @@ namespace DevTools.Application.Services.Impl
                 var discoveredToolPaths = new HashSet<string>();
                 var existingTools = await _toolRepository.GetAll();
 
-                await ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, discoveredToolPaths, existingTools, _toolRepository, _logger);
+                ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, discoveredToolPaths, existingTools, _toolRepository, _logger);
 
                 await ToolDiscoveryHelper.RemoveUnusedTools(existingTools, discoveredToolPaths, _toolRepository);
             }

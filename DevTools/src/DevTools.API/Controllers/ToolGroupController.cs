@@ -5,6 +5,7 @@ using DevTools.Application.DTOs.Response.Tool;
 using DevTools.Application.DTOs.Response.ToolGroup;
 using DevTools.Application.Services;
 using DevTools.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevTools.API.Controllers
@@ -32,6 +33,7 @@ namespace DevTools.API.Controllers
                 await _toolService.GetToolByGroupIdAsync(id, userRole, userId)));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateAsync(CreateToolGroupDto request)
         {
@@ -39,6 +41,7 @@ namespace DevTools.API.Controllers
                 await _toolGroupService.CreateAsync(request)));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateAsync(UpdateToolGroupDto request)
         {
@@ -46,6 +49,7 @@ namespace DevTools.API.Controllers
                 await _toolGroupService.UpdateAsync(request)));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsync(int id)
         {

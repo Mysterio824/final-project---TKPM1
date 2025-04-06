@@ -14,6 +14,8 @@ namespace DevTools.Application.DTOs.Request.Tool
 
         public bool IsEnabled { get; set; } = true;
 
+        public required int GroupId { get; set; }
+
         public FormFile File { get; set; }
     }
 }

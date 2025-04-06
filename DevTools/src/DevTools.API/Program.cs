@@ -39,7 +39,7 @@ public class Program
             ConfigureMiddleware(app);
 
             app.Logger.LogInformation("Application fully started. Listening on {Urls}",
-                string.Join(", ", app.Urls.Count != 0 ? app.Urls : [$"http://0.0.0.0:{builder.Configuration["APP_PORT"] ?? "5000"}"]));
+                string.Join(", ", app.Urls.Count != 0 ? app.Urls : [$"http://localhost:{builder.Configuration["APP_PORT"] ?? "5000"}"]));
 
             await app.RunAsync();
         }

@@ -10,6 +10,8 @@ namespace DevTools.Application.DTOs.Request.Tool
 
         public bool IsPremium { get; set; } = false;
 
+        public required int GroupId { get; set; }
+
         public bool IsEnabled { get; set; } = true;
 
         public FormFile File { get; set; }

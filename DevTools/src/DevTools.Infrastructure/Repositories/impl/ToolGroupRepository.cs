@@ -23,7 +23,20 @@ namespace DevTools.Infrastructure.Repositories.impl
             }
         }
 
-        public async Task<IEnumerable<ToolGroup>> GetByNameAsync(string name)
+        public async Task<ToolGroup?> GetByNameAsync (string name)
+        {
+            try
+            {
+                return await GetFirstAsync(t => t.Name.ToLower().Trim() == name.ToLower().Trim());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve tool group with name {ToolName}", name);
+                throw new ResourceNotFoundException(typeof(Tool));
+            }
+        }
+
+        public async Task<IEnumerable<ToolGroup>> SearchByNameAsync(string name)
         {
             try
             {

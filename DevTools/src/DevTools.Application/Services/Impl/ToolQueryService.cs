@@ -57,7 +57,7 @@ namespace DevTools.Application.Services.Impl
 
         public async Task<IEnumerable<ToolItemResponseDto>> GetToolsByNameAsync(string name, UserRole role, int userId = -1)
         {
-            var toolList = await _toolRepository.GetByNameAsync(name);
+            var toolList = await _toolRepository.SearchByNameAsync(name);
             var favoriteToolIds = await GetFavoriteToolIds(userId);
             return MapToToolItemDTOs(toolList, role, favoriteToolIds);
         }

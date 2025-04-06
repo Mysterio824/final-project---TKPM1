@@ -8,6 +8,7 @@ namespace DevTools.Infrastructure.Repositories
         Task<IEnumerable<Tool>> GetByGroupAsync(int Id);
         Task<IEnumerable<Tool>> GetFavoriteAsync(int userId);
         Task<Tool?> GetByIdAsync(int id);
-        Task<IEnumerable<Tool>> GetByNameAsync(string name);
+        Task<IEnumerable<Tool>> SearchByNameAsync(string name);
+        Task<Tool?> GetByNameAsync(string name);
     }
 }

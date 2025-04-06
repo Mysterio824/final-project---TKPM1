@@ -42,6 +42,7 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IToolCommandService, ToolCommandService>();
         services.AddScoped<IToolQueryService, ToolQueryService>();
         services.AddScoped<IFileService, FileService>();
+        services.AddScoped<IToolGroupService, ToolGroupService>();
     }
 
     public static void AddStrategies(this IServiceCollection services)

@@ -1,36 +1,44 @@
-﻿using System.Reflection;
-using DevTools.Application.Common;
+﻿using System;
+using System.Linq;
+using System.Reflection;
 
 namespace DevTools.Application.Utils
 {
     public static class ToolValidator
     {
-        public static bool IsValidTool(string dllPath, out Type? toolType)
+        public static bool IsValidTool(string filePath)
         {
-            toolType = null;
-
-            if (!File.Exists(dllPath) || !Path.GetExtension(dllPath).Equals(".dll", StringComparison.CurrentCultureIgnoreCase))
-                return false;
-
             try
             {
-                var assembly = Assembly.LoadFrom(dllPath);
-                toolType = assembly.GetTypes()
-                    .FirstOrDefault(t =>
-                        typeof(ITool).IsAssignableFrom(t) &&
-                        !t.IsInterface &&
-                        !t.IsAbstract);
-            }
-            catch (ReflectionTypeLoadException)
-            {
-                return false;
-            }
-            catch (BadImageFormatException)
-            {
-                return false;
-            }
+                var assembly = Assembly.LoadFrom(filePath);
 
-            return toolType != null;
+                var toolType = assembly.GetTypes().FirstOrDefault(t =>
+                    t.GetMethod("GetUI") != null &&
+                    t.GetMethod("Execute") != null);
+
+                if (toolType == null)
+                    return false;
+
+                var getUIMethod = toolType.GetMethod("GetUI");
+                var executeMethod = toolType.GetMethod("Execute");
+
+                if (getUIMethod == null ||
+                    getUIMethod.ReturnType != typeof(object) ||
+                    executeMethod == null ||
+                    executeMethod.ReturnType != typeof(object) ||
+                    executeMethod.GetParameters().Length != 1 ||
+                    executeMethod.GetParameters()[0].ParameterType != typeof(object))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading assembly or finding types: {ex.Message}");
+                return false;
+            }
         }
     }
 }

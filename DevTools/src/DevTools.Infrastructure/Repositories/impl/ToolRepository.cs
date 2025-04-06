@@ -70,7 +70,7 @@ namespace DevTools.Infrastructure.Repositories.impl
             }
         }
 
-        public async Task<IEnumerable<Tool>> GetByNameAsync(string name)
+        public async Task<IEnumerable<Tool>> SearchByNameAsync(string name)
         {
             try
             {
@@ -80,6 +80,19 @@ namespace DevTools.Infrastructure.Repositories.impl
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to retrieve tool");
+                throw new ResourceNotFoundException(typeof(Tool));
+            }
+        }
+
+        public async Task<Tool?> GetByNameAsync(string name)
+        {
+            try
+            {
+                return await GetFirstAsync(t => t.Name.ToLower().Trim() == name.ToLower().Trim());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve tool with name {ToolName}", name);
                 throw new ResourceNotFoundException(typeof(Tool));
             }
         }

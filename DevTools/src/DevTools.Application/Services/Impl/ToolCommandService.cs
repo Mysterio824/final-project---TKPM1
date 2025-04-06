@@ -53,12 +53,6 @@ namespace DevTools.Application.Services.Impl
                 FileHelper.ValidateToolFile(request.File);
                 string filePath = _fileService.SaveFile(request.File, request.Name);
 
-                if (!ToolValidator.IsValidTool(filePath))
-                {
-                    _fileService.DeleteFile(filePath);
-                    throw new BadRequestException("Invalid tool DLL. No valid implementation of ITool found.");
-                }
-
                 var newTool = _mapper.Map<Tool>(request);
                 var toolGroup = await _toolGroupRepository.GetByIdAsync(request.GroupId);
                 if (toolGroup == null)

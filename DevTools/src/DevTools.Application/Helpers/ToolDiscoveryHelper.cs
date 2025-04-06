@@ -22,9 +22,6 @@ namespace DevTools.Application.Helpers
                 {
                     var fileName = Path.GetFileName(dllPath);
 
-                    if (!ToolValidator.IsValidTool(dllPath))
-                        continue;
-
                     discoveredToolPaths.Add(fileName);
 
                     if (!(existingTools

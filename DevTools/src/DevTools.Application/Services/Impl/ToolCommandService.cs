@@ -55,7 +55,7 @@ namespace DevTools.Application.Services.Impl
 
                 if (!ToolValidator.IsValidTool(filePath))
                 {
-                    FileHelper.DeleteFile(filePath);
+                    _fileService.DeleteFile(filePath);
                     throw new BadRequestException("Invalid tool DLL. No valid implementation of ITool found.");
                 }
 
@@ -63,7 +63,7 @@ namespace DevTools.Application.Services.Impl
                 var toolGroup = await _toolGroupRepository.GetByIdAsync(request.GroupId);
                 if (toolGroup == null)
                 {
-                    FileHelper.DeleteFile(filePath);
+                    _fileService.DeleteFile(filePath);
                     throw new NotFoundException($"Tool group {request.GroupId} not found.");
                 }
                 newTool.Group = toolGroup;
@@ -202,7 +202,7 @@ namespace DevTools.Application.Services.Impl
                 var discoveredToolPaths = new HashSet<string>();
                 var existingTools = await _toolRepository.GetAll();
 
-                ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, discoveredToolPaths, existingTools, _toolRepository, _logger);
+                ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, discoveredToolPaths, existingTools, _fileService, _logger);
 
                 await ToolDiscoveryHelper.RemoveUnusedTools(existingTools, discoveredToolPaths, _toolRepository);
             }

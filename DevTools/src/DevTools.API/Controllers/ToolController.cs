@@ -27,7 +27,7 @@ namespace DevTools.API.Controllers
             var userRole =  GetUserRole();
             var userId =  GetUserId();
 
-            await _toolCommandService.UpdateToolList();
+            //await _toolCommandService.UpdateToolList();
             var tools = await _toolQueryService.GetToolsAsync(userRole, userId);
             return Ok(ApiResult<IEnumerable<ToolItemResponseDto>>.Success(tools));
         }

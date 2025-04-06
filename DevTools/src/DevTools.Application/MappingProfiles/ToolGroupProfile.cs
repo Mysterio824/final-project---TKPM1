@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DevTools.Application.DTOs.Request.ToolGroup;
+using DevTools.Application.DTOs.Response;
 using DevTools.Application.DTOs.Response.ToolGroup;
 using DevTools.Domain.Entities;
 
@@ -14,5 +15,7 @@ public class ToolGroupProfile : Profile
         CreateMap<UpdateToolGroupDto, ToolGroup>();
 
         CreateMap<ToolGroup, ToolGroupResponseDto>();
+
+        CreateMap<ToolGroup, BaseResponseDto>();
     }
 }

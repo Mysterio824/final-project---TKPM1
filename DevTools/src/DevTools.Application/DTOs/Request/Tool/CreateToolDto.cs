@@ -14,6 +14,6 @@ namespace DevTools.Application.DTOs.Request.Tool
 
         public bool IsEnabled { get; set; } = true;
 
-        public FormFile File { get; set; }
+        public IFormFile File { get; set; }
     }
 }

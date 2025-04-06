@@ -3,6 +3,7 @@ using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
 using DevTools.Application.DTOs.Response.Tool;
 using DevTools.Application.DTOs.Request.Tool;
+using DevTools.Application.DTOs.Response;
 
 namespace DevTools.Application.MappingProfiles
 {
@@ -25,6 +26,8 @@ namespace DevTools.Application.MappingProfiles
                     IsToolAccessible(src, (UserRole)context.Items["UserRole"])))
                 .ForMember(dest => dest.IsFavorite, opt => opt.Ignore())
                 .ForMember(dest => dest.File, opt => opt.Ignore());
+
+            CreateMap<Tool, BaseResponseDto>();
         }
 
         private static bool IsToolAccessible(Tool tool, UserRole role)

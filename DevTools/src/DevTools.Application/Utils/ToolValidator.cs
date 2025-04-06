@@ -12,31 +12,23 @@ namespace DevTools.Application.Utils
             {
                 var assembly = Assembly.LoadFrom(filePath);
 
-                var toolType = assembly.GetTypes().FirstOrDefault(t =>
-                    t.GetMethod("GetUI") != null &&
-                    t.GetMethod("Execute") != null);
-
-                if (toolType == null)
-                    return false;
-
-                var getUIMethod = toolType.GetMethod("GetUI");
-                var executeMethod = toolType.GetMethod("Execute");
-
-                if (getUIMethod == null ||
-                    getUIMethod.ReturnType != typeof(object) ||
-                    executeMethod == null ||
-                    executeMethod.ReturnType != typeof(object) ||
-                    executeMethod.GetParameters().Length != 1 ||
-                    executeMethod.GetParameters()[0].ParameterType != typeof(object))
+                // Check all types for the required methods
+                return assembly.GetTypes().Any(t =>
                 {
-                    return false;
-                }
+                    var methods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
-                return true;
+                    var hasExecute = methods.Any(m =>
+                        m.Name == "Execute" &&
+                        m.GetParameters().Length == 1 &&
+                        m.GetParameters()[0].ParameterType == typeof(object));
+
+                    var hasGetUI = methods.Any(m => m.Name == "GetUI");
+
+                    return hasExecute && hasGetUI;
+                });
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error loading assembly or finding types: {ex.Message}");
                 return false;
             }
         }

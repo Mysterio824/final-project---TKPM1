@@ -1,4 +1,5 @@
 ﻿using DevTools.Application.Common;
+using DevTools.Application.Services;
 using DevTools.Application.Utils;
 using DevTools.Domain.Entities;
 using DevTools.Infrastructure.Repositories;
@@ -8,7 +9,12 @@ namespace DevTools.Application.Helpers
 {
     public static class ToolDiscoveryHelper
     {
-        public static void ProcessDiscoveredDlls(string toolDirectory, HashSet<string> discoveredToolPaths, IEnumerable<Tool> existingTools, IToolRepository toolRepository, ILogger logger)
+        public static void ProcessDiscoveredDlls(
+            string toolDirectory, 
+            HashSet<string> discoveredToolPaths, 
+            IEnumerable<Tool> existingTools,
+            IFileService fileService,
+            ILogger logger)
         {
             foreach (var dllPath in Directory.GetFiles(toolDirectory, "*.dll"))
             {
@@ -25,7 +31,7 @@ namespace DevTools.Application.Helpers
                         .Any(t => t.Name
                             .Equals(fileName, StringComparison.OrdinalIgnoreCase))))
                     {
-                        FileHelper.DeleteFile(dllPath);
+                        fileService.DeleteFile(dllPath);
                         logger.LogInformation("Deleted unmatched DLL file: {DllPath}", dllPath);
                     }
                 }

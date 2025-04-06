@@ -5,16 +5,19 @@ using DevTools.Domain.Enums;
 using DevTools.Application.DTOs.Response.Tool;
 using System.IO;
 using DevTools.Application.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace DevTools.Application.Services.Impl
 {
     public class ToolQueryService(
         IToolRepository toolRepository,
         IFavoriteToolRepository favoriteToolRepository,
+        ILogger<ToolQueryService> logger,
         IMapper mapper) : IToolQueryService
     {
         private readonly IToolRepository _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
         private readonly IFavoriteToolRepository _favoriteToolRepository = favoriteToolRepository ?? throw new ArgumentNullException(nameof(favoriteToolRepository));
+        private readonly ILogger<ToolQueryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly IMapper _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 
         public async Task<IEnumerable<ToolItemResponseDto>> GetToolsByGroupIdAsync(int groupId, UserRole role, int userId = -1)

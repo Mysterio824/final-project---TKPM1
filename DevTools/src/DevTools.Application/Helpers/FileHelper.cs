@@ -12,13 +12,5 @@ namespace DevTools.Application.Helpers
             if (Path.GetExtension(file.FileName)?.ToLower() != ".dll")
                 throw new ArgumentException("Only DLL files are allowed.");
         }
-
-        public static void DeleteFile(string filePath)
-        {
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-        }
     }
 }

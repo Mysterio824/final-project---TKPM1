@@ -28,7 +28,6 @@ public static class ApplicationDependencyInjection
 
     public static void AddServices(this IServiceCollection services)
     {
-        // Services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<ITokenService, TokenService>();
@@ -66,6 +65,16 @@ public static class ApplicationDependencyInjection
 
     public static void AddLinkGeneratorConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton(configuration.GetSection("applicationUrl").Get<LinkGenerateSettings>());
+        var settings = new LinkGenerateSettings
+        {
+            ApplicationUrl = configuration.GetValue<string>("applicationUrl")
+        };
+
+        if (string.IsNullOrEmpty(settings.ApplicationUrl))
+        {
+            throw new InvalidOperationException("ApplicationUrl is not configured");
+        }
+
+        services.AddSingleton(settings);
     }
 }

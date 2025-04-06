@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using DevTools.Domain.Entities;
+﻿using DevTools.Domain.Entities;
 using DevTools.Infrastructure.Persistence;
 
 namespace DevTools.Infrastructure.Repositories.impl;

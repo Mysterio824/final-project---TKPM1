@@ -3,12 +3,14 @@ using DevTools.Domain.Entities;
 
 namespace DevTools.Infrastructure.Persistence;
 
-public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbContext(options)
+public class DatabaseContext : DbContext
 {
     public DbSet<User> Users { get; set; }
     public DbSet<Tool> Tools { get; set; }
     public DbSet<FavoriteTool> FavoriteTools { get; set; }
     public DbSet<ToolGroup> ToolGroups { get; set; }
+
+    public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,8 +29,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
             .HasKey(e => e.Id);
 
         modelBuilder.Entity<ToolGroup>()
-            .ToTable("ToolGroup", "public")
-            .HasKey(ft => ft.Id);
+            .ToTable("ToolGroups", "public")
+            .HasKey(e => e.Id);
 
         base.OnModelCreating(modelBuilder);
     }

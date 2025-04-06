@@ -30,8 +30,10 @@ WORKDIR /app
 # Copy built application
 COPY --from=publish /app/publish .
 
-# Copy dynamic tool plugins
-COPY src/DevTools.Application/Tools /app/Tools
+# Copy the Templates folder from its actual location in the build stage
+COPY --from=build /app/src/DevTools.Application/Templates /app/Templates
+# Copy the Tools folder
+COPY --from=build /app/src/DevTools.Application/Tools /app/Tools
 
 # Expose both HTTP and HTTPS ports
 EXPOSE ${APP_HTTPS_PORT}

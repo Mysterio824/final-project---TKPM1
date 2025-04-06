@@ -95,6 +95,7 @@ namespace DevTools.Application.Services.Impl
             return body;
         }
 
+
         private async Task<(string? email, RegisterDto? registerDto)> ValidateVerificationToken(string token)
         {
             var email = await _redisService.GetEmailByVerificationTokenAsync(token);

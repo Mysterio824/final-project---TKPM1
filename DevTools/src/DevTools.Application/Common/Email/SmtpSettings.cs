@@ -2,15 +2,17 @@
 
 public class SmtpSettings
 {
-    public string Server { get; set; }
+    public string SmtpHost { get; set; }
 
-    public int Port { get; set; }
+    public int SmtpPort { get; set; }
 
-    public string SenderName { get; set; }
+    public string FromName { get; set; }
 
-    public string SenderEmail { get; set; }
+    public string FromEmail { get; set; }
 
     public string Username { get; set; }
 
     public string Password { get; set; }
+
+    public bool EnableSsl { get; set; }
 }

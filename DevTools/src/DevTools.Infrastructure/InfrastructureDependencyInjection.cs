@@ -25,6 +25,7 @@ public static class InfrastructureDependencyInjection
     {
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IToolRepository, ToolRepository>();
+        services.AddScoped<IToolGroupRepository, ToolGroupRepository>();
         services.AddScoped<IFavoriteToolRepository, FavoriteToolRepository>();
     }
 

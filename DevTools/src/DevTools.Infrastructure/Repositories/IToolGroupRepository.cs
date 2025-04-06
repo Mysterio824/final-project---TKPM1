@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DevTools.Domain.Entities;
+﻿using DevTools.Domain.Entities;
 
 namespace DevTools.Infrastructure.Repositories
 {
-    internal interface IToolGroupRepository : IBaseRepository<ToolGroup> { }
+    public interface IToolGroupRepository : IBaseRepository<ToolGroup> 
+    {
+        Task<IEnumerable<ToolGroup>> GetAll();
+        Task<IEnumerable<ToolGroup>> GetByNameAsync(string name);
+        Task<ToolGroup?> GetByIdAsync(int Id);   
+    }
 }

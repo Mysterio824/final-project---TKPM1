@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using DevTools.Domain.Common;
-using DevTools.Domain.Entities;
 using DevTools.Domain.Exceptions;
 using DevTools.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -42,10 +38,9 @@ namespace DevTools.Infrastructure.Repositories.impl
             return await DbSet.Where(predicate).ToListAsync();
         }
 
-        public async Task<TEntity> GetFirstAsync(Expression<Func<TEntity, bool>> predicate)
+        public async Task<TEntity?> GetFirstAsync(Expression<Func<TEntity, bool>> predicate)
         {
-            var entity = await DbSet.Where(predicate).FirstOrDefaultAsync()
-                ?? throw new ResourceNotFoundException(typeof(TEntity));
+            var entity = await DbSet.Where(predicate).FirstOrDefaultAsync();
 
             return entity;
         }

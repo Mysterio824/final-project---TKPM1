@@ -1,8 +1,10 @@
-﻿namespace DevTools.Application.Services;
-
-public interface ITemplateService
+﻿namespace DevTools.Application.Services
 {
-    Task<string> GetTemplateAsync(string templateName);
+    public interface ITemplateService
+    {
+        Task<string> GetTemplateAsync(string templateName);
 
-    string ReplaceInTemplate(string input, IDictionary<string, string> replaceWords);
+        string ReplaceInTemplate(string input, IDictionary<string, string> replaceWords);
+    }
 }
+

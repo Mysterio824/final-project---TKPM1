@@ -8,6 +8,8 @@ public class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<UserDto, User>();
+        CreateMap<User, UserDto>()
+            .ForMember(dest => dest.Token, opt => opt.Ignore())
+            .ForMember(dest => dest.RefreshToken, opt => opt.Ignore());
     }
 }

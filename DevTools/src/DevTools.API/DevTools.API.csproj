@@ -25,5 +25,10 @@
   <ItemGroup>
     <ProjectReference Include="..\DevTools.Application\DevTools.Application.csproj" />
   </ItemGroup>
+	
+
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
 
 </Project>

@@ -24,13 +24,19 @@ namespace DevTools.Infrastructure.Migrations
 
             modelBuilder.Entity("DevTools.Domain.Entities.FavoriteTool", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ToolId")
                         .HasColumnType("integer");
 
-                    b.HasKey("UserId", "ToolId");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
 
                     b.ToTable("FavoriteTools", "public");
                 });
@@ -78,13 +84,13 @@ namespace DevTools.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Title")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("ToolGroup", "public");
+                    b.ToTable("ToolGroups", "public");
                 });
 
             modelBuilder.Entity("DevTools.Domain.Entities.User", b =>

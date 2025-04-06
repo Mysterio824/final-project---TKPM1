@@ -1,5 +1,6 @@
 ﻿using DevTools.Application.Strategies.Core;
 using DevTools.Application.Services;
+using DevTools.Application.DTOs.Response.Tool;
 
 namespace DevTools.Application.Strategies.ToolStrategies
 {
@@ -7,12 +8,7 @@ namespace DevTools.Application.Strategies.ToolStrategies
     {
         private readonly IToolCommandService _toolService = toolService;
 
-        public async Task<string> ExecuteAsync(int id)
-        {
-            await _toolService.SetPremium(id);
-            return SuccessMessage;
-        }
-
-        public string SuccessMessage => "Tool set to premium successfully";
+        public async Task<UpdateToolResponseDto> ExecuteAsync(int id)
+            => await _toolService.SetPremium(id);
     }
 }

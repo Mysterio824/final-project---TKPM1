@@ -57,8 +57,31 @@ namespace DevTools.Infrastructure.Repositories.impl
             }
         }
 
+        public async Task<IEnumerable<Tool>> GetByGroupAsync(int Id)
+        {
+            try
+            {
+                return await GetAllAsync(t => t.Group.Id == Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve tools by group ID {GroupId}", Id);
+                throw new ResourceNotFoundException(typeof(Tool));
+            }
+        }
+
         public async Task<IEnumerable<Tool>> GetByNameAsync(string name)
-            => await GetAllAsync(tool =>
+        {
+            try
+            {
+                return await GetAllAsync(tool =>
                     tool.Name.Contains(name, StringComparison.CurrentCultureIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve tool");
+                throw new ResourceNotFoundException(typeof(Tool));
+            }
+        }
     }
 }

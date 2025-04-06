@@ -1,74 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page Not Found - 404</title>
-    <style>
-        body {
-            background-color: #f4f4f7;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 30px auto;
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .error-code {
-            font-size: 64px;
-            font-weight: bold;
-            color: #e74c3c;
-        }
-
-        .message {
-            font-size: 20px;
-            color: #333333;
-            margin: 20px 0;
-        }
-
-        .description {
-            font-size: 16px;
-            color: #777777;
-            margin-bottom: 30px;
-        }
-
-        .button {
-            background-color: #3498db;
-            color: #ffffff;
-            padding: 12px 25px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        .footer {
-            font-size: 12px;
-            color: #aaaaaa;
-            margin-top: 30px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verified</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      padding-bottom: 20px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333333;
+    }
+    .content {
+      font-size: 16px;
+      color: #555555;
+      line-height: 1.6;
+      margin-top: 20px;
+    }
+    .button {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 12px 25px;
+      background-color: #4CAF50;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #999999;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="error-code">404</div>
-        <div class="message">Oops! Page Not Found</div>
-        <div class="description">
-            It looks like the link you followed is broken or the page no longer exists.<br>
-            But don’t worry — we’ll help you get back on track.
-        </div>
-        <a href="https://yourapp.com" class="button">Go to Homepage</a>
-        <div class="footer">
-            If you believe this is an error, please contact our support team.
-        </div>
+  <div class="container">
+    <div class="header">
+      <img src="https://i.imgur.com/5zOa9gN.png" alt="App Logo" style="max-width: 80px; margin-bottom: 10px;">
+      <div class="title">Email Successfully Verified</div>
     </div>
+    <div class="content">
+      <p>Hi {name},</p>
+      <p>We're excited to let you know that your email address has been successfully verified. You're all set to start using your account!</p>
+    </div>
+    <div class="footer">
+      If you didn't verify your email, please ignore this message or contact our support team.
+    </div>
+  </div>
 </body>
 </html>

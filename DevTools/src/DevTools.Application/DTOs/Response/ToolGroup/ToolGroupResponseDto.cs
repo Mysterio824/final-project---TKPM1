@@ -2,7 +2,7 @@
 
 namespace DevTools.Application.DTOs.Response.ToolGroup
 {
-    public class ToolGroupDto
+    public class ToolGroupResponseDto
     {
         public int Id { get; set; }
         public required string Name { get; set; }

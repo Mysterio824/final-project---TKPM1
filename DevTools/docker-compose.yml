@@ -14,6 +14,7 @@ services:
       - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=DevTools
       - Jwt__Audience=DevToolsUsers
+      - applicationUrl=https://localhost:${APP_HTTPS_PORT:-5000}
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION}
       - Redis__ConnectionString=${REDIS_CONNECTION}
       - Redis__InstanceName=DevTools

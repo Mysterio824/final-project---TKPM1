@@ -13,6 +13,6 @@ public class ToolGroupProfile : Profile
 
         CreateMap<UpdateToolGroupDto, ToolGroup>();
 
-        CreateMap<ToolGroup, ToolGroupDto>();
+        CreateMap<ToolGroup, ToolGroupResponseDto>();
     }
 }

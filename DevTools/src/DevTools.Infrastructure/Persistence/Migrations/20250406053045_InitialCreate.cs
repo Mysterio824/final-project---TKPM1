@@ -19,26 +19,28 @@ namespace DevTools.Infrastructure.Migrations
                 schema: "public",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     ToolId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FavoriteTools", x => new { x.UserId, x.ToolId });
+                    table.PrimaryKey("PK_FavoriteTools", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ToolGroup",
+                name: "ToolGroups",
                 schema: "public",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Title = table.Column<string>(type: "text", nullable: false)
+                    Name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ToolGroup", x => x.Id);
+                    table.PrimaryKey("PK_ToolGroups", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -76,10 +78,10 @@ namespace DevTools.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Tools", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tools_ToolGroup_GroupId",
+                        name: "FK_Tools_ToolGroups_GroupId",
                         column: x => x.GroupId,
                         principalSchema: "public",
-                        principalTable: "ToolGroup",
+                        principalTable: "ToolGroups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -107,7 +109,7 @@ namespace DevTools.Infrastructure.Migrations
                 schema: "public");
 
             migrationBuilder.DropTable(
-                name: "ToolGroup",
+                name: "ToolGroups",
                 schema: "public");
         }
     }

@@ -7,12 +7,12 @@ namespace DevTools.Application.Services
 {
     public interface IToolGroupService
     {
-        Task<CreateToolGroupDto> CreateAsync(CreateToolGroupDto createTodoListModel);
+        Task<CreateToolGroupResponseDto> CreateAsync(CreateToolGroupDto request);
 
         Task<BaseResponseDto> DeleteAsync(int id);
 
-        Task<IEnumerable<ToolItemResponseDto>> GetAllAsync();
+        Task<IEnumerable<ToolGroupResponseDto>> GetAllAsync();
 
-        Task<UpdateToolGroupResponseDto> UpdateAsync(int id, UpdateToolGroupDto updateTodoListModel);
+        Task<UpdateToolGroupResponseDto> UpdateAsync(UpdateToolGroupDto request);
     }
 }

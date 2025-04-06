@@ -5,6 +5,7 @@ using System.Net;
 using DevTools.Application.Common.Email;
 using MimeKit;
 using DevTools.Application.Templates;
+using MailKit.Security;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -82,7 +83,7 @@ namespace DevTools.Application.Services.Impl
                 Body = builder.ToMessageBody()
             };
 
-            email.From.Add(new MailboxAddress(_smtpSettings.SenderName, _smtpSettings.SenderEmail));
+            email.From.Add(new MailboxAddress(_smtpSettings.FromName, _smtpSettings.FromEmail));
             email.To.Add(new MailboxAddress(emailMessage.ToAddress.Split("@")[0], emailMessage.ToAddress));
 
             return email;
@@ -105,7 +106,21 @@ namespace DevTools.Application.Services.Impl
 
             try
             {
-                await client.ConnectAsync(_smtpSettings.Server, _smtpSettings.Port, true);
+                if (_smtpSettings.SmtpPort == 465)
+                {
+                    // Use SSL
+                    await client.ConnectAsync(_smtpSettings.SmtpHost, _smtpSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
+                }
+                else if (_smtpSettings.SmtpPort == 587)
+                {
+                    // Use STARTTLS
+                    await client.ConnectAsync(_smtpSettings.SmtpHost, _smtpSettings.SmtpPort, SecureSocketOptions.StartTls);
+                }
+                else
+                {
+                    throw new BadRequestException("StmpPort not found!");
+                }
+
                 client.AuthenticationMechanisms.Remove("XOAUTH2");
                 await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
 

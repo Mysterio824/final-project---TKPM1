@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.AspNetCore.Hosting;
 
 namespace DevTools.Application.Services.Impl;
 
@@ -6,12 +7,9 @@ public class TemplateService : ITemplateService
 {
     private readonly string _templatesPath;
 
-    public TemplateService()
+    public TemplateService(IWebHostEnvironment hostingEnvironment)
     {
-        var projectPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
-        var templateProject = Assembly.GetExecutingAssembly().GetName().Name;
-
-        _templatesPath = Path.Combine(projectPath, templateProject, "Templates");
+        _templatesPath = Path.Combine(hostingEnvironment.ContentRootPath, "Templates");
     }
 
     public async Task<string> GetTemplateAsync(string templateName)
@@ -23,11 +21,9 @@ public class TemplateService : ITemplateService
 
     public string ReplaceInTemplate(string input, IDictionary<string, string> replaceWords)
     {
-        var response = string.Empty;
-
+        var response = input;
         foreach (var temp in replaceWords)
-            response = input.Replace(temp.Key, temp.Value);
-
+            response = response.Replace(temp.Key, temp.Value);
         return response;
     }
 }

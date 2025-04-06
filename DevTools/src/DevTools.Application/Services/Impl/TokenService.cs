@@ -1,11 +1,12 @@
-﻿using DevTools.Domain.Entities;
+﻿using DevTools.Application.Helpers;
 using DevTools.Application.Exceptions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+using DevTools.Domain.Entities;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -18,7 +19,7 @@ namespace DevTools.Application.Services.Impl
 
         public string GenerateAccessToken(User user)
         {
-            var claims = CreateUserClaims(user);
+            var claims = JwtHelper.CreateUserClaims(user);
             var token = CreateJwtToken(claims, DateTime.Now.AddMinutes(30));
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -35,44 +36,13 @@ namespace DevTools.Application.Services.Impl
 
         public string DecodeRefreshToken(string refreshToken)
         {
-            var principal = DecodeJwtWithoutValidation(refreshToken);
+            var principal = JwtHelper.DecodeJwtWithoutValidation(refreshToken);
             var userIdClaim = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
                 throw new UnauthorizedException("Invalid refresh token");
 
             return userIdClaim;
         }
-
-        private static ClaimsPrincipal? DecodeJwtWithoutValidation(string token)
-        {
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = false,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = false,
-                    SignatureValidator = (t, p) => tokenHandler.ReadToken(t)
-                }, out _);
-
-                return principal;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static Claim[] CreateUserClaims(User user)
-            => new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
-            };
 
         private JwtSecurityToken CreateJwtToken(Claim[] claims, DateTime expiration)
         {

@@ -1,7 +1,8 @@
-﻿namespace DevTools.Application.Strategies.Core;
+﻿using DevTools.Application.DTOs.Response.Tool;
+
+namespace DevTools.Application.Strategies.Core;
 
 public interface IToolActionStrategy
 {
-    Task<string> ExecuteAsync(int id);
-    string SuccessMessage { get; }
+    Task<UpdateToolResponseDto> ExecuteAsync(int id);
 }

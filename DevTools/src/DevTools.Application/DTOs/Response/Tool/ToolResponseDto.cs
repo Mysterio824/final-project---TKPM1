@@ -2,7 +2,7 @@
 
 namespace DevTools.Application.DTOs.Response.Tool
 {
-    internal class ToolResponseDto
+    public class ToolResponseDto
     {
         public required string Name { get; set; }
         public string? Description { get; set; }
@@ -10,6 +10,6 @@ namespace DevTools.Application.DTOs.Response.Tool
         public required bool IsEnabled { get; set; }
         public required bool IsFavorite { get; set; }
 
-        public required FormFile File { get; set; }
+        public required byte[] File { get; set; }
     }
 }

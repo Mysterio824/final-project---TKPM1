@@ -1,12 +1,12 @@
 ﻿using DevTools.Application.DTOs.Response;
 using DevTools.Application.Services;
-using DevTools.Domain.Enums;
 using DevTools.Application.Strategies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using DevTools.Application.DTOs.Request.Tool;
 using DevTools.Application.DTOs.Response.Tool;
+using DevTools.Domain.Enums;
+using System.Security.Claims;
 
 namespace DevTools.API.Controllers
 {
@@ -22,10 +22,10 @@ namespace DevTools.API.Controllers
         private readonly ILogger<ToolController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         [HttpGet("all")]
-        public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetTools()
+        public async Task<IActionResult> GetTools()
         {
-            var userRole = GetUserRole();
-            var userId = GetUserId();
+            var userRole =  GetUserRole();
+            var userId =  GetUserId();
 
             await _toolCommandService.UpdateToolList();
             var tools = await _toolQueryService.GetToolsAsync(userRole, userId);
@@ -33,23 +33,20 @@ namespace DevTools.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResult<CreateToolResponseDto>>> GetToolById(int id)
+        public async Task<IActionResult> GetToolById(int id)
         {
-            var userRole = GetUserRole();
-            var userId = GetUserId();
+            var userRole =  GetUserRole();
+            var userId =  GetUserId();
 
-            var tool = await _toolQueryService.GetToolByIdAsync(id, userRole, userId);
-            if (tool == null)
-                return NotFound();
-
-            return Ok(ApiResult<CreateToolResponseDto>.Success(tool));
+            var result = await _toolQueryService.GetToolByIdAsync(id, userRole, userId);
+            return Ok(ApiResult<ToolResponseDto>.Success(result));
         }
 
         [HttpGet("search")]
         public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetToolsByName([FromQuery] string name)
         {
-            var userRole = GetUserRole();
-            var userId = GetUserId();
+            var userRole =  GetUserRole();
+            var userId =  GetUserId();
 
             await _toolCommandService.UpdateToolList();
             var tools = await _toolQueryService.GetToolsByNameAsync(name, userRole, userId);
@@ -58,10 +55,10 @@ namespace DevTools.API.Controllers
 
         [Authorize]
         [HttpGet("favorite/all")]
-        public async Task<ActionResult<ApiResult<IEnumerable<ToolItemResponseDto>>>> GetFavoriteTools()
+        public async Task<IActionResult> GetFavoriteTools()
         {
-            var userRole = GetUserRole();
-            var userId = GetUserId();
+            var userRole =  GetUserRole();
+            var userId =  GetUserId();
 
             await _toolCommandService.UpdateToolList();
             var favoriteTools = await _toolQueryService.GetToolFavoriteAsync(userRole, userId);
@@ -72,7 +69,7 @@ namespace DevTools.API.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost("add")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult> AddTool(CreateToolDto request)
+        public async Task<IActionResult> AddTool(CreateToolDto request)
         {
             return Ok(ApiResult<CreateToolResponseDto>
                 .Success(await _toolCommandService.AddToolAsync(request)));
@@ -80,7 +77,7 @@ namespace DevTools.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/{actionName}")]
-        public async Task<ActionResult<string>> UpdateTool(int id, string actionName)
+        public async Task<IActionResult> UpdateTool(int id, string actionName)
         {
             var strategy = _strategyFactory.GetStrategy(actionName);
             var result = await strategy.ExecuteAsync(id);
@@ -91,9 +88,8 @@ namespace DevTools.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTool(int id)
         {
-            return Ok(ApiResult<BaseResponseDto>.Success(await _toolCommandService.DeleteToolAsync(id));
+            return Ok(ApiResult<BaseResponseDto>.Success(await _toolCommandService.DeleteToolAsync(id)));
         }
-
 
         private UserRole GetUserRole()
         {
@@ -111,5 +107,6 @@ namespace DevTools.API.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return string.IsNullOrEmpty(userIdClaim) ? -1 : int.Parse(userIdClaim);
         }
+
     }
 }

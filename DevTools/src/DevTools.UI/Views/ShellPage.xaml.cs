@@ -1,29 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using DevTools.UI.Utils;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using System.Linq;
 
 namespace DevTools.UI.Views
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class ShellPage : Page
     {
         public ShellPage()
@@ -33,17 +18,25 @@ namespace DevTools.UI.Views
             AppServices.NavigationService.Navigate(typeof(DashboardPage));
             UpdateUIForAuthState();
 
-            // Set header text
             HeaderText.Text = "Dashboard";
+            NavList.SelectedIndex = 0;
+            NavList.SelectionChanged += NavList_SelectionChanged;
+            AppServices.AuthService.OnLoginStatusChanged += UpdateUIForAuthState;
         }
 
-        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        private void NavList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (args.SelectedItemContainer == null)
+            if (NavList.SelectedItem == null)
                 return;
 
-            string tag = args.SelectedItemContainer.Tag.ToString();
-            HeaderText.Text = args.SelectedItemContainer.Content.ToString();
+            var selectedItem = NavList.SelectedItem as ListViewItem;
+            string tag = selectedItem.Tag.ToString();
+
+            // Update header text
+            HeaderText.Text = (selectedItem.Content as StackPanel)
+                .Children
+                .OfType<TextBlock>()
+                .FirstOrDefault()?.Text ?? "Dashboard";
 
             switch (tag)
             {
@@ -68,12 +61,10 @@ namespace DevTools.UI.Views
             {
                 LoginButton.Visibility = Visibility.Collapsed;
                 LogoutButton.Visibility = Visibility.Visible;
-
                 if (JwtTokenManager.IsAdmin)
                     AdminItem.Visibility = Visibility.Visible;
                 else
                     AdminItem.Visibility = Visibility.Collapsed;
-
                 if (!JwtTokenManager.IsPremium)
                     UpgradeButton.Visibility = Visibility.Visible;
                 else

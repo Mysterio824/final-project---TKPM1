@@ -63,5 +63,10 @@ namespace DevTools.UI.Views
                 property.SetValue(ViewModel, JwtTokenManager.IsLoggedIn);
             }
         }
+
+        private void Login_Click(object sender, RoutedEventArgs e)
+        {
+            AppServices.NavigationService.Navigate(typeof(LoginPage));
+        }
     }
 }

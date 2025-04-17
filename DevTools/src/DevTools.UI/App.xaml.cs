@@ -47,7 +47,7 @@ namespace DevTools.UI
         /// <summary>
         /// Gets the main application window.
         /// </summary>
-        public Window MainWindow { get; private set; }
+        public static IServiceProvider Services { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="App"/> class.
@@ -56,6 +56,9 @@ namespace DevTools.UI
         {
             this.InitializeComponent();
             this.UnhandledException += App_UnhandledException;
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+            Services = serviceCollection.BuildServiceProvider();
         }
 
         /// <summary>
@@ -81,6 +84,28 @@ namespace DevTools.UI
             e.Handled = true;
             System.Diagnostics.Debug.WriteLine($"Unhandled exception: {e.Exception}");
         }
+        private void ConfigureServices(IServiceCollection services)
+        {
+            // Register MockDao
+            services.AddSingleton<IMockDao, MockDao>();
+
+            // Register services
+            services.AddTransient<ApiService>();
+            services.AddTransient<AuthService>();
+            services.AddTransient<FileService>();
+            services.AddTransient<ToolService>();
+            services.AddTransient<ToolUploadService>();
+            services.AddTransient<ToolLoaderService>();
+            services.AddTransient<NavigationService>();
+
+            // Register view models
+            services.AddTransient<DashboardViewModel>();
+            services.AddTransient<AdminDashboardViewModel>();
+            services.AddTransient<LoginViewModel>();
+            services.AddTransient<FavouriteViewModel>();
+            services.AddTransient<ToolDetailViewModel>();
+        }
+
         private Window? m_window;
     }
 }

@@ -9,55 +9,191 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Page.DataContext>
-        <Binding Path="ToolDetailViewModel" Source="{StaticResource Locator}"/>
-    </Page.DataContext>
-
-    <Grid Padding="20">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBlock Text="{Binding ToolMetadata.Name}" 
-                       Style="{StaticResource TitleTextBlockStyle}"/>
+        <!-- Header Banner -->
+        <Grid Grid.Row="0" 
+              Background="{ThemeResource SystemAccentColorLight3}" 
+              Padding="24,24,24,24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <FontIcon Glyph="&#xE1CF;" 
-                      Margin="10,0,5,0"
-                      Visibility="{Binding ToolMetadata.IsPremium}"/>
+            <!-- Back button and tool info -->
+            <StackPanel Grid.Column="0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,4">
+                    <Border Background="{ThemeResource SystemAccentColorLight1}" 
+                            Width="48" 
+                            Height="48" 
+                            CornerRadius="8">
+                        <FontIcon Glyph="&#xE8F1;" 
+                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                  FontSize="24" 
+                                  HorizontalAlignment="Center" 
+                                  VerticalAlignment="Center"/>
+                    </Border>
 
-            <TextBlock Text="Premium" 
-                       Visibility="{Binding ToolMetadata.IsPremium}"
-                       Foreground="Gold"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
+                    <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{x:Bind ViewModel.ToolMetadata.Name, Mode=OneWay}" 
+                                       FontSize="24" 
+                                       FontWeight="SemiBold"/>
+                            <Border Margin="12,0,0,0" 
+                                    Background="{ThemeResource SystemAccentColorLight1}" 
+                                    BorderThickness="0" 
+                                    CornerRadius="12" 
+                                    Padding="8,4,8,4"
+                                    VerticalAlignment="Center"
+                                    Visibility="{x:Bind ViewModel.ToolMetadata.IsPremium, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="PREMIUM" 
+                                           FontSize="10" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="{ThemeResource SystemAccentColorDark1}"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind ViewModel.ToolMetadata.Description, Mode=OneWay}" 
+                                   Opacity="0.8" 
+                                   MaxWidth="600"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="Add to Favorites" 
-                    Command="{Binding AddToFavoriteCommand}"
-                    Visibility="{Binding IsUserLoggedIn}"/>
-        </StackPanel>
+            <!-- Action buttons -->
+            <StackPanel Grid.Column="1" 
+                        Orientation="Horizontal" 
+                        VerticalAlignment="Bottom" 
+                        Margin="0,0,0,4">
+                <Button Command="{x:Bind ViewModel.AddToFavoriteCommand}" 
+                        Visibility="{x:Bind ViewModel.IsUserLoggedIn, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Style="{StaticResource TextButtonStyle}" 
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE734;" FontSize="12"/>
+                        <TextBlock Text="Add to favorites" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Margin="8,0,0,0" 
+                        Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE768;" FontSize="12"/>
+                        <TextBlock Text="Share" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
 
-        <Grid Grid.Row="2">
+        <!-- Tool Content Area -->
+        <Grid Grid.Row="1" Padding="24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="{Binding ToolMetadata.Description}" 
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,10"/>
+            <!-- Tabs for tool functions -->
+            <TabView Grid.Row="0" Margin="0,0,0,16">
+                <TabView.TabItems>
+                    <TabViewItem Header="Tool Interface" IsSelected="True">
+                        <TabViewItem.IconSource>
+                            <SymbolIconSource Symbol="Document"/>
+                        </TabViewItem.IconSource>
+                    </TabViewItem>
+                    <TabViewItem Header="Documentation">
+                        <TabViewItem.IconSource>
+                            <SymbolIconSource Symbol="Bookmarks"/>
+                        </TabViewItem.IconSource>
+                    </TabViewItem>
+                    <TabViewItem Header="Settings">
+                        <TabViewItem.IconSource>
+                            <SymbolIconSource Symbol="Setting"/>
+                        </TabViewItem.IconSource>
+                    </TabViewItem>
+                </TabView.TabItems>
+            </TabView>
 
-            <ContentControl Grid.Row="1" Content="{Binding ToolUI}"/>
-        </Grid>
-
-        <ProgressRing x:Name="LoadingRing" 
-                      IsActive="True" 
-                      Width="50" 
-                      Height="50"
+            <!-- Tool UI Container -->
+            <Grid Grid.Row="1">
+                <!-- Login Prompt -->
+                <Grid Visibility="{x:Bind ViewModel.IsUserLoggedIn, Mode=OneWay, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                      HorizontalAlignment="Center" 
                       VerticalAlignment="Center"
-                      HorizontalAlignment="Center"/>
+                      MaxWidth="500">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            CornerRadius="8"
+                            Padding="24">
+                        <StackPanel HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE72E;" 
+                                      FontSize="48" 
+                                      Foreground="{ThemeResource SystemAccentColor}"
+                                      HorizontalAlignment="Center"/>
+                            <TextBlock Text="Sign in to access this tool" 
+                                       FontSize="20" 
+                                       FontWeight="SemiBold" 
+                                       HorizontalAlignment="Center"
+                                       Margin="0,16,0,8"/>
+                            <TextBlock Text="You need to be signed in to use this tool. Login now to get access to this and other powerful development tools."
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       Opacity="0.8"
+                                       Margin="0,0,0,24"/>
+                            <Button Content="Login Now" 
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    HorizontalAlignment="Center" 
+                                    Click="Login_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Premium indicator -->
+                    <Border Grid.Row="1" 
+                            Background="#FFF7E9"
+                            BorderBrush="#FFDEB1"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            Margin="0,16,0,0"
+                            Visibility="{x:Bind ViewModel.ToolMetadata.IsPremium, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xEA3B;" 
+                                      FontSize="16" 
+                                      Foreground="#FF9D00"/>
+                            <TextBlock Text="This is a premium tool. You'll need to upgrade your account after login." 
+                                       Foreground="#5D4200" 
+                                       Margin="12,0,0,0" 
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Actual Tool UI -->
+                <Grid Visibility="{x:Bind ViewModel.IsUserLoggedIn, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <!-- Loading indicator -->
+                    <ProgressRing x:Name="LoadingRing" 
+                                  IsActive="False" 
+                                  Width="40" 
+                                  Height="40"/>
+
+                    <!-- Tool content -->
+                    <ContentControl Content="{x:Bind ViewModel.ToolUI, Mode=OneWay}" 
+                                    HorizontalAlignment="Stretch" 
+                                    VerticalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch"/>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

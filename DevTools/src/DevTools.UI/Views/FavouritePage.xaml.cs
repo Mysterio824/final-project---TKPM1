@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
 using DevTools.UI.Services;
+using DevTools.UI.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,6 +39,11 @@ namespace DevTools.UI.Views
         {
             var selectedTool = e.ClickedItem as Tool;
             AppServices.NavigationService.Navigate(typeof(ToolDetailPage), selectedTool);
+        }
+
+        private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

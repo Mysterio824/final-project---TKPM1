@@ -12,16 +12,20 @@ namespace DevTools.UI.ViewModels
 {
     public class AdminDashboardViewModel : ObservableObject
     {
+        private readonly ToolService _toolService;
+        private readonly ToolUploadService _toolUploadService;
         public ObservableCollection<Tool> Tools { get; } = new();
 
-        public AdminDashboardViewModel()
+        public AdminDashboardViewModel(ToolService toolService, ToolUploadService toolUploadService)
         {
+            _toolService = toolService;
+            _toolUploadService = toolUploadService;
             LoadAsync();
         }
 
         private async void LoadAsync()
         {
-            var tools = await AppServices.ToolService.GetToolsAsync();
+            var tools = await _toolService.GetToolsAsync();
             Tools.Clear();
             foreach (var tool in tools)
                 Tools.Add(tool);
@@ -29,7 +33,7 @@ namespace DevTools.UI.ViewModels
 
         public async void SetToolEnabled(Tool tool)
         {
-            await AppServices.ToolUploadService.EnableToolAsync(tool.Id, tool.IsEnabled);
+            await _toolUploadService.EnableToolAsync(tool.Id, tool.IsEnabled);
         }
     }
 }

@@ -9,52 +9,364 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="20">
-        <StackPanel MaxWidth="600" HorizontalAlignment="Center">
-            <TextBlock Text="Upgrade to Premium" 
-                       Style="{StaticResource TitleTextBlockStyle}"
-                       Margin="0,0,0,20"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                  Padding="20" 
-                  CornerRadius="8">
+        <!-- Header -->
+        <Grid Grid.Row="0" 
+              Background="{ThemeResource SystemAccentColorLight3}" 
+              Padding="24,32">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Upgrade to Premium" 
+                           FontSize="28" 
+                           FontWeight="SemiBold" 
+                           Margin="0,24,0,8"/>
+                <TextBlock Text="Get unlimited access to all premium tools and features" 
+                           Opacity="0.8" 
+                           FontSize="16" 
+                           MaxWidth="600"/>
+            </StackPanel>
+
+            <Image Grid.Column="1" 
+                   Source="ms-appx:///Assets/PremiumBadge.png" 
+                   Width="80" 
+                   Height="80"/>
+        </Grid>
+
+        <!-- Plans -->
+        <ScrollViewer Grid.Row="1" Padding="24,32">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Premium Features" 
-                           Style="{StaticResource SubtitleTextBlockStyle}"
-                           Margin="0,0,0,10"/>
+                <!-- Features section -->
+                <Grid Grid.Row="0" Margin="0,0,0,40">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="1" Spacing="8" Margin="0,0,0,20">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE73E;" Margin="0,0,10,0"/>
-                        <TextBlock Text="Access to all premium tools"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE73E;" Margin="0,0,10,0"/>
-                        <TextBlock Text="Priority customer support"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE73E;" Margin="0,0,10,0"/>
-                        <TextBlock Text="Early access to new features"/>
-                    </StackPanel>
-                </StackPanel>
+                    <TextBlock Grid.Row="0" 
+                               Text="Premium Features" 
+                               FontSize="20" 
+                               FontWeight="SemiBold" 
+                               Margin="0,0,0,16"/>
 
-                <StackPanel Grid.Row="2" Spacing="10">
-                    <TextBlock Text="Select your plan" FontWeight="SemiBold"/>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <RadioButton Content="Monthly - $9.99/month" GroupName="PlanOptions"/>
-                    <RadioButton Content="Annual - $99.99/year (Save 16%)" GroupName="PlanOptions" IsChecked="True"/>
+                        <!-- Feature 1 -->
+                        <Border Grid.Column="0" 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                CornerRadius="8"
+                                Padding="20"
+                                Margin="0,0,12,0">
+                            <StackPanel>
+                                <Border Background="{ThemeResource SystemAccentColorLight3}" 
+                                        Width="48" 
+                                        Height="48" 
+                                        CornerRadius="24"
+                                        HorizontalAlignment="Left">
+                                    <FontIcon Glyph="&#xE954;" 
+                                              FontSize="20" 
+                                              Foreground="{ThemeResource SystemAccentColor}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="All Premium Tools" 
+                                           FontSize="16" 
+                                           FontWeight="SemiBold" 
+                                           Margin="0,16,0,8"/>
+                                <TextBlock Text="Access all premium developer tools including code generators, analyzers, and more" 
+                                           TextWrapping="Wrap" 
+                                           Opacity="0.8"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Button Content="Subscribe Now" 
-                            Click="Subscribe_Click"
-                            HorizontalAlignment="Stretch"
-                            Margin="0,20,0,0"/>
-                </StackPanel>
+                        <!-- Feature 2 -->
+                        <Border Grid.Column="1" 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                CornerRadius="8"
+                                Padding="20"
+                                Margin="12,0">
+                            <StackPanel>
+                                <Border Background="{ThemeResource SystemAccentColorLight3}" 
+                                        Width="48" 
+                                        Height="48" 
+                                        CornerRadius="24"
+                                        HorizontalAlignment="Left">
+                                    <FontIcon Glyph="&#xE7B8;" 
+                                              FontSize="20" 
+                                              Foreground="{ThemeResource SystemAccentColor}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Cloud Sync" 
+                                           FontSize="16" 
+                                           FontWeight="SemiBold" 
+                                           Margin="0,16,0,8"/>
+                                <TextBlock Text="Sync your tools, favorites and settings across all your devices and workstations" 
+                                           TextWrapping="Wrap" 
+                                           Opacity="0.8"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Feature 3 -->
+                        <Border Grid.Column="2" 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                CornerRadius="8"
+                                Padding="20"
+                                Margin="12,0,0,0">
+                            <StackPanel>
+                                <Border Background="{ThemeResource SystemAccentColorLight3}" 
+                                        Width="48" 
+                                        Height="48" 
+                                        CornerRadius="24"
+                                        HorizontalAlignment="Left">
+                                    <FontIcon Glyph="&#xE90B;" 
+                                              FontSize="20" 
+                                              Foreground="{ThemeResource SystemAccentColor}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Priority Support" 
+                                           FontSize="16" 
+                                           FontWeight="SemiBold" 
+                                           Margin="0,16,0,8"/>
+                                <TextBlock Text="Get direct support from our developer team with 24-hour response time" 
+                                           TextWrapping="Wrap" 
+                                           Opacity="0.8"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Subscription plans -->
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" 
+                               Text="Choose Your Plan" 
+                               FontSize="20" 
+                               FontWeight="SemiBold" 
+                               Margin="0,0,0,16"/>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Monthly Plan -->
+                        <Border Grid.Column="0" 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                CornerRadius="8"
+                                Padding="24"
+                                Margin="0,0,12,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" 
+                                           Text="Monthly" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"/>
+
+                                <StackPanel Grid.Row="1" 
+                                            Orientation="Horizontal" 
+                                            Margin="0,16,0,0">
+                                    <TextBlock Text="$" 
+                                               FontSize="18" 
+                                               VerticalAlignment="Top" 
+                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="9.99" 
+                                               FontSize="36" 
+                                               FontWeight="Bold" 
+                                               Margin="-2,0,0,0"/>
+                                    <TextBlock Text="/month" 
+                                               FontSize="16" 
+                                               Opacity="0.8" 
+                                               VerticalAlignment="Bottom" 
+                                               Margin="4,0,0,4"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2" Margin="0,20,0,0">
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="All premium tools" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="Cloud sync" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="Email support" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Button Grid.Row="3" 
+                                        Content="Subscribe Monthly" 
+                                        Style="{StaticResource AccentButtonStyle}" 
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,24,0,0"
+                                        Click="Subscribe_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Yearly Plan -->
+                        <Border Grid.Column="1" 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                CornerRadius="8"
+                                Padding="24"
+                                Margin="12,0,12,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" 
+                                           Text="Yearly" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"/>
+
+                                <StackPanel Grid.Row="1" 
+                                            Orientation="Horizontal" 
+                                            Margin="0,16,0,0">
+                                    <TextBlock Text="$" 
+                                               FontSize="18" 
+                                               VerticalAlignment="Top" 
+                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="99.99" 
+                                               FontSize="36" 
+                                               FontWeight="Bold" 
+                                               Margin="-2,0,0,0"/>
+                                    <TextBlock Text="/year" 
+                                               FontSize="16" 
+                                               Opacity="0.8" 
+                                               VerticalAlignment="Bottom" 
+                                               Margin="4,0,0,4"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2" Margin="0,20,0,0">
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="All premium tools" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="Cloud sync" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" 
+                                                  Glyph="&#xE73E;" 
+                                                  Foreground="{ThemeResource SystemAccentColor}" 
+                                                  FontSize="16"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="Priority support" 
+                                                   Margin="12,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Button Grid.Row="3" 
+                                        Content="Subscribe Yearly" 
+                                        Style="{StaticResource AccentButtonStyle}" 
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,24,0,0"
+                                        Click="Subscribe_Click"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
             </Grid>
-        </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

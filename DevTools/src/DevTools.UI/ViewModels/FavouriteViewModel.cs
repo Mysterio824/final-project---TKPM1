@@ -13,9 +13,11 @@ namespace DevTools.UI.ViewModels
 {
     public class FavouriteViewModel : ObservableObject
     {
+        private readonly ToolService _toolService;
+        private readonly INavigationService _navigation;
         public ObservableCollection<Tool> FavouriteTools { get; } = new();
 
-        public FavouriteViewModel()
+        public FavouriteViewModel(ToolService toolService, INavigationService navigation)
         {
             _toolService = toolService;
             _navigation = navigation;

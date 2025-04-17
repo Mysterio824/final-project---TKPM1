@@ -52,7 +52,6 @@ namespace DevTools.UI.Views
 
             if (success)
             {
-                // Handle successful login and navigate back
                 switch (_returnDestination)
                 {
                     case "favorites":

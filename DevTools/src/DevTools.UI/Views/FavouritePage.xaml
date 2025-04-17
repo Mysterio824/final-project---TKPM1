@@ -4,74 +4,142 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:DevTools.UI.Views"
-    xmlns:models="using:DevTools.UI.Models"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:DevTools.UI.Models"
+    xmlns:cv="using:DevTools.UI.Converters"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource BackgroundBrush}">
 
-    <Page.DataContext>
-        <Binding Path="FavouriteViewModel" Source="{StaticResource Locator}"/>
-    </Page.DataContext>
-
-    <Grid Padding="20">
+    <Page.Resources>
+        <cv:EmptyCollectionToVisibilityConverter x:Key="EmptyCollectionToVisibilityConverter"/>
+        <cv:NonEmptyCollectionToVisibilityConverter x:Key="NonEmptyCollectionToVisibilityConverter"/>
+        <cv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Page.Resources>
+    <Grid Padding="24,16,24,16" >
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Your Favorite Tools" 
-                   Style="{StaticResource SubtitleTextBlockStyle}"
-                   Margin="0,0,0,20"/>
+        <!-- Header Section with greeting and description -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,24" Background="{ThemeResource SurfaceBrush}" Padding="20" CornerRadius="8">
+            <TextBlock Text="Your Favorite Tools" 
+                       Style="{ThemeResource HeadingStyle}"/>
+            <TextBlock Text="Quick access to your favorite development tools" 
+                       Style="{ThemeResource BodyTextStyle}" 
+                       Margin="0,8,0,0"/>
+        </StackPanel>
 
+        <!-- No favorites message -->
+        <StackPanel Grid.Row="1" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    Visibility="{x:Bind ViewModel.FavouriteTools.Count, Mode=OneWay, Converter={StaticResource EmptyCollectionToVisibilityConverter}}">
+            <FontIcon Glyph="&#xE00C;" 
+                      FontSize="48" 
+                      Foreground="{ThemeResource SystemBaseLowColor}"/>
+            <TextBlock Text="You don't have any favorite tools yet" 
+                       FontSize="18" 
+                       Margin="0,16,0,0" 
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Browse the dashboard and add tools to favorites" 
+                       FontSize="14" 
+                       Opacity="0.7" 
+                       TextWrapping="Wrap" 
+                       TextAlignment="Center" 
+                       Margin="0,8,0,16" 
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Grid of favorite tools -->
         <GridView Grid.Row="1" 
-          ItemsSource="{Binding FavouriteTools}"
-          SelectionMode="Single"
-          ItemClick="ToolItem_Click"
-          IsItemClickEnabled="True">
+                  ItemsSource="{x:Bind ViewModel.FavouriteTools, Mode=OneWay}"
+                  SelectionMode="None"
+                  IsItemClickEnabled="True"
+                  ItemClick="ToolItem_Click"
+                  Visibility="{x:Bind ViewModel.FavouriteTools.Count, Mode=OneWay, Converter={StaticResource NonEmptyCollectionToVisibilityConverter}}">
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="Margin" Value="0,0,16,16"/>
+                </Style>
+            </GridView.ItemContainerStyle>
+
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="models:Tool">
-                    <Grid Width="200" Height="150" Margin="10">
+                    <Grid Background="#33826AF9" 
+                          CornerRadius="8"
+                          BorderThickness="1" 
+                          Padding="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="{x:Bind Name}" 
-                           FontWeight="SemiBold" 
-                           FontSize="16"
-                           TextWrapping="Wrap"/>
+                        <!-- Tool Icon and Premium Badge -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Row="1"
-                           Text="{x:Bind Description}" 
-                           TextWrapping="Wrap"
-                           Opacity="0.7"
-                           Margin="0,5"/>
+                            <Border Background="{ThemeResource SystemAccentColorLight3}" 
+                                    Width="40" 
+                                    Height="40" 
+                                    CornerRadius="8">
+                                <FontIcon Glyph="&#xE8F1;" 
+                                          Foreground="{ThemeResource SystemAccentColor}" 
+                                          FontSize="18" 
+                                          HorizontalAlignment="Center" 
+                                          VerticalAlignment="Center"/>
+                            </Border>
 
+                            <Border Grid.Column="1" 
+                                    HorizontalAlignment="Right" 
+                                    VerticalAlignment="Top"
+                                    Background="{ThemeResource SystemAccentColorLight2}" 
+                                    BorderThickness="0" 
+                                    CornerRadius="12" 
+                                    Padding="8,4,8,4"
+                                    Visibility="{x:Bind IsPremium, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="PREMIUM" 
+                                           FontSize="10" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="{ThemeResource SystemAccentColorDark1}"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Tool Name and Description -->
+                        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+                            <TextBlock Text="{x:Bind Name}" 
+                                       Style="{ThemeResource SubheadingStyle}"/>
+                            <TextBlock Text="{x:Bind Description}" 
+                                       TextWrapping="Wrap" 
+                                       Style="{ThemeResource BodyTextStyle}" 
+                                       MaxLines="2" 
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <!-- Action Buttons -->
                         <StackPanel Grid.Row="2" 
-                            Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE1CF;" 
-                              Visibility="{x:Bind IsPremium}"/>
-                            <TextBlock Text="Premium" 
-                               Visibility="{x:Bind IsPremium}"
-                               Foreground="Gold"/>
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Right" 
+                                    Margin="0,16,0,0">
+                            <Button 
+                                    Background="{ThemeResource AccentColor}"
+                                    CornerRadius="3"
+                                    Click="RemoveFavorite_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE8FB;" FontSize="12"/>
+                                    <TextBlock Text="Remove" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
-
-        <!-- Add a separate control to handle the empty state -->
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-            Visibility="{Binding FavouriteTools.Count, Converter={StaticResource EmptyCollectionToVisibilityConverter}}">
-            <TextBlock Text="You haven't added any favorites yet" 
-               Style="{StaticResource SubtitleTextBlockStyle}"
-               TextAlignment="Center"/>
-            <TextBlock Text="Browse the dashboard and add tools to your favorites"
-               TextAlignment="Center"
-               Opacity="0.7"
-               Margin="0,10"/>
-        </StackPanel>
     </Grid>
 </Page>

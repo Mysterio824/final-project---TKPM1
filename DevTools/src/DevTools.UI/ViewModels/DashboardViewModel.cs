@@ -13,16 +13,20 @@ namespace DevTools.UI.ViewModels
 {
     public class DashboardViewModel : ObservableObject
     {
+        private readonly ToolService _toolService;
+        private readonly INavigationService _navigation;
         public ObservableCollection<Tool> Tools { get; } = new();
 
-        public DashboardViewModel()
+        public DashboardViewModel(ToolService toolService, INavigationService navigation)
         {
+            _toolService = toolService;
             LoadToolsAsync();
+            _navigation = navigation;
         }
 
         private async void LoadToolsAsync()
         {
-            var tools = await AppServices.ToolService.GetToolsAsync();
+            var tools = await _toolService.GetToolsAsync();
             Tools.Clear();
             foreach (var tool in tools)
                 Tools.Add(tool);
@@ -30,7 +34,7 @@ namespace DevTools.UI.ViewModels
 
         public void NavigateToTool(Tool tool)
         {
-            AppServices.NavigationService.Navigate(typeof(ToolDetailPage), tool);
+            _navigation.Navigate(typeof(ToolDetailPage), tool);
         }
     }
 }

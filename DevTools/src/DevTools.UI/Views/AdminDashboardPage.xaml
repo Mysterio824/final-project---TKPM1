@@ -5,11 +5,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:DevTools.UI.Views"
     xmlns:models="using:DevTools.UI.Models"
+    xmlns:cv="using:DevTools.UI.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource BackgroundBrush}">
 
+    <Page.Resources>
+        <cv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Page.Resources>
+    
     <Grid Padding="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -18,17 +23,28 @@
         </Grid.RowDefinitions>
 
         <TextBlock Text="Admin Dashboard" 
-                   Style="{StaticResource TitleTextBlockStyle}"
+                   Style="{StaticResource HeadingStyle}"
                    Margin="0,0,0,20"/>
 
         <Button Grid.Row="1" 
                 Content="Upload New Tool" 
                 Click="UploadTool_Click"
-                Margin="0,0,0,20"/>
+                Margin="0,0,0,20"
+                Background="{ThemeResource PrimaryColor}"
+                Foreground="{ThemeResource TextPrimaryColor}"
+                Padding="8"
+                CornerRadius="5"
+        >
+            <Button.Resources>
+                <Color x:Key="ButtonBackgroundPointerOver">#7B61FF</Color>
+            </Button.Resources>
+        </Button>
 
         <ListView Grid.Row="2" 
                   ItemsSource="{Binding Tools}"
-                  SelectionMode="None">
+                  SelectionMode="None"
+                  Background="{ThemeResource SurfaceColor}"
+                  >
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:Tool">
                     <Grid Padding="10">
@@ -38,28 +54,35 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel>
+                        <StackPanel Margin="0,0,30,0">
                             <TextBlock Text="{x:Bind Name}" 
-                                       FontWeight="SemiBold" 
-                                       FontSize="16"/>
+                                       Style="{ThemeResource SubheadingStyle}"/>
                             <TextBlock Text="{x:Bind Description}" 
                                        TextWrapping="Wrap"
-                                       Opacity="0.7"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                <TextBlock Text="Premium: " Margin="0,0,5,0"/>
-                                <TextBlock Text="{x:Bind IsPremium}"/>
-                            </StackPanel>
+                                       Margin="0,3,0,0"
+                                       Style="{ThemeResource BodyTextStyle}"/>
+                            <TextBlock Text="Premium"
+                                       Margin="0,5,0,0"
+                                       Style="{ThemeResource AccentTextStyle}"
+                                       Visibility="{x:Bind IsPremium, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            
                         </StackPanel>
 
                         <ToggleSwitch Grid.Column="1" 
                                       Header="Enabled"
                                       IsOn="{x:Bind IsEnabled, Mode=TwoWay}"
-                                      Toggled="ToggleSwitch_Toggled"/>
+                                      Toggled="ToggleSwitch_Toggled"
+                                      Foreground="{ThemeResource TextPrimaryColor}"/>
 
                         <Button Grid.Column="2" 
                                 Content="Edit" 
                                 Click="EditTool_Click"
-                                Margin="10,0,0,0"/>
+                                Margin="0,0,0,0"
+                                Style="{ThemeResource DefaultButtonStyle}">
+                            <Button.Resources>
+                                <Color x:Key="ButtonBackgroundPointerOver">#7B61FF</Color>
+                            </Button.Resources>
+                        </Button>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

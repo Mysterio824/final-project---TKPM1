@@ -7,37 +7,91 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{StaticResource BackgroundBrush}">
 
-    <Page.DataContext>
-        <Binding Path="LoginViewModel" Source="{StaticResource Locator}"/>
-    </Page.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-    <Grid MaxWidth="400" Padding="20">
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Login" 
-                       Style="{StaticResource TitleTextBlockStyle}"
-                       Margin="0,0,0,20"/>
+        <!-- Login Card -->
+        <Grid Grid.Row="1" 
+              HorizontalAlignment="Center" 
+              VerticalAlignment="Center" 
+              MaxWidth="440">
+            <Grid Background="{StaticResource SurfaceBrush}" 
+                  CornerRadius="16" 
+                  Padding="40">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <TextBox Header="Username" 
-                     PlaceholderText="Enter your username"
-                     Text="{Binding Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,0,0,15"/>
+                <!-- Header -->
+                <StackPanel Grid.Row="0" 
+                            HorizontalAlignment="Center" 
+                            Margin="0,0,0,24">
+                    <Ellipse Width="60" 
+                             Height="60" 
+                             Fill="{StaticResource BackgroundBrush}" 
+                             Stroke="{StaticResource PrimaryBrush}" 
+                             StrokeThickness="2" 
+                             Margin="0,0,0,16"/>
+                    <TextBlock Text="Welcome Back" 
+                               Style="{StaticResource HeadingStyle}" 
+                               FontSize="28" 
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Sign in to continue" 
+                               Style="{StaticResource BodyTextStyle}" 
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
 
-            <PasswordBox Header="Password" 
-                         PlaceholderText="Enter your password"
-                         Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,0,20"/>
+                <!-- Error Message -->
+                <TextBlock x:Name="ErrorMessage" 
+                           Grid.Row="1" 
+                           Foreground="{StaticResource ErrorBrush}" 
+                           TextWrapping="Wrap" 
+                           Margin="0,0,0,16" 
+                           Visibility="Collapsed"/>
 
-            <Button Content="Login" 
-                    Command="{Binding LoginCommand}"
-                    HorizontalAlignment="Stretch"/>
+                <!-- Username Field -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,16">
+                    <TextBlock Text="Username" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding Username, Mode=TwoWay}" 
+                             Background="#1F1F26" 
+                             BorderThickness="0" 
+                             Padding="16,12" 
+                             CornerRadius="8" 
+                             PlaceholderText="Enter your username"/>
+                </StackPanel>
 
-            <TextBlock x:Name="ErrorMessage"
-                       Foreground="Red"
-                       TextWrapping="Wrap"
-                       Margin="0,15,0,0"
-                       Visibility="Collapsed"/>
-        </StackPanel>
+                <!-- Password Field -->
+                <StackPanel Grid.Row="3" Margin="0,0,0,24">
+                    <TextBlock Text="Password" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               Margin="0,0,0,8"/>
+                    <PasswordBox Password="{Binding Password, Mode=TwoWay}" 
+                                 Background="#1F1F26" 
+                                 BorderThickness="0" 
+                                 Padding="16,12" 
+                                 CornerRadius="8" 
+                                 PlaceholderText="Enter your password"/>
+                </StackPanel>
+
+                <!-- Login Button -->
+                <Button Grid.Row="4" 
+                        Content="Sign In" 
+                        Style="{StaticResource DefaultButtonStyle}" 
+                        HorizontalAlignment="Stretch" 
+                        Padding="0,12" 
+                        Click="Login_Click"/>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

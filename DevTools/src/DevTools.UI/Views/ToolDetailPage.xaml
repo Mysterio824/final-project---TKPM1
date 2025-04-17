@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="DevTools.UI.Views.ToolDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DevTools.UI.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.DataContext>
+        <Binding Path="ToolDetailViewModel" Source="{StaticResource Locator}"/>
+    </Page.DataContext>
+
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="{Binding ToolMetadata.Name}" 
+                       Style="{StaticResource TitleTextBlockStyle}"/>
+
+            <FontIcon Glyph="&#xE1CF;" 
+                      Margin="10,0,5,0"
+                      Visibility="{Binding ToolMetadata.IsPremium}"/>
+
+            <TextBlock Text="Premium" 
+                       Visibility="{Binding ToolMetadata.IsPremium}"
+                       Foreground="Gold"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+            <Button Content="Add to Favorites" 
+                    Command="{Binding AddToFavoriteCommand}"
+                    Visibility="{Binding IsUserLoggedIn}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="{Binding ToolMetadata.Description}" 
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"/>
+
+            <ContentControl Grid.Row="1" Content="{Binding ToolUI}"/>
+        </Grid>
+
+        <ProgressRing x:Name="LoadingRing" 
+                      IsActive="True" 
+                      Width="50" 
+                      Height="50"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+    </Grid>
+</Page>

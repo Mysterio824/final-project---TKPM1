@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevTools.Infrastructure", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{989AB373-1146-4B83-AA1B-B8C3833ECD86}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevTools.UI", "src\DevTools.UI\DevTools.UI.csproj", "{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,12 @@ Global
 		{D485B6FB-1449-480C-97C9-FB9DDB98D273}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D485B6FB-1449-480C-97C9-FB9DDB98D273}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D485B6FB-1449-480C-97C9-FB9DDB98D273}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Debug|Any CPU.Build.0 = Debug|x64
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Debug|Any CPU.Deploy.0 = Debug|x64
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Release|Any CPU.ActiveCfg = Release|x64
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Release|Any CPU.Build.0 = Release|x64
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1}.Release|Any CPU.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,5 +52,9 @@ Global
 		{7591192A-3567-4755-925F-F533377665BE} = {989AB373-1146-4B83-AA1B-B8C3833ECD86}
 		{2117F830-E130-4065-9C5C-844A1D3DDADB} = {989AB373-1146-4B83-AA1B-B8C3833ECD86}
 		{D485B6FB-1449-480C-97C9-FB9DDB98D273} = {989AB373-1146-4B83-AA1B-B8C3833ECD86}
+		{30EEBDE7-B719-4EDC-86CC-28A7A543C0C1} = {989AB373-1146-4B83-AA1B-B8C3833ECD86}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C7063744-F8B0-43D4-97C3-49F11128373C}
 	EndGlobalSection
 EndGlobal

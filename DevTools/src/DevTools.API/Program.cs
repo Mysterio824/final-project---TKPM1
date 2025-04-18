@@ -1,9 +1,9 @@
 using DevTools.API.Configurations;
 using DevTools.API.Middleware;
 using DevTools.Application.Services;
-using DevTools.Infrastructure;
 using DevTools.Application;
-using DevTools.Infrastructure.Persistence;
+using DevTools.DataAcess.Persistence;
+using DevTools.DataAcess;
 
 namespace DevTools.API;
 

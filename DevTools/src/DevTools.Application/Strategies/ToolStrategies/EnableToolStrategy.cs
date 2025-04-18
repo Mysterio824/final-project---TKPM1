@@ -2,7 +2,7 @@
 using DevTools.Application.Services;
 using DevTools.Application.DTOs.Response.Tool;
 
-namespace DevTools.Infrastructure.Strategies.ToolStrategies
+namespace DevTools.Application.Strategies.ToolStrategies
 {
     public class EnableToolStrategy(IToolCommandService toolService) : IToolActionStrategy
     {

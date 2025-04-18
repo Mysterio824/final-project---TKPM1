@@ -15,7 +15,7 @@ namespace DevTools.UI.Services
         public FileService(IMockDao mockDao)
         {
             //_httpClient = new HttpClient();
-            //_httpClient.BaseAddress = new Uri("http://0.0.0.0:5000");
+            //_httpClient.BaseAddress = new Uri("https://localhost:5000");
             _mockDao = mockDao;
         }
 
@@ -24,7 +24,7 @@ namespace DevTools.UI.Services
             //var response = await _httpClient.GetAsync($"tools/{toolId}/download");
             //response.EnsureSuccessStatusCode();
             //return await response.Content.ReadAsByteArrayAsync();
-            var response = await _mockDao.GetAsync<byte[]>($"tools/{toolId}/download");
+            var response = await _mockDao.GetAsync<byte[]>($"api/tool/{toolId}");
             if (response == null)
             {
                 throw new Exception("Failed to download tool DLL.");

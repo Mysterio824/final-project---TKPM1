@@ -3,7 +3,6 @@ using DevTools.Application.Services;
 using DevTools.Application.Strategies.Core;
 using DevTools.Application.Strategies.ToolStrategies;
 using DevTools.Application.Strategies;
-using DevTools.Infrastructure.Strategies.ToolStrategies;
 using Microsoft.Extensions.DependencyInjection;
 using DevTools.Application.Common.Email;
 using Microsoft.Extensions.Configuration;

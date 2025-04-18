@@ -1,10 +1,10 @@
 ﻿using System.Linq.Expressions;
+using DevTools.DataAccess.Persistence;
+using DevTools.DataAccess.Repositories;
 using DevTools.Domain.Common;
-using DevTools.Domain.Exceptions;
-using DevTools.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace DevTools.Infrastructure.Repositories.impl
+namespace DevTools.DataAccess.Repositories.impl
 {
     public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : BaseEntity
     {

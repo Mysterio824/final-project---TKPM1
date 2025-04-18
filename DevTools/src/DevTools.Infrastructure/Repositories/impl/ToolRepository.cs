@@ -1,10 +1,11 @@
-﻿using DevTools.Domain.Entities;
+﻿using DevTools.DataAccess.Persistence;
+using DevTools.DataAccess.Repositories;
+using DevTools.Domain.Entities;
 using DevTools.Domain.Exceptions;
-using DevTools.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace DevTools.Infrastructure.Repositories.impl
+namespace DevTools.DataAccess.Repositories.impl
 {
     public class ToolRepository(
         DatabaseContext context,

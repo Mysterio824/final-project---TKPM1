@@ -17,8 +17,13 @@ namespace DevTools.UI.Services
 
         public ApiService()
         {
-            _httpClient = new HttpClient();
-            _httpClient.BaseAddress = new Uri("http://0.0.0.0:5000");
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+
+            _httpClient = new HttpClient(handler);
+            _httpClient.BaseAddress = new Uri("https://localhost:5000");
             UpdateAuthorizationHeader();
         }
 

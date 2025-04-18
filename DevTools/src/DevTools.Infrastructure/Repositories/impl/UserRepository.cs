@@ -1,7 +1,7 @@
-﻿using DevTools.Domain.Entities;
-using DevTools.Infrastructure.Persistence;
+﻿using DevTools.DataAccess.Persistence;
+using DevTools.Domain.Entities;
 
-namespace DevTools.Infrastructure.Repositories.impl;
+namespace DevTools.DataAccess.Repositories.impl;
 
 public class UserRepository(DatabaseContext context) : BaseRepository<User>(context), IUserRepository
 {

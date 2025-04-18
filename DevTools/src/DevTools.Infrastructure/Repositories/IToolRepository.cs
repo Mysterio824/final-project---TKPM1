@@ -1,6 +1,6 @@
 ﻿using DevTools.Domain.Entities;
 
-namespace DevTools.Infrastructure.Repositories
+namespace DevTools.DataAccess.Repositories
 {
     public interface IToolRepository : IBaseRepository<Tool>
     {

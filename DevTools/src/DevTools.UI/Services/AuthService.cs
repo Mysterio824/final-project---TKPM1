@@ -12,37 +12,46 @@ namespace DevTools.UI.Services
 {
     public class AuthService
     {
-        //private readonly HttpClient _httpClient;
+        private readonly HttpClient _httpClient;
         private readonly IMockDao _mockDao;
 
         public AuthService(IMockDao mockDao)
         {
-            //_httpClient = new HttpClient();
-            //_httpClient.BaseAddress = new Uri("http://0.0.0.0:5000");
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+
+            _httpClient = new HttpClient(handler);
+            _httpClient.BaseAddress = new Uri("https://localhost:5000");
             _mockDao = mockDao;
         }
         public event Action? OnLoginStatusChanged;
-        public async Task<bool> LoginAsync(string username, string password)
+        public async Task<bool> LoginAsync(string email, string password)
         {
-            //var response = await _httpClient.PostAsJsonAsync("auth/login", new { username, password });
-            //if (response.IsSuccessStatusCode)
-            //{
-            //    var apiResult = await response.Content.ReadFromJsonAsync<ApiResult<User>>();
-            //    if (apiResult?.Succeeded == true)
-            //    {
-            //        JwtTokenManager.SaveToken(apiResult.Result!.Token);
-            //        AppServices.ApiService.UpdateAuthorizationHeader();
-            //        return true;
-            //    }
-            //}
-            var response = await _mockDao.PostAsync<ApiResult<User>>("auth/login", new { username, password });
-            if (response?.Succeeded == true)
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", new { email, password })
+                ?? throw new Exception("Failed to login.");
+            if (response.IsSuccessStatusCode)
             {
-                JwtTokenManager.SaveToken(response.Result!.Token);
-                //AppServices.ApiService.UpdateAuthorizationHeader();
-                OnLoginStatusChanged?.Invoke();
-                return true;
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResult<User>>();
+                if (apiResult?.Succeeded == true)
+                {
+                    JwtTokenManager.SaveToken(apiResult.Result!.Token);
+                    AppServices.ApiService.UpdateAuthorizationHeader();
+                    return true;
+                }
+            } else
+            {
+
             }
+            //var response = await _mockDao.PostAsync<ApiResult<User>>("api/auth/login", new { username, password });
+            //if (response?.Succeeded == true)
+            //{
+            //    JwtTokenManager.SaveToken(response.Result!.Token);
+            //    AppServices.ApiService.UpdateAuthorizationHeader();
+            //    OnLoginStatusChanged?.Invoke();
+            //    return true;
+            //}
             return false;
         }
 

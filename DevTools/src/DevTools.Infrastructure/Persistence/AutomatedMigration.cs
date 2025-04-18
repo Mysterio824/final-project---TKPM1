@@ -1,8 +1,7 @@
-﻿using DevTools.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DevTools.Infrastructure.Persistence;
+namespace DevTools.DataAccess.Persistence;
 
 public static class AutomatedMigration
 {

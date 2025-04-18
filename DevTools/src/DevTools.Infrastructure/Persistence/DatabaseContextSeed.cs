@@ -1,14 +1,15 @@
-﻿using DevTools.Domain.Entities;
+﻿using DevTools.DataAccess.Repositories;
+using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
-using DevTools.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace DevTools.Infrastructure.Persistence;
+namespace DevTools.DataAccess.Persistence;
 
 public class DatabaseContextSeed(
-    ILogger<DatabaseContextSeed> logger, 
+    ILogger<DatabaseContextSeed> logger,
     IUserRepository userRepository
-) {
+)
+{
     private readonly ILogger<DatabaseContextSeed> _logger = logger;
     private readonly IUserRepository _userRepository = userRepository;
 

@@ -2,14 +2,12 @@
 using DevTools.Application.DTOs.Response;
 using DevTools.Application.DTOs.Response.Tool;
 using DevTools.Domain.Entities;
-using DevTools.Infrastructure.Repositories;
 using DevTools.Application.Helpers;
 using Microsoft.Extensions.Logging;
 using AutoMapper;
 using DevTools.Application.Exceptions;
 using DevTools.Application.Utils;
-using DevTools.Infrastructure.Repositories.impl;
-using DevTools.Application.DTOs.Response.ToolGroup;
+using DevTools.DataAccess.Repositories;
 
 namespace DevTools.Application.Services.Impl
 {

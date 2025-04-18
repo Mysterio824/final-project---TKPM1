@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using DevTools.Domain.Common;
 
-namespace DevTools.Infrastructure.Repositories
+namespace DevTools.DataAccess.Repositories
 {
     public interface IBaseRepository<TEntity> where TEntity : BaseEntity
     {

@@ -1,12 +1,12 @@
-﻿using DevTools.Domain.Entities;
-using DevTools.Infrastructure.Persistence;
+﻿using DevTools.DataAccess.Persistence;
+using DevTools.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace DevTools.Infrastructure.Repositories.impl
+namespace DevTools.DataAccess.Repositories.impl
 {
     public class FavoriteToolRepository(DatabaseContext context) : BaseRepository<FavoriteTool>(context), IFavoriteToolRepository
     {
-        public async Task<IEnumerable<FavoriteTool>> GetAll(int userId) 
+        public async Task<IEnumerable<FavoriteTool>> GetAll(int userId)
             => await GetAllAsync(ti => ti.UserId == userId);
 
         public async Task<FavoriteTool?> GetAsync(int userId, int toolId)

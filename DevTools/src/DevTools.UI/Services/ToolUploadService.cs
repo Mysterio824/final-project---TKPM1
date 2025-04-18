@@ -20,7 +20,7 @@ namespace DevTools.UI.Services
         public ToolUploadService(IMockDao mockDao)
         {
             //_httpClient = new HttpClient();
-            //_httpClient.BaseAddress = new Uri("http://0.0.0.0:5000");
+            //_httpClient.BaseAddress = new Uri("https://localhost:5000");
             _mockDao = mockDao;
         }
 
@@ -33,7 +33,7 @@ namespace DevTools.UI.Services
 
             //var response = await _httpClient.PostAsync("admin/tools/upload", content);
             //return response.IsSuccessStatusCode;
-            var endpoint = "admin/tools/upload";
+            var endpoint = "api/tool/add";
             var data = new
             {
                 name,
@@ -47,8 +47,9 @@ namespace DevTools.UI.Services
 
         public async Task<bool> EnableToolAsync(int id, bool enable)
         {
+            //action. Use 'disable', 'enable', 'setpremium', or 'setfree'."
             //var response = await _httpClient.PostAsJsonAsync($"admin/tools/{id}/set-enabled", new { enabled = enable });
-            var endpoint = $"admin/tools/{id}/set-enabled";
+            var endpoint = $"api/tool/{id}/enable";
             var data = new { enabled = enable };
             var response = await _mockDao.PostAsync<ApiResult<bool>>(endpoint, data);
             //return response.IsSuccessStatusCode;

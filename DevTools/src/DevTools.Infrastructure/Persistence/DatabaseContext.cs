@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DevTools.Domain.Entities;
 
-namespace DevTools.Infrastructure.Persistence;
+namespace DevTools.DataAccess.Persistence;
 
 public class DatabaseContext : DbContext
 {

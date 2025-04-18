@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DevTools.Infrastructure\DevTools.Infrastructure.csproj" />
+    <ProjectReference Include="..\DevTools.Infrastructure\DevTools.DataAccess.csproj" />
   </ItemGroup>
 
   <ItemGroup>

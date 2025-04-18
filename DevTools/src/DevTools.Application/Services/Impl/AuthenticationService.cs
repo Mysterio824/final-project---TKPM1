@@ -1,11 +1,11 @@
-﻿using DevTools.Infrastructure.Repositories;
-using DevTools.Domain.Entities;
+﻿using DevTools.Domain.Entities;
 using DevTools.Application.Exceptions;
 using Microsoft.Extensions.Logging;
 using DevTools.Application.Utils;
 using DevTools.Application.DTOs.Request.User;
 using DevTools.Application.DTOs.Response.User;
 using AutoMapper;
+using DevTools.DataAccess.Repositories;
 
 namespace DevTools.Application.Services.Impl
 {
@@ -26,7 +26,6 @@ namespace DevTools.Application.Services.Impl
         {
             ValidationUtils.ValidateEmail(loginDto.Email);
 
-            ValidationUtils.ValidateEmail(loginDto.Email);
             var user = await _userRepository.GetByEmailAsync(loginDto.Email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                 throw new BadRequestException("Invalid email or password");

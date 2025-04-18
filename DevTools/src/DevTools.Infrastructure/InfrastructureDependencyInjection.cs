@@ -1,13 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using DevTools.Infrastructure.Persistence;
-using DevTools.Infrastructure.Repositories;
-using DevTools.Infrastructure.Repositories.impl;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using DevTools.DataAccess.Repositories;
+using DevTools.DataAccess.Repositories.impl;
+using DevTools.DataAccess.Persistence;
 
-namespace DevTools.Infrastructure;
+namespace DevTools.DataAccess;
 
 public static class InfrastructureDependencyInjection
 {

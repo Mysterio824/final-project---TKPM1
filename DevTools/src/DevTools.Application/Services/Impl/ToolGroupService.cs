@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using DevTools.Application.DTOs.Request.ToolGroup;
 using DevTools.Application.DTOs.Response;
-using DevTools.Application.DTOs.Response.Tool;
 using DevTools.Application.DTOs.Response.ToolGroup;
 using DevTools.Application.Exceptions;
+using DevTools.DataAccess.Repositories;
 using DevTools.Domain.Entities;
-using DevTools.Infrastructure.Repositories;
-using DevTools.Infrastructure.Repositories.impl;
 
 namespace DevTools.Application.Services.Impl
 {

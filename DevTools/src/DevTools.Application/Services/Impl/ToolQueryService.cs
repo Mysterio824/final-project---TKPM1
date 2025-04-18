@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
-using DevTools.Infrastructure.Repositories;
 using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
 using DevTools.Application.DTOs.Response.Tool;
-using System.IO;
 using DevTools.Application.Exceptions;
 using Microsoft.Extensions.Logging;
+using DevTools.DataAccess.Repositories;
 
 namespace DevTools.Application.Services.Impl
 {

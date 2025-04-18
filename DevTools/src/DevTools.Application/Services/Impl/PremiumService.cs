@@ -1,7 +1,7 @@
 ﻿using DevTools.Application.Exceptions;
-using DevTools.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 using DevTools.Domain.Enums;
+using DevTools.DataAccess.Repositories;
 
 namespace DevTools.Application.Services.Impl
 {

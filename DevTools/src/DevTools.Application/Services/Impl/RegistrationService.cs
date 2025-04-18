@@ -1,11 +1,11 @@
-﻿using DevTools.Infrastructure.Repositories;
-using DevTools.Domain.Entities;
+﻿using DevTools.Domain.Entities;
 using DevTools.Domain.Enums;
 using DevTools.Application.Utils;
 using Microsoft.Extensions.Logging;
 using DevTools.Application.Templates;
 using DevTools.Application.DTOs.Request.User;
 using DevTools.Application.DTOs.Response.User;
+using DevTools.DataAccess.Repositories;
 
 namespace DevTools.Application.Services.Impl
 {

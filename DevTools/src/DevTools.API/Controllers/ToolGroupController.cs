@@ -34,7 +34,7 @@ namespace DevTools.API.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost]
+        [HttpPost("add")]
         public async Task<IActionResult> CreateAsync(CreateToolGroupDto request)
         {
             return Ok(ApiResult<CreateToolGroupResponseDto>.Success(

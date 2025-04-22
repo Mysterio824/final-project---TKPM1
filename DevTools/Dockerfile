@@ -7,7 +7,7 @@ COPY . ./
 COPY src/DevTools.API/*.csproj ./src/DevTools.API/
 COPY src/DevTools.Application/*.csproj ./src/DevTools.Application/
 COPY src/DevTools.Domain/*.csproj ./src/DevTools.Domain/
-COPY src/DevTools.Infrastructure/*.csproj ./src/DevTools.Infrastructure/
+COPY src/DevTools.DataAccess/*.csproj ./src/DevTools.DataAccess/
 
 # Restore dependencies
 WORKDIR /app/src/DevTools.API

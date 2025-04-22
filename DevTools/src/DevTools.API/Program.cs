@@ -4,6 +4,7 @@ using DevTools.Application.Services;
 using DevTools.Application;
 using DevTools.DataAccess.Persistence;
 using DevTools.DataAccess;
+using DevTools.Application.Helpers;
 
 namespace DevTools.API;
 
@@ -35,7 +36,6 @@ public class Program
 
         try
         {
-            ConfigureToolWatcher(app);
             ConfigureMiddleware(app);
 
             app.Logger.LogInformation("Application fully started. Listening on {Urls}",
@@ -48,13 +48,6 @@ public class Program
             app.Logger.LogError(ex, "Application failed to start. Details: {Message}", ex.Message);
             throw;
         }
-    }
-
-    private static void ConfigureToolWatcher(WebApplication app)
-    {
-        var toolService = app.Services.CreateScope().ServiceProvider.GetRequiredService<IToolCommandService>();
-        var toolWatcher = new ToolWatcher("Tools", toolService);
-        toolWatcher.StartWatching();
     }
 
     private static void ConfigureMiddleware(WebApplication app)

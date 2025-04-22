@@ -10,10 +10,14 @@ namespace DevTools.Application.Services.Impl
 {
     public class ToolGroupService(
         IToolGroupRepository toolGroupRepository,
+        IToolCommandService toolCommand,
+        IToolRepository toolRepository,
         IMapper mapper
         ) : IToolGroupService
     {
         private readonly IToolGroupRepository _toolGroupRepository = toolGroupRepository ?? throw new ArgumentNullException(nameof(toolGroupRepository));
+        private readonly IToolCommandService _toolCommand = toolCommand ?? throw new ArgumentNullException(nameof(toolCommand));
+        private readonly IToolRepository _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
         private readonly IMapper _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         public async Task<CreateToolGroupResponseDto> CreateAsync(CreateToolGroupDto request)
         {
@@ -44,9 +48,14 @@ namespace DevTools.Application.Services.Impl
         {
             var toolGroup = await _toolGroupRepository.GetByIdAsync(id)
                 ?? throw new NotFoundException($"Tool group with id {id} not found.");
+            var toolList = await _toolRepository.GetByGroupAsync(id);
+            foreach (var tool in toolList)
+            {
+                await _toolCommand.DeleteToolAsync(tool.Id);
+            }
+            
             var result = await _toolGroupRepository.DeleteAsync(toolGroup);
             return _mapper.Map<BaseResponseDto>(result);
-
         }
 
         public async Task<IEnumerable<ToolGroupResponseDto>> GetAllAsync()

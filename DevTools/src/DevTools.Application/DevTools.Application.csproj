@@ -17,8 +17,4 @@
     <ProjectReference Include="..\DevTools.DataAccess\DevTools.DataAccess.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Tools\" />
-  </ItemGroup>
-
 </Project>

@@ -23,7 +23,7 @@ namespace DevTools.API.Controllers
             return Ok(ApiResult<IEnumerable<ToolGroupResponseDto>>.Success(await _toolGroupService.GetAllAsync()));
         }
 
-        [HttpGet("{id}/todoItems")]
+        [HttpGet("{id}/tools")]
         public async Task<IActionResult> GetAllToolItemsAsync(int id)
         {
             var userRole =  GetUserRole();

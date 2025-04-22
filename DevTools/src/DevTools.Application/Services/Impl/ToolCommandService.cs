@@ -197,13 +197,13 @@ namespace DevTools.Application.Services.Impl
 
         public async Task UpdateToolList()
         {
+            _logger.LogInformation("Updating tool list...");
             await _toolLock.WaitAsync();
             try
             {
-                var discoveredToolPaths = new HashSet<string>();
                 var existingTools = await _toolRepository.GetAll();
 
-                ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, discoveredToolPaths, existingTools, _fileService, _logger);
+                var discoveredToolPaths = ToolDiscoveryHelper.ProcessDiscoveredDlls(_toolDirectory, existingTools, _fileService, _logger);
 
                 await ToolDiscoveryHelper.RemoveUnusedTools(existingTools, discoveredToolPaths, _toolRepository);
             }

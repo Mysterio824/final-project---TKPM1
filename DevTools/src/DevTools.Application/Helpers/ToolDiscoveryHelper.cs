@@ -1,6 +1,4 @@
-﻿using DevTools.Application.Common;
-using DevTools.Application.Services;
-using DevTools.Application.Utils;
+﻿using DevTools.Application.Services;
 using DevTools.DataAccess.Repositories;
 using DevTools.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -9,34 +7,48 @@ namespace DevTools.Application.Helpers
 {
     public static class ToolDiscoveryHelper
     {
-        public static void ProcessDiscoveredDlls(
-            string toolDirectory, 
-            HashSet<string> discoveredToolPaths, 
+        public static HashSet<string> ProcessDiscoveredDlls(
+            string toolDirectory,
             IEnumerable<Tool> existingTools,
             IFileService fileService,
             ILogger logger)
         {
-            foreach (var dllPath in Directory.GetFiles(toolDirectory, "*.dll"))
+            HashSet<string> discoveredToolPaths = new HashSet<string>();
+
+            foreach (var filePath in Directory.GetFiles(toolDirectory))
             {
                 try
                 {
-                    var fileName = Path.GetFileName(dllPath);
+                    var fileName = Path.GetFileName(filePath);
+                    var extension = Path.GetExtension(filePath);
 
-                    discoveredToolPaths.Add(fileName);
-
-                    if (!(existingTools
-                        .Any(t => t.Name
-                            .Equals(fileName, StringComparison.OrdinalIgnoreCase))))
+                    if (!extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
                     {
-                        fileService.DeleteFile(dllPath);
-                        logger.LogInformation("Deleted unmatched DLL file: {DllPath}", dllPath);
+                        fileService.DeleteFile(filePath);
+                        logger.LogInformation("Deleted non-DLL file: {FilePath}", filePath);
+                        continue;
+                    }
+
+
+                    var isMatched = existingTools.Any(t =>
+                        Path.GetFileName(t.DllPath).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+                    if (!isMatched)
+                    {
+                        fileService.DeleteFile(filePath);
+                        logger.LogInformation("Deleted unmatched DLL file: {FilePath}", filePath);
+                    } else
+                    {
+                        discoveredToolPaths.Add(fileName);
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("Error processing DLL {DllPath}: {ErrorMessage}", dllPath, ex.Message);
+                    logger.LogError(ex, "Error processing file: {FilePath}", filePath);
+                    return new HashSet<string>();
                 }
             }
+            return discoveredToolPaths;
         }
 
         public static async Task RemoveUnusedTools(IEnumerable<Tool> existingTools, HashSet<string> discoveredToolPaths, IToolRepository toolRepository)

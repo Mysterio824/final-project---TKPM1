@@ -17,14 +17,18 @@ namespace DevTools.Application.Services.Impl
             Directory.CreateDirectory(_toolDirectory);
         }
 
-        public string SaveFile(IFormFile file, String name)
+        public string SaveFile(IFormFile file, string name)
         {
-            string filePath = Path.Combine(_toolDirectory, name);
+            string safeName = Path.GetFileNameWithoutExtension(name) + ".dll";
+            string filePath = Path.Combine(_toolDirectory, safeName);
+
             using var stream = new FileStream(filePath, FileMode.Create);
             file.CopyTo(stream);
+
             _logger.LogInformation("Saved file to {FilePath}", filePath);
             return filePath;
         }
+
 
         public void DeleteFile(string filePath)
         {

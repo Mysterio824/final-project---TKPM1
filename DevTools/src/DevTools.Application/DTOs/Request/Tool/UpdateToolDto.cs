@@ -16,6 +16,6 @@ namespace DevTools.Application.DTOs.Request.Tool
 
         public required int GroupId { get; set; }
 
-        public FormFile File { get; set; }
+        public IFormFile? File { get; set; }
     }
 }

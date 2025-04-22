@@ -85,6 +85,15 @@ namespace DevTools.API.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPut("edit")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> EditTool([FromForm] UpdateToolDto request)
+        {
+            return Ok(ApiResult<UpdateToolResponseDto>
+                .Success(await _toolCommandService.UpdateToolAsync(request)));
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTool(int id)
         {

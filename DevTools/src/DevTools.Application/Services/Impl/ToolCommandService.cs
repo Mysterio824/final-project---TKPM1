@@ -103,18 +103,27 @@ namespace DevTools.Application.Services.Impl
                     throw new NotFoundException($"Tool {request.Id} not found.");
                 }
 
-                FileHelper.ValidateToolFile(request.File);
-                string oldFilePath = tool.DllPath;
-                _fileService.DeleteFile(oldFilePath);
-
                 var toolGroup = await _toolGroupRepository.GetByIdAsync(request.GroupId)
                     ?? throw new NotFoundException($"Tool group {request.GroupId} not found.");
 
-                string filePath = _fileService.SaveFile(request.File, request.Name);
+                string filePath = tool.DllPath;
 
-                tool = _mapper.Map<Tool>(request);
-                tool.DllPath = filePath;
+                // Handle file update if provided
+                if (request.File != null)
+                {
+                    FileHelper.ValidateToolFile(request.File);
+                    string oldFilePath = tool.DllPath;
+                    _fileService.DeleteFile(oldFilePath);
+                    filePath = _fileService.SaveFile(request.File, request.Name);
+                }
+
+                // Update tool properties
+                tool.Name = request.Name;
+                tool.Description = request.Description;
+                tool.IsPremium = request.IsPremium;
+                tool.IsEnabled = request.IsEnabled;
                 tool.Group = toolGroup;
+                tool.DllPath = filePath;
 
                 await _toolRepository.UpdateAsync(tool);
 

@@ -64,10 +64,9 @@ namespace DevTools.UI.Views
             exitAnimation.Children.Add(fadeOut);
 
             var toolService = App.ServiceProvider.GetService(typeof(ToolService)) as ToolService;
-            
+            var toolGroupService = App.ServiceProvider.GetService(typeof(ToolGroupService)) as ToolGroupService;
             if (user.IsAdmin)
             {
-                var toolGroupService = App.ServiceProvider.GetService(typeof(ToolGroupService)) as ToolGroupService;
                 var adminViewModel = new AdminDashboardViewModel(
                     toolService,
                     toolGroupService,
@@ -85,11 +84,12 @@ namespace DevTools.UI.Views
                 var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
                 var viewModel = new DashboardViewModel(
                     toolService,
+                    toolGroupService,
                     accountService,
                     authService,
                     onLogout: () =>
                     {
-                        Frame.Navigate(typeof(DashboardPage), new DashboardViewModel(toolService, accountService, authService, () => { }));
+                        Frame.Navigate(typeof(DashboardPage), new DashboardViewModel(toolService, toolGroupService, accountService, authService, () => { }));
                     },
                     user
                 );

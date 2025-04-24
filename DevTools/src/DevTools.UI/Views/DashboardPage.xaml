@@ -18,180 +18,344 @@
 		<cv:EmptyCollectionToVisibilityConverter x:Key="EmptyCollectionToVisibilityConverter"/>
 		<cv:PremiumButtonTextConverter x:Key="PremiumButtonTextConverter"/>
 		<cv:PremiumCommandConverter x:Key="PremiumCommandConverter"/>
-	</Page.Resources>
-		
-    <Grid Padding="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <SolidColorBrush x:Key="SidePanelBackgroundBrush" Color="{ThemeResource SystemChromeWhiteColor}"/>
+        <x:Double x:Key="SidePanelExpandedWidth">250</x:Double>
+        <x:Double x:Key="SidePanelCollapsedWidth">48</x:Double>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Image Source="/Assets/logo.png" Width="40" Height="40" Margin="0,0,15,0"/>
-                <TextBlock Text="IT Tools" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center"/>
-            </StackPanel>
+        <Style x:Key="ToolCardStyle" TargetType="Grid">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="Padding" Value="15"/>
+        </Style>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <StackPanel x:Name="AnonymousUI" Orientation="Horizontal" Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                    <Button x:Name="LoginButton" Content="Login" Margin="5,0" Click="LoginButton_Click"/>
-                    <Button x:Name="RegisterButton" Content="Register" Margin="5,0" Click="RegisterButton_Click"/>
+        <DataTemplate x:Key="SearchResultItemTemplate" x:DataType="model:Tool">
+            <Grid Padding="12" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon Grid.Column="0" 
+                      Glyph="{x:Bind SymbolGlyph}" 
+                      Margin="0,0,12,0"
+                      VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind Name}" 
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           FontWeight="SemiBold"/>
+                    <TextBlock Text="{x:Bind Description}" 
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           TextTrimming="CharacterEllipsis"
+                           Opacity="0.6"/>
                 </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
 
-                <StackPanel x:Name="UserUI" Orientation="Horizontal" Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{x:Bind ViewModel.CurrentUser.Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <Button x:Name="FavoritesButton" 
-                            ToolTipService.ToolTip="My Favorites" 
-                            Margin="5,0" 
-                            Click="FavoritesButton_Click">
-                        <FontIcon Glyph="&#xE00B;"/>
-                    </Button>
-                    <Button x:Name="RequestPremiumButton" 
-                        Content="Get Premium" 
-                        Margin="5,0" 
-                        Command="{x:Bind ViewModel.RequestPremiumCommand}"
-                        Visibility="{x:Bind ViewModel.IsPremium, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="SidebarColumn" Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-                    <Button x:Name="RevokePremiumButton" 
-                        Content="Revoke Premium" 
-                        Margin="5,0" 
-                        Command="{x:Bind ViewModel.RevokePremiumCommand}"
-                        Visibility="{x:Bind ViewModel.IsPremium, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                    <Button x:Name="LogoutButton" 
-                            Command="{x:Bind ViewModel.LogoutCommand}" 
-                            Margin="5,0">
-                        <FontIcon Glyph="&#xE7E8;"/>
-                    </Button>
-                </StackPanel>
-            </StackPanel>
-        </Grid>
-
-        <Grid Grid.Row="1" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBox Grid.Column="0" 
-                     PlaceholderText="Search tools..." 
-                     Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,0,10,0"/>
-            
-            <Button Grid.Column="1" 
-                    Content="Search" 
-                    Command="{x:Bind ViewModel.SearchCommand}"/>
-        </Grid>
-
-        <Grid Grid.Row="2">
+        <!-- Side Panel -->
+        <Grid x:Name="SidePanel" 
+          Grid.Column="0" 
+          Width="{StaticResource SidePanelExpandedWidth}"
+          Background="{StaticResource SidePanelBackgroundBrush}">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Image Grid.Row="0" Source="/Assets/logo2.png" Width="100" Height="100" Stretch="Fill" Margin="0,0,0,0" VerticalAlignment="Center"/>
+
+            <!-- Tool Categories List -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater x:Name="ToolGroupsRepeater" 
+                           ItemsSource="{x:Bind ViewModel.ToolGroups, Mode=OneWay}">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="model:ToolGroup">
+                            <Expander HorizontalAlignment="Stretch" 
+                                  Header="{x:Bind Name}"
+                                  IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
+                                <ListView ItemsSource="{x:Bind Tools}" 
+                                      SelectionMode="Single"
+                                      IsItemClickEnabled="True"
+                                      ItemClick="SidebarToolItem_Click">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="model:Tool">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{x:Bind Name}" 
+                                                       TextTrimming="CharacterEllipsis"/>
+                                                <FontIcon Glyph="&#xEB29;" 
+                                                      Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}" 
+                                                      Foreground="Gold"
+                                                      Margin="4,0,0,0"
+                                                      FontSize="12"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Main Content -->
+        <Grid Grid.Column="1" Padding="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" 
-                       Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
-                       Foreground="Red" 
-                       TextWrapping="Wrap" 
-                       Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"/>
+            <!-- Enhanced Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <GridView Grid.Row="1" 
-                      ItemsSource="{x:Bind ViewModel.Tools, Mode=OneWay}" 
+                <!-- Toggle Button for side panel -->
+                <Button Grid.Row="0" 
+                        x:Name="ToggleSidePanelButton"
+                        HorizontalAlignment="Right" 
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,4,4"
+                        Click="ToggleSidePanel_Click">
+                    <FontIcon x:Name="TogglePanelIcon" Glyph="&#xE76B;"/>
+                </Button>
+                <!-- Home Button -->
+                <Button Grid.Column="1" 
+                    x:Name="HomeButton"
+                    Margin="0,0,15,0"
+                    Click="HomeButton_Click"
+                    Background="Transparent"
+                    BorderBrush="Transparent">
+                    <FontIcon Glyph="&#xE80F;"/>
+                </Button>
+
+                <!-- Search Bar with Suggestions -->
+                <AutoSuggestBox Grid.Column="2"
+                           x:Name="SearchBox" 
+                           PlaceholderText="Search tools..." 
+                           Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           QueryIcon="Find"
+                           TextChanged="SearchBox_TextChanged"
+                           SuggestionChosen="SearchBox_SuggestionChosen"
+                           QuerySubmitted="SearchBox_QuerySubmitted"
+                           ItemTemplate="{StaticResource SearchResultItemTemplate}"/>
+
+                <!-- Right Header Controls -->
+                <StackPanel Grid.Column="3" 
+                        Orientation="Horizontal" 
+                        HorizontalAlignment="Right">
+
+                    <!-- Language Selector -->
+                    <ComboBox x:Name="LanguageSelector"
+                          Width="100"
+                          Margin="5,0"
+                          VerticalAlignment="Center"
+                          SelectedIndex="0"
+                          SelectionChanged="LanguageSelector_SelectionChanged">
+                        <ComboBoxItem Content="English"/>
+                        <ComboBoxItem Content="Spanish"/>
+                        <ComboBoxItem Content="French"/>
+                        <ComboBoxItem Content="German"/>
+                    </ComboBox>
+
+                    <!-- Theme Toggle -->
+                    <ToggleButton x:Name="ThemeToggle"
+                              Click="ThemeToggle_Click"
+                              ToolTipService.ToolTip="Toggle Theme"
+                              Background="Transparent"
+                                BorderBrush="Transparent">
+                        <FontIcon x:Name="ThemeIcon" Glyph="&#xE793;"/>
+                    </ToggleButton>
+
+                    <!-- Info Button -->
+                    <Button x:Name="InfoButton"
+                        Click="InfoButton_Click"
+                        ToolTipService.ToolTip="About"
+                            Background="Transparent"
+                            BorderBrush="Transparent">
+                        <FontIcon Glyph="&#xE946;"/>
+                    </Button>
+
+                    <!-- GitHub Link -->
+                    <HyperlinkButton x:Name="GitHubLink"
+                                 NavigateUri="https://github.com/yourusername/ittools"
+                                 ToolTipService.ToolTip="GitHub Repository"
+                                     Background="Transparent"
+                                    BorderBrush="Transparent">
+                        <Image Grid.Row="0" Source="/Assets/github.svg" Width="20" Height="20" VerticalAlignment="Center"/>
+                    </HyperlinkButton>
+
+                    <!-- Anonymous UI -->
+                    <StackPanel x:Name="AnonymousUI" 
+                            Orientation="Horizontal" 
+                            Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <Button x:Name="LoginButton" Content="Login" Margin="5,0" Click="LoginButton_Click"/>
+                        <Button x:Name="RegisterButton" Content="Register" Margin="5,0" Click="RegisterButton_Click"/>
+                    </StackPanel>
+
+                    <!-- User UI -->
+                    <StackPanel x:Name="UserUI" 
+                            Orientation="Horizontal" 
+                            Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{x:Bind ViewModel.CurrentUser.Name, Mode=OneWay}" 
+                               VerticalAlignment="Center" 
+                               Margin="0,0,10,0"/>
+                        <Button x:Name="FavoritesButton" 
+                            ToolTipService.ToolTip="My Favorites" 
+                            Margin="5,0" 
+                            Click="FavoritesButton_Click">
+                            <FontIcon Glyph="&#xE00B;"/>
+                        </Button>
+                        <Button x:Name="RequestPremiumButton" 
+                            ToolTipService.ToolTip="Get Premium"
+                            Margin="5,0" 
+                            Command="{x:Bind ViewModel.RequestPremiumCommand}"
+                            Visibility="{x:Bind ViewModel.IsPremium, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <Button.Content>
+                                <Image Source="/Assets/premium.svg" Width="120" Height="120" VerticalAlignment="Center"/>
+                            </Button.Content>
+                        </Button>
+                        <Button x:Name="LogoutButton" 
+                            Command="{x:Bind ViewModel.LogoutCommand}" 
+                            ToolTipService.ToolTip="Logout"
+                            Margin="5,0"
+                                Background="Transparent"
+                                BorderBrush="Transparent">
+                            <FontIcon Glyph="&#xE7E8;"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Error Message -->
+            <TextBlock Grid.Row="1" 
+                   Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
+                   Foreground="Red" 
+                   TextWrapping="Wrap" 
+                   Margin="0,0,0,10"
+                   Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"/>
+
+            <!-- Main Tool Grid -->
+            <Grid Grid.Row="2">
+                <GridView ItemsSource="{x:Bind ViewModel.Tools, Mode=OneWay}" 
                       SelectedItem="{x:Bind ViewModel.SelectedTool, Mode=TwoWay}"
                       SelectionMode="Single"
                       IsItemClickEnabled="True"
                       ItemClick="ToolsGridView_ItemClick">
-                <GridView.ItemTemplate>
-                    <DataTemplate x:DataType="model:Tool">
-                        <Grid Width="300" Height="200" Margin="10" Padding="15" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:DataType="model:Tool">
+                            <Grid Style="{StaticResource ToolCardStyle}" Width="300" Height="200" Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" 
+                                <!-- Tool header with name and premium badge -->
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Tool Symbol -->
+                                    <FontIcon Grid.Column="0" 
+                                          Glyph="{x:Bind SymbolGlyph}" 
+                                          Margin="0,0,10,0"/>
+
+                                    <!-- Tool Name -->
+                                    <TextBlock Grid.Column="1" 
                                            Text="{x:Bind Name}" 
                                            Style="{StaticResource SubtitleTextBlockStyle}" 
                                            TextTrimming="CharacterEllipsis"/>
-                                
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <FontIcon Glyph="&#xEB29;" 
-                                              Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}" 
-                                              Foreground="Gold"/>
-                                </StackPanel>
-                            </Grid>
 
-                            <TextBlock Grid.Row="1" 
-                                       Text="{x:Bind Description}" 
+                                    <!-- Premium Badge -->
+                                    <FontIcon Grid.Column="2" 
+                                          Glyph="&#xEB29;" 
+                                          Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}" 
+                                          Foreground="Gold"/>
+                                </Grid>
+
+                                <!-- Tool Category -->
+                                <TextBlock Grid.Row="1" 
+                                       Text="{x:Bind GroupName}" 
                                        Style="{StaticResource CaptionTextBlockStyle}" 
                                        Opacity="0.6" 
                                        Margin="0,5,0,0"/>
 
-                            <TextBlock Grid.Row="2" 
+                                <!-- Tool Description -->
+                                <TextBlock Grid.Row="2" 
                                        Text="{x:Bind Description}" 
                                        Style="{StaticResource BodyTextBlockStyle}" 
                                        TextWrapping="Wrap" 
                                        TextTrimming="CharacterEllipsis" 
                                        Margin="0,10,0,0"/>
 
-                            <StackPanel Grid.Row="3" 
+                                <!-- Tool Actions -->
+                                <StackPanel Grid.Row="3" 
                                         Orientation="Horizontal" 
                                         HorizontalAlignment="Right" 
                                         VerticalAlignment="Bottom">
-                                
-                                <Button IsEnabled="{Binding DataContext.IsAuthenticated, ElementName=ToolsGridView, Converter={StaticResource BoolToVisibilityConverter}}" 
+
+                                    <!-- Add to favorites button -->
+                                    <Button IsEnabled="{Binding DataContext.IsAuthenticated, ElementName=ToolsGridView, Converter={StaticResource BoolToVisibilityConverter}}" 
                                         Command="{Binding DataContext.AddToFavoritesCommand, ElementName=ToolsGridView}"
                                         CommandParameter="{x:Bind}"
                                         Visibility="{x:Bind IsFavorite, Converter={StaticResource InverseBoolToVisibilityConverter}}"
-                                        Margin="5,0">
-                                    <FontIcon Glyph="&#xE006;"/>
-                                </Button>
+                                        Margin="5,0"
+                                        ToolTipService.ToolTip="Add to Favorites">
+                                        <FontIcon Glyph="&#xE006;"/>
+                                    </Button>
 
-                                <Button IsEnabled="{Binding DataContext.IsAuthenticated, ElementName=ToolsGridView, Converter={StaticResource BoolToVisibilityConverter}}" 
+                                    <!-- Remove from favorites button -->
+                                    <Button IsEnabled="{Binding DataContext.IsAuthenticated, ElementName=ToolsGridView, Converter={StaticResource BoolToVisibilityConverter}}" 
                                         Command="{Binding DataContext.RemoveFromFavoritesCommand, ElementName=ToolsGridView}"
                                         CommandParameter="{x:Bind}"
                                         Visibility="{x:Bind IsFavorite, Converter={StaticResource BoolToVisibilityConverter}}"
-                                        Margin="5,0">
-                                    <FontIcon Glyph="&#xE00B;" Foreground="Gold"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-                    </DataTemplate>
-                </GridView.ItemTemplate>
-                
-                <GridView.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <ItemsWrapGrid Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </GridView.ItemsPanel>
-            </GridView>
+                                        Margin="5,0"
+                                        ToolTipService.ToolTip="Remove from Favorites">
+                                        <FontIcon Glyph="&#xE00B;" Foreground="Gold"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
 
-            <ProgressRing Grid.Row="1" 
-                          IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                </GridView>
+
+                <!-- Loading Indicator -->
+                <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
                           Width="50" 
                           Height="50" 
                           HorizontalAlignment="Center" 
                           VerticalAlignment="Center"/>
 
-            <TextBlock Grid.Row="1" 
-                       Text="No tools found matching your search criteria." 
+                <!-- No Results Message -->
+                <TextBlock Text="No tools found matching your search criteria." 
                        HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
                        Visibility="{x:Bind ViewModel.Tools.Count, Mode=OneWay, Converter={StaticResource EmptyCollectionToVisibilityConverter}}"/>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

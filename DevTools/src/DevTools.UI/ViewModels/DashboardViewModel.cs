@@ -18,16 +18,19 @@ namespace DevTools.UI.ViewModels
     public class DashboardViewModel : BaseViewModel
     {
         private readonly ToolService _toolService;
+        private readonly ToolGroupService _toolGroupService;
         private readonly AccountService _accountService;
         private readonly AuthService _authService;
         private readonly Action _onLogout;
 
         private string _searchQuery;
         private ObservableCollection<Tool> _tools;
+        private ObservableCollection<ToolGroup> _toolGroup;
         private Tool _selectedTool;
         private User _currentUser;
         private bool _isLoading;
         private string _errorMessage;
+        private bool _isSidePanelExpanded = true;
 
         public User CurrentUser
         {
@@ -49,6 +52,11 @@ namespace DevTools.UI.ViewModels
             get => _tools;
             set => SetProperty(ref _tools, value);
         }
+        public ObservableCollection<ToolGroup> ToolGroups
+        {
+            get => _toolGroup;
+            set => SetProperty(ref _toolGroup, value);
+        }
 
         public Tool SelectedTool
         {
@@ -67,13 +75,18 @@ namespace DevTools.UI.ViewModels
             get => _errorMessage;
             set => SetProperty(ref _errorMessage, value);
         }
+        public bool IsSidePanelExpanded
+        {
+            get => _isSidePanelExpanded;
+            set => SetProperty(ref _isSidePanelExpanded, value);
+        }
 
         public bool IsAuthenticated => _currentUser != null;
         public bool IsPremium => _currentUser?.IsPremium ?? false;
         public bool IsAdmin => _currentUser?.IsAdmin ?? false;
 
+        public ICommand LoadToolGroupsWithToolsCommand { get; }
         public ICommand SearchCommand { get; }
-        public ICommand LoadToolsCommand { get; }
         public ICommand AddToFavoritesCommand { get; }
         public ICommand RemoveFromFavoritesCommand { get; }
         public ICommand UploadToolCommand { get; }
@@ -81,17 +94,19 @@ namespace DevTools.UI.ViewModels
         public ICommand RevokePremiumCommand { get; }
         public ICommand LogoutCommand { get; }
 
-        public DashboardViewModel(ToolService toolService, AccountService accountService, AuthService authService, Action onLogout, User currentUser = null)
+        public DashboardViewModel(ToolService toolService, ToolGroupService toolGroupService, AccountService accountService, AuthService authService, Action onLogout, User currentUser = null)
         {
             _toolService = toolService;
+            _toolGroupService = toolGroupService;
             _accountService = accountService;
             _authService = authService;
             CurrentUser = currentUser;
             _onLogout = onLogout;
             Tools = new ObservableCollection<Tool>();
+            ToolGroups = new ObservableCollection<ToolGroup>();
 
+            LoadToolGroupsWithToolsCommand = new AsyncCommand(LoadToolGroupsWithToolsAsync);
             SearchCommand = new AsyncCommand(ExecuteSearchAsync);
-            LoadToolsCommand = new AsyncCommand(LoadToolsAsync);
             AddToFavoritesCommand = new AsyncCommand<Tool>(AddToFavoritesAsync, CanModifyFavorites);
             RemoveFromFavoritesCommand = new AsyncCommand<Tool>(RemoveFromFavoritesAsync, CanModifyFavorites);
             UploadToolCommand = new AsyncCommand<Tool>(UploadToolAsync, CanUploadTool);
@@ -105,6 +120,48 @@ namespace DevTools.UI.ViewModels
                 _accountService.SetAuthToken(_currentUser.Token);
             }
         }
+        public async Task LoadToolGroupsWithToolsAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = string.Empty;
+
+                var toolGroups = await _toolGroupService.GetAllToolGroupsAsync();
+
+                ToolGroups.Clear();
+
+                foreach (var group in toolGroups)
+                {
+                    group.IsExpanded = group.IsExpanded;
+
+                    var tools = await _toolGroupService.GetToolsByGroupIdAsync(group.Id);
+
+                    group.Tools.Clear();
+                    foreach (var tool in tools)
+                    {
+                        tool.GroupName = group.Name;
+                        if (string.IsNullOrEmpty(tool.SymbolGlyph))
+                        {
+                            tool.SymbolGlyph = "\uE774";
+                        }
+
+                        group.Tools.Add(tool);
+                    }
+
+                    ToolGroups.Add(group);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading tool groups with tools: {ex.Message}");
+                ErrorMessage = "Failed to load tool categories. Please try again later.";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
         private bool CanModifyFavorites(Tool tool) => IsAuthenticated && tool != null;
         private bool CanUploadTool(Tool tool)
         {
@@ -114,28 +171,6 @@ namespace DevTools.UI.ViewModels
             return true;
         }
 
-        public async Task LoadToolsAsync()
-        {
-            try
-            {
-                IsLoading = true;
-                var tools = await _toolService.GetAllToolsAsync();
-                Tools.Clear();
-                foreach (var tool in tools)
-                {
-                    Tools.Add(tool);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading tools: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
         private async Task ExecuteSearchAsync()
         {
             try
@@ -143,7 +178,7 @@ namespace DevTools.UI.ViewModels
                 IsLoading = true;
                 if (string.IsNullOrWhiteSpace(SearchQuery))
                 {
-                    await LoadToolsAsync();
+                    //await LoadToolsAsync();
                     return;
                 }
 
@@ -245,7 +280,9 @@ namespace DevTools.UI.ViewModels
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                var success = await _accountService.RequestPremiumUpgradeAsync();
+                //var success = await _accountService.RequestPremiumUpgradeAsync();
+                //stimulation
+                var success = true;
                 if (success)
                 {
                     ErrorMessage = "Premium request submitted successfully!";
@@ -311,6 +348,11 @@ namespace DevTools.UI.ViewModels
             {
                 IsLoading = false;
             }
+        }
+        public void ToggleSidePanel()
+        {
+            IsSidePanelExpanded = !IsSidePanelExpanded;
+            OnPropertyChanged(nameof(IsSidePanelExpanded));
         }
     }
 }

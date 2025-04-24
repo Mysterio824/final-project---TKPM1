@@ -99,46 +99,47 @@
                                Opacity="0.7"/>
 				</StackPanel>
 			</Grid>
-
-			<Grid Visibility="{x:Bind ViewModel.IsToolLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+            <ScrollViewer>
+                <Grid Visibility="{x:Bind ViewModel.IsToolLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                   BorderThickness="1"
                   CornerRadius="8"
                   BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                   Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
 
-				<Grid.RowDefinitions>
-					<RowDefinition Height="*"/>
-					<RowDefinition Height="Auto"/>
-				</Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-				<ContentControl Grid.Row="0"
+                    <ContentControl Grid.Row="0"
                                 Content="{Binding ToolUI}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch"/>
 
-				<Grid Grid.Row="1"
+                    <Grid Grid.Row="1"
                       Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                       Padding="16"
                       BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-					<StackPanel Spacing="8">
-						<TextBlock Text="RESULTS"
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="RESULTS"
                                    FontWeight="SemiBold"
                                    FontSize="12"
                                    Opacity="0.7"/>
-						<ContentControl Content="{x:Bind ViewModel.LastResult, Mode=OneWay}">
-							<ContentControl.ContentTemplate>
-								<DataTemplate>
-									<!-- Default result display template -->
-									<TextBlock Text="{Binding}"
+                            <ContentControl Content="{x:Bind ViewModel.LastResult, Mode=OneWay}">
+                                <ContentControl.ContentTemplate>
+                                    <DataTemplate>
+                                        <!-- Default result display template -->
+                                        <TextBlock Text="{Binding}"
                                                TextWrapping="Wrap"/>
-								</DataTemplate>
-							</ContentControl.ContentTemplate>
-						</ContentControl>
-					</StackPanel>
-				</Grid>
-			</Grid>
-		</Grid>
+                                    </DataTemplate>
+                                </ContentControl.ContentTemplate>
+                            </ContentControl>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
 	</Grid>
 </Page>

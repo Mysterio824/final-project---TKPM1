@@ -81,6 +81,9 @@ namespace DevTools.UI
                 var baseUrl = "https://localhost:5000";
                 return new ToolGroupService(httpClient, baseUrl);
             });
+            builder.AddTransient<LoginViewModel>();
+            builder.AddTransient<RegisterViewModel>();
+            builder.AddTransient<AdminDashboardViewModel>();
             builder.AddTransient<DashboardViewModel>();
             builder.AddTransient<ToolDetailViewModel>();
 

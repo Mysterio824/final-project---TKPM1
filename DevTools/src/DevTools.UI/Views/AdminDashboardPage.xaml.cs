@@ -12,10 +12,14 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
-using DevTools.UI.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+using DevTools.UI.ViewModels;
+using Microsoft.AspNetCore.Http.Internal;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -27,167 +31,91 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class AdminDashboardPage : Page
     {
-        private AdminDashboardViewModel ViewModel => DataContext as AdminDashboardViewModel;
+        public AdminDashboardViewModel ViewModel { get; private set; }
 
         public AdminDashboardPage()
         {
             this.InitializeComponent();
-            DataContext = AppServices.AdminDashboardViewModel;
         }
 
-        private async void UploadTool_Click(object sender, RoutedEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            ContentDialog dialog = new ContentDialog
+            base.OnNavigatedTo(e);
+
+            if (e.Parameter is AdminDashboardViewModel viewModel)
             {
-                Title = "Upload New Tool",
-                PrimaryButtonText = "Upload",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
+                ViewModel = viewModel;
+            }
+
+            LoadData();
+        }
+
+        private async void LoadData()
+        {
+            await ViewModel.LoadGroupsAsync();
+            await ViewModel.LoadToolsAsync();
+        }
+
+        private async void OnSelectFileClick(object sender, RoutedEventArgs e)
+        {
+            var filePicker = new FileOpenPicker
+            {
+                ViewMode = PickerViewMode.Thumbnail,
+                SuggestedStartLocation = PickerLocationId.PicturesLibrary
             };
 
-            // Create the content for the dialog
-            StackPanel panel = new StackPanel { Spacing = 10 };
+            filePicker.FileTypeFilter.Add(".dll");
 
-            TextBox nameBox = new TextBox
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
+            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+
+            var file = await filePicker.PickSingleFileAsync();
+            if (file != null)
             {
-                Header = "Tool Name",
-                PlaceholderText = "Enter tool name"
-            };
-            panel.Children.Add(nameBox);
-
-            TextBox descriptionBox = new TextBox
-            {
-                Header = "Description",
-                PlaceholderText = "Enter tool description",
-                TextWrapping = TextWrapping.Wrap,
-                AcceptsReturn = true,
-                Height = 100
-            };
-            panel.Children.Add(descriptionBox);
-
-            ToggleSwitch premiumSwitch = new ToggleSwitch
-            {
-                Header = "Premium Tool",
-                OffContent = "No",
-                OnContent = "Yes"
-            };
-            panel.Children.Add(premiumSwitch);
-
-            Button fileButton = new Button { Content = "Select DLL File" };
-            TextBlock fileNameBlock = new TextBlock { Text = "No file selected" };
-            panel.Children.Add(fileButton);
-            panel.Children.Add(fileNameBlock);
-
-            dialog.Content = panel;
-
-            // Handle file selection (simplified for demo)
-            fileButton.Click += (s, args) =>
-            {
-                fileNameBlock.Text = "example.dll";
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary)
-            {
-                // Process upload (implementation would need access to actual file stream)
-                // This is a placeholder for demonstration
-                ContentDialog uploadingDialog = new ContentDialog
-                {
-                    Title = "Uploading Tool",
-                    Content = "Your tool is being uploaded and processed...",
-                    XamlRoot = this.XamlRoot
-                };
-
-                // Show success message (in production, this would await the actual upload)
-                await uploadingDialog.ShowAsync();
-
-                ContentDialog successDialog = new ContentDialog
-                {
-                    Title = "Success",
-                    Content = $"Tool '{nameBox.Text}' has been uploaded successfully.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-
-                await successDialog.ShowAsync();
+                var formFile = await ConvertToFormFileAsync(file);
+                ViewModel.ToolFile = formFile;
             }
         }
 
-        private void ToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        private async Task<IFormFile> ConvertToFormFileAsync(StorageFile file)
         {
-            if (sender is ToggleSwitch toggle && toggle.DataContext is Tool tool)
+            var stream = await file.OpenStreamForReadAsync();
+            var formFile = new FormFile(stream, 0, stream.Length, file.Name, file.Name)
             {
-                ViewModel.SetToolEnabled(tool);
+                Headers = new HeaderDictionary(),
+                ContentType = file.ContentType
+            };
+
+            return formFile;
+        }
+
+        private void OnClearFormClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SelectTool(null);
+            ViewModel.SelectGroup(null);
+        }
+
+        private void OnToolSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is Tool tool)
+            {
+                ViewModel.SelectTool(tool);
             }
         }
 
-        private async void EditTool_Click(object sender, RoutedEventArgs e)
+        private void OnGroupSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is Button button && button.DataContext is Tool tool)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is ToolGroup group)
             {
-                // Open edit dialog (simplified)
-                ContentDialog dialog = new ContentDialog
-                {
-                    Title = $"Edit Tool: {tool.Name}",
-                    PrimaryButtonText = "Save",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Primary,
-                    XamlRoot = this.XamlRoot
-                };
+                ViewModel.SelectGroup(group);
+            }
+        }
 
-                // Create the content for the dialog
-                StackPanel panel = new StackPanel { Spacing = 10 };
-
-                TextBox nameBox = new TextBox
-                {
-                    Header = "Tool Name",
-                    Text = tool.Name
-                };
-                panel.Children.Add(nameBox);
-
-                TextBox descriptionBox = new TextBox
-                {
-                    Header = "Description",
-                    Text = tool.Description,
-                    TextWrapping = TextWrapping.Wrap,
-                    AcceptsReturn = true,
-                    Height = 100
-                };
-                panel.Children.Add(descriptionBox);
-
-                ToggleSwitch premiumSwitch = new ToggleSwitch
-                {
-                    Header = "Premium Tool",
-                    IsOn = tool.IsPremium,
-                    OffContent = "No",
-                    OnContent = "Yes"
-                };
-                panel.Children.Add(premiumSwitch);
-
-                dialog.Content = panel;
-
-                var result = await dialog.ShowAsync();
-
-                if (result == ContentDialogResult.Primary)
-                {
-                    // Update tool properties (in a real app, you'd call an API)
-                    tool.Name = nameBox.Text;
-                    tool.Description = descriptionBox.Text;
-                    tool.IsPremium = premiumSwitch.IsOn;
-
-                    // Show success message
-                    ContentDialog successDialog = new ContentDialog
-                    {
-                        Title = "Success",
-                        Content = $"Tool '{tool.Name}' has been updated successfully.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.XamlRoot
-                    };
-
-                    await successDialog.ShowAsync();
-                }
+        private void OnEditToolClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.SelectTool(tool);
             }
         }
     }

@@ -8,9 +8,13 @@ namespace DevTools.UI.Models
 {
     public class User
     {
-        public string Username { get; set; } = string.Empty;
-        public string Token { get; set; } = string.Empty;
-        public bool IsAdmin { get; set; }
-        public bool IsPremium { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Token { get; set; }
+        public string RefreshToken { get; set; }
+        public int Role { get; set; }
+        public bool IsPremium => Role > 1;
+        public bool IsAdmin => Role == 3;
     }
 }

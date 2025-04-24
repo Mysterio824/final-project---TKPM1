@@ -13,8 +13,10 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.Services;
-using Microsoft.Extensions.DependencyInjection;
 using DevTools.UI.ViewModels;
+using DevTools.UI.Models;
+using Microsoft.UI.Xaml.Media.Animation;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,51 +28,84 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class LoginPage : Page
     {
-        private LoginViewModel ViewModel => DataContext as LoginViewModel;
-        private string _returnDestination;
+        public LoginViewModel ViewModel { get; private set; }
 
         public LoginPage()
         {
             this.InitializeComponent();
-            DataContext = AppServices.LoginViewModel;
+            this.Loaded += LoginPage_Loaded;
+        }
+
+        private void LoginPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Apply animation when page loads
+            EntranceAnimation.Begin();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.Parameter is string destination)
-            {
-                _returnDestination = destination;
-            }
+            var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
+            ViewModel = new LoginViewModel(authService, OnLoginSuccess);
+            EmailTextBox.Focus(FocusState.Programmatic);
         }
 
-        private async void Login_Click(object sender, RoutedEventArgs e)
+        private void OnLoginSuccess(User user)
         {
-            ErrorMessage.Visibility = Visibility.Collapsed;
-
-            bool success = await ViewModel.LoginAsync();
-
-            if (success)
+            var exitAnimation = new Storyboard();
+            var fadeOut = new DoubleAnimation
             {
-                switch (_returnDestination)
+                From = 1.0,
+                To = 0.0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(300))
+            };
+            Storyboard.SetTarget(fadeOut, MainPanel);
+            Storyboard.SetTargetProperty(fadeOut, "Opacity");
+            exitAnimation.Children.Add(fadeOut);
+
+            var toolService = App.ServiceProvider.GetService(typeof(ToolService)) as ToolService;
+            
+            if (user.IsAdmin)
+            {
+                var toolGroupService = App.ServiceProvider.GetService(typeof(ToolGroupService)) as ToolGroupService;
+                var adminViewModel = new AdminDashboardViewModel(
+                    toolService,
+                    toolGroupService,
+                    user
+                );
+
+                exitAnimation.Completed += (s, e) =>
                 {
-                    case "favorites":
-                        AppServices.NavigationService.Navigate(typeof(FavouritePage));
-                        break;
-                    case "premium":
-                        AppServices.NavigationService.Navigate(typeof(UpgradePage));
-                        break;
-                    default:
-                        AppServices.NavigationService.Navigate(typeof(DashboardPage));
-                        break;
-                }
+                    Frame.Navigate(typeof(AdminDashboardPage), adminViewModel);
+                };
             }
             else
             {
-                // Show error message
-                ErrorMessage.Text = "Login failed. Please check your credentials and try again.";
-                ErrorMessage.Visibility = Visibility.Visible;
+                var accountService = App.ServiceProvider.GetService(typeof(AccountService)) as AccountService;
+                var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
+                var viewModel = new DashboardViewModel(
+                    toolService,
+                    accountService,
+                    authService,
+                    onLogout: () =>
+                    {
+                        Frame.Navigate(typeof(DashboardPage), new DashboardViewModel(toolService, accountService, authService, () => { }));
+                    },
+                    user
+                );
+
+                exitAnimation.Completed += (s, e) =>
+                {
+                    Frame.Navigate(typeof(DashboardPage), viewModel);
+                };
             }
+
+            exitAnimation.Begin();
+        }
+
+        private void RegisterLink_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(RegisterPage));
         }
     }
 }

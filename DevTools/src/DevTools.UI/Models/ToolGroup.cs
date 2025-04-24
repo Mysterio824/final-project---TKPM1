@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DevTools.UI.Models
 {
-    public class Tool
+    public class ToolGroup
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -14,6 +14,5 @@ namespace DevTools.UI.Models
         public bool IsPremium { get; set; }
         public bool IsEnabled { get; set; }
         public bool IsFavorite { get; set; }
-        public byte[] FileData { get; set; }
     }
 }

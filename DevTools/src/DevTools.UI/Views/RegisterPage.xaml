@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="DevTools.UI.Views.RegisterPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DevTools.UI.Views"
+    xmlns:cv="using:DevTools.UI.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <cv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <Style x:Key="InputFieldStyle" TargetType="TextBox">
+            <Setter Property="Margin" Value="0,5,0,15"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Width" Value="300"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="PasswordFieldStyle" TargetType="PasswordBox">
+            <Setter Property="Margin" Value="0,5,0,15"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Width" Value="300"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="500" Padding="20">
+            <TextBlock Text="Register New Account" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,30"/>
+
+            <TextBlock Text="Username" Margin="0,0,0,5"/>
+            <TextBox x:Name="UsernameTextBox" 
+                     Text="{x:Bind ViewModel.Username, Mode=TwoWay}" 
+                     Style="{StaticResource InputFieldStyle}"
+                     PlaceholderText="Choose a username"/>
+
+            <TextBlock Text="Email" Margin="0,0,0,5"/>
+            <TextBox x:Name="EmailTextBox" 
+                     Text="{x:Bind ViewModel.Email, Mode=TwoWay}" 
+                     Style="{StaticResource InputFieldStyle}"
+                     PlaceholderText="Enter your email address"/>
+
+            <TextBlock Text="Password" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="PasswordBox" 
+                         Password="{x:Bind ViewModel.Password, Mode=TwoWay}" 
+                         Style="{StaticResource PasswordFieldStyle}"
+                         PlaceholderText="Create a password"/>
+
+            <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
+                       Foreground="Red" 
+                       TextWrapping="Wrap"
+                       Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"
+                       Margin="0,0,0,15"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <Button Content="Register" 
+                        Command="{x:Bind ViewModel.RegisterCommand}" 
+                        Style="{StaticResource ActionButtonStyle}"/>
+
+                <HyperlinkButton Content="Already have an account? Login" 
+                                 Click="LoginLink_Click"
+                                 Margin="20,0,0,0"
+                                 VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+                          Margin="0,20,0,0" 
+                          Width="24" 
+                          Height="24"
+                          HorizontalAlignment="Left"/>
+        </StackPanel>
+    </Grid>
+</Page>

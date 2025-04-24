@@ -2,97 +2,195 @@
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data.SqlTypes;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using Windows.Storage;
 
 namespace DevTools.UI.ViewModels
 {
-    public class ToolDetailViewModel : ObservableObject
+    public class ToolDetailViewModel : BaseViewModel
     {
-        private readonly FileService _fileService;
         private readonly ToolService _toolService;
-        private readonly ToolLoaderService _loader;
-        private Tool _toolMetadata;
-        private bool _isUserLoggedIn;
+        private readonly ToolLoader _toolLoader = ToolLoader.Instance;
+        private Tool _tool;
+        private UserControl _toolUI;
+        private bool _isLoading;
+        private string _errorMessage;
+        private bool _isToolLoaded;
+        private ITool _toolInstance;
+        private object _lastResult;
+        private bool _hasResult;
 
-        public Tool ToolMetadata
+        public Tool Tool
         {
-            get => _toolMetadata;
-            private set => SetProperty(ref _toolMetadata, value);
+            get => _tool;
+            set => SetProperty(ref _tool, value);
         }
 
-        public bool IsUserLoggedIn
+        public UserControl ToolUI
         {
-            get => _isUserLoggedIn;
-            set => SetProperty(ref _isUserLoggedIn, value);
+            get => _toolUI;
+            set => SetProperty(ref _toolUI, value);
         }
 
-        private ITool? _toolInstance;
-        public ITool? ToolInstance
+        public bool IsLoading
         {
-            get => _toolInstance;
-            private set => SetProperty(ref _toolInstance, value);
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
         }
 
-        public UserControl? ToolUI => ToolInstance?.GetUI();
-        public RelayCommand AddToFavoriteCommand { get; }
-
-        public ToolDetailViewModel(FileService fileService, ToolService toolService, ToolLoaderService loader)
+        public string ErrorMessage
         {
-            _fileService = fileService;
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
+        }
+
+        public bool IsToolLoaded
+        {
+            get => _isToolLoaded;
+            set => SetProperty(ref _isToolLoaded, value);
+        }
+
+        public object LastResult
+        {
+            get => _lastResult;
+            set
+            {
+                if (SetProperty(ref _lastResult, value))
+                {
+                    HasResult = value != null;
+                }
+            }
+        }
+
+        public bool HasResult
+        {
+            get => _hasResult;
+            set => SetProperty(ref _hasResult, value);
+        }
+
+        public ICommand LoadToolCommand { get; }
+        public ICommand ExecuteToolCommand { get; }
+
+        public ToolDetailViewModel(ToolService toolService)
+        {
             _toolService = toolService;
-            _loader = loader;
+            LoadToolCommand = new AsyncCommand<Tool>(LoadToolAsync);
+            ExecuteToolCommand = new AsyncCommand<object>(ExecuteToolAsync, CanExecuteTool);
+        }
 
-            // Initialize with current login state
-            IsUserLoggedIn = JwtTokenManager.IsLoggedIn;
-
-            AddToFavoriteCommand = new RelayCommand(async () => await AddToFavouritesAsync(), () => IsUserLoggedIn);
+        private bool CanExecuteTool(object input)
+        {
+            return IsToolLoaded && _toolInstance != null;
         }
 
         public async Task LoadToolAsync(Tool tool)
         {
             try
             {
-                ToolMetadata = tool;
-                // Download the DLL for the tool
-                var dll = await _fileService.DownloadToolDllAsync(tool.Id);
-                // Load the tool instance
-                ToolInstance = await _loader.LoadAsync(dll);
-                // Notify UI of changes
-                OnPropertyChanged(nameof(ToolUI));
+                ClearPreviousState();
+                IsLoading = true;
+                ErrorMessage = string.Empty;
+
+                if (tool == null)
+                {
+                    ErrorMessage = "Tool is null.";
+                    return;
+                }
+
+                // Fetch tool data from service if FileData is missing
+                if (tool.FileData == null || tool.FileData.Length == 0)
+                {
+                    Tool = await _toolService.GetToolByIdAsync(tool.Id);
+                    if (Tool == null || Tool.FileData == null || Tool.FileData.Length == 0)
+                    {
+                        ErrorMessage = "Failed to load tool or tool data is missing.";
+                        return;
+                    }
+                    tool = Tool;
+                }
+
+                // Use ToolLoader to load the plugin
+                _toolInstance = _toolLoader.LoadPlugin(tool, tool.FileData);
+                if (_toolInstance == null)
+                {
+                    ErrorMessage = "Failed to load tool from plugin.";
+                    return;
+                }
+
+                // Get the tool's UI
+                var toolUI = _toolInstance.GetUI() as UserControl;
+                if (toolUI == null)
+                {
+                    ErrorMessage = "Tool UI could not be created.";
+                    return;
+                }
+
+                ToolUI = toolUI;
+                IsToolLoaded = true;
             }
             catch (Exception ex)
             {
-                // Handle errors (e.g., log them or show a message to the user)
-                Console.WriteLine($"Error loading tool: {ex.Message}");
+                ErrorMessage = $"Failed to load tool: {ex.Message}";
+                Debug.WriteLine($"Exception details: {ex}");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
-        private async Task AddToFavouritesAsync()
+        public async Task ExecuteToolAsync(object input)
         {
-            if (ToolMetadata == null)
+            if (!IsToolLoaded || _toolInstance == null)
+            {
+                ErrorMessage = "Tool is not loaded properly.";
                 return;
+            }
+
             try
             {
-                var success = await _toolService.AddToFavouritesAsync(ToolMetadata.Id);
-                if (success)
-                {
-                    // Optionally, notify the user or update the UI
-                    Console.WriteLine($"Tool '{ToolMetadata.Name}' added to favorites.");
-                }
-                else
-                {
-                    Console.WriteLine($"Failed to add tool '{ToolMetadata.Name}' to favorites.");
-                }
+                IsLoading = true;
+                ErrorMessage = string.Empty;
+
+                // Execute the tool
+                LastResult = _toolInstance.Execute(input);
             }
             catch (Exception ex)
             {
-                // Handle errors (e.g., log them or show a message to the user)
-                Console.WriteLine($"Error adding tool to favorites: {ex.Message}");
+                ErrorMessage = $"Error executing tool: {ex.Message}";
+                Debug.WriteLine($"Exception details: {ex}");
             }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void ClearPreviousState()
+        {
+            Tool = null;
+            ToolUI = null;
+            IsToolLoaded = false;
+            _toolInstance = null;
+            LastResult = null;
+        }
+
+        public void Cleanup()
+        {
+            ToolUI = null;
+            _toolInstance = null;
         }
     }
 }

@@ -15,8 +15,6 @@ using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
 using DevTools.UI.Services;
-using Microsoft.Extensions.DependencyInjection;
-using DevTools.UI.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,34 +26,87 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class DashboardPage : Page
     {
-        private DashboardViewModel ViewModel => AppServices.DashboardViewModel;
+        public DashboardViewModel ViewModel { get; private set; }
+        private readonly Action<User> onLogout;
 
         public DashboardPage()
         {
             this.InitializeComponent();
-            DataContext = ViewModel;
         }
 
-        private void ToolItem_Click(object sender, ItemClickEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            var selectedTool = e.ClickedItem as Tool;
+            base.OnNavigatedTo(e);
 
-            // Verify access for premium tools
-            if (selectedTool.IsPremium && !JwtTokenManager.IsPremium)
+            ViewModel = e.Parameter as DashboardViewModel;
+
+            ViewModel.LoadToolsCommand.Execute(null);
+        }
+
+        private void LoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(LoginPage));
+        }
+
+        private void RegisterButton_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(RegisterPage));
+        }
+
+        private void FavoritesButton_Click(object sender, RoutedEventArgs e)
+        {
+            //Frame.Navigate(typeof(FavoritesPage), ViewModel);
+        }
+
+        private void ToolsGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            var tool = e.ClickedItem as Tool;
+            if (tool != null)
             {
-                if (!JwtTokenManager.IsLoggedIn)
+                if (tool.IsPremium && !ViewModel.IsPremium)
                 {
-                    AppServices.NavigationService.Navigate(typeof(LoginPage), "premium");
+                    ShowPremiumUpgradeDialog();
+                }
+                else if (!tool.IsEnabled)
+                {
+                    ShowToolUnavailableMessage();
                 }
                 else
                 {
-                    AppServices.NavigationService.Navigate(typeof(UpgradePage));
+                    Frame.Navigate(typeof(ToolDetailPage), tool);
                 }
-                return;
             }
+        }
 
-            // Navigate to the tool detail page
-            AppServices.NavigationService.Navigate(typeof(ToolDetailPage), selectedTool);
+        private async void ShowPremiumUpgradeDialog()
+        {
+            ContentDialog premiumDialog = new ContentDialog
+            {
+                Title = "Premium Feature",
+                Content = "This tool is available only for premium users. Would you like to upgrade to premium?",
+                PrimaryButtonText = "Upgrade",
+                CloseButtonText = "Not Now",
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            ContentDialogResult result = await premiumDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                ViewModel.RequestPremiumCommand.Execute(null);
+            }
+        }
+
+        private async void ShowToolUnavailableMessage()
+        {
+            ContentDialog unavailableDialog = new ContentDialog
+            {
+                Title = "Tool Unavailable",
+                Content = "This tool is currently unavailable. Please try again later.",
+                CloseButtonText = "OK",
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            await unavailableDialog.ShowAsync();
         }
     }
 }

@@ -12,10 +12,9 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using DevTools.UI.Services;
 using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
-using DevTools.UI.Services;
-using DevTools.UI.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -25,25 +24,34 @@ namespace DevTools.UI.Views
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class FavouritePage : Page
+    public sealed partial class RegisterPage : Page
     {
-        private FavouriteViewModel ViewModel => DataContext as FavouriteViewModel;
+        public RegisterViewModel ViewModel { get; private set; }
 
-        public FavouritePage()
+        public RegisterPage()
         {
             this.InitializeComponent();
-            DataContext = AppServices.FavouriteViewModel;
         }
 
-        private void ToolItem_Click(object sender, ItemClickEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            var selectedTool = e.ClickedItem as Tool;
-            AppServices.NavigationService.Navigate(typeof(ToolDetailPage), selectedTool);
+            base.OnNavigatedTo(e);
+
+            var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
+            ViewModel = new RegisterViewModel(authService, OnRegisterSuccess);
+
+            UsernameTextBox.Focus(FocusState.Programmatic);
         }
 
-        private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
+        private void OnRegisterSuccess(User user)
         {
+            // Navigate to main page with the newly registered user
+            //Frame.Navigate(typeof(MainPage), user);
+        }
 
+        private void LoginLink_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(LoginPage));
         }
     }
 }

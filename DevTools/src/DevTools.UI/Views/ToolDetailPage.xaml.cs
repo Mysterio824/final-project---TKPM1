@@ -14,9 +14,8 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using DevTools.UI.Models;
 using DevTools.UI.Utils;
-using DevTools.UI.Services;
+using DevTools.UI.Models;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,45 +27,62 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class ToolDetailPage : Page
     {
-        private ToolDetailViewModel ViewModel => DataContext as ToolDetailViewModel;
+        public ToolDetailViewModel ViewModel { get; private set; }
 
         public ToolDetailPage()
         {
             this.InitializeComponent();
-            DataContext = AppServices.ToolDetailViewModel;
-            this.Loaded += ToolDetailPage_Loaded;
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            if (e.Parameter is Tool tool)
+            if (e.Parameter is ToolDetailViewModel viewModel)
             {
-                LoadingRing.IsActive = true;
-                await ViewModel.LoadToolAsync(tool);
-                LoadingRing.IsActive = false;
+                ViewModel = viewModel;
+            }
+            else if (e.Parameter is Tool tool)
+            {
+                ViewModel = App.ServiceProvider.GetService<ToolDetailViewModel>();
+                LoadTool(tool);
+            }
+            this.DataContext = ViewModel;
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+
+            ViewModel?.Cleanup();
+        }
+
+        private void LoadTool(Tool tool)
+        {
+            if (ViewModel.LoadToolCommand is AsyncCommand<int> asyncCommand)
+            {
+                asyncCommand.Execute(tool);
+            }
+            else
+            {
+                ViewModel.LoadToolCommand.Execute(tool);
             }
         }
 
-        private void ToolDetailPage_Loaded(object sender, RoutedEventArgs e)
+        private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            // Add binding for login state visibility
-            var binding = new Microsoft.UI.Xaml.Data.Binding();
-            binding.Mode = Microsoft.UI.Xaml.Data.BindingMode.OneWay;
-            binding.Source = JwtTokenManager.IsLoggedIn ? Visibility.Visible : Visibility.Collapsed;
-
-            // Manually set the IsUserLoggedIn property on ViewModel
-            var property = typeof(ToolDetailViewModel).GetProperty("IsUserLoggedIn");
-            if (property != null)
+            if (this.Frame.CanGoBack)
             {
-                property.SetValue(ViewModel, JwtTokenManager.IsLoggedIn);
+                this.Frame.GoBack();
             }
         }
 
-        private void Login_Click(object sender, RoutedEventArgs e)
+        private void RetryButton_Click(object sender, RoutedEventArgs e)
         {
-            AppServices.NavigationService.Navigate(typeof(LoginPage));
+            if (ViewModel.Tool != null)
+            {
+                ViewModel.LoadToolCommand.Execute(ViewModel.Tool.Id);
+            }
         }
     }
 }

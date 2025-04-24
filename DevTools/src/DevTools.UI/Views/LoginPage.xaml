@@ -4,10 +4,80 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:DevTools.UI.Views"
+	xmlns:cv="using:DevTools.UI.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource BackgroundBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <cv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <cv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <cv:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <cv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <cv:BoolToSymbolConverter x:Key="BoolToSymbolConverter"/>
+
+        <Storyboard x:Name="EntranceAnimation">
+            <DoubleAnimation
+        Storyboard.TargetName="MainPanel"
+        Storyboard.TargetProperty="Opacity"
+        From="0" To="1" Duration="0:0:0.5"/>
+
+            <DoubleAnimation
+        Storyboard.TargetName="MainPanel"
+        Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+        From="50" To="0" Duration="0:0:0.5">
+                <DoubleAnimation.EasingFunction>
+                    <CircleEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+
+        <Style x:Key="InputFieldContainerStyle" TargetType="Grid">
+            <Setter Property="Margin" Value="0,6,0,16"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource TextControlBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Background" Value="{ThemeResource TextControlBackground}"/>
+        </Style>
+
+        <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0,12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0,12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="24,12"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -15,83 +85,112 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Login Card -->
-        <Grid Grid.Row="1" 
-              HorizontalAlignment="Center" 
-              VerticalAlignment="Center" 
-              MaxWidth="440">
-            <Grid Background="{StaticResource SurfaceBrush}" 
-                  CornerRadius="16" 
-                  Padding="40">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" 
+              BorderBrush="{ThemeResource SystemControlBackgroundListLowBrush}" BorderThickness="0,0,0,1"
+              Padding="20,8" Height="60">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Header -->
-                <StackPanel Grid.Row="0" 
-                            HorizontalAlignment="Center" 
-                            Margin="0,0,0,24">
-                    <Ellipse Width="60" 
-                             Height="60" 
-                             Fill="{StaticResource BackgroundBrush}" 
-                             Stroke="{StaticResource PrimaryBrush}" 
-                             StrokeThickness="2" 
-                             Margin="0,0,0,16"/>
-                    <TextBlock Text="Welcome Back" 
-                               Style="{StaticResource HeadingStyle}" 
-                               FontSize="28" 
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="Sign in to continue" 
-                               Style="{StaticResource BodyTextStyle}" 
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE715;" Margin="0,0,12,0"/>
+                <TextBlock Text="IT Tools" FontWeight="SemiBold" FontSize="18" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
 
-                <!-- Error Message -->
-                <TextBlock x:Name="ErrorMessage" 
-                           Grid.Row="1" 
-                           Foreground="{StaticResource ErrorBrush}" 
-                           TextWrapping="Wrap" 
-                           Margin="0,0,0,16" 
-                           Visibility="Collapsed"/>
+        <Grid Grid.Row="1">
+            <StackPanel x:Name="MainPanel" VerticalAlignment="Center" HorizontalAlignment="Center" 
+          MaxWidth="400" Padding="24" Opacity="0">
+                <StackPanel.RenderTransform>
+                    <TranslateTransform x:Name="MainPanelTransform" Y="50"/>
+                </StackPanel.RenderTransform>
+                <TextBlock Text="Sign in to your account" Style="{StaticResource TitleTextBlockStyle}" 
+                           FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Text="Enter your email and password to access your account" 
+                           Foreground="{ThemeResource SystemBaseMediumColor}" Margin="0,0,0,32"/>
 
-                <!-- Username Field -->
-                <StackPanel Grid.Row="2" Margin="0,0,0,16">
-                    <TextBlock Text="Username" 
-                               Foreground="{StaticResource TextSecondaryBrush}" 
-                               Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding Username, Mode=TwoWay}" 
-                             Background="#1F1F26" 
-                             BorderThickness="0" 
-                             Padding="16,12" 
-                             CornerRadius="8" 
-                             PlaceholderText="Enter your username"/>
-                </StackPanel>
+                <TextBlock Text="Email" Margin="0,0,0,4" FontWeight="Medium"/>
+                <Grid Style="{StaticResource InputFieldContainerStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Grid.Column="0" FontFamily="Segoe MDL2 Assets" Glyph="&#xE715;" 
+                              Foreground="{ThemeResource SystemBaseMediumColor}" Margin="0,0,8,0"
+                              VerticalAlignment="Center"/>
+                    <TextBox x:Name="EmailTextBox" Grid.Column="1"
+                             Text="{x:Bind ViewModel.Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ModernTextBoxStyle}"
+                             PlaceholderText="Enter your email address"/>
+                </Grid>
 
-                <!-- Password Field -->
-                <StackPanel Grid.Row="3" Margin="0,0,0,24">
-                    <TextBlock Text="Password" 
-                               Foreground="{StaticResource TextSecondaryBrush}" 
-                               Margin="0,0,0,8"/>
-                    <PasswordBox Password="{Binding Password, Mode=TwoWay}" 
-                                 Background="#1F1F26" 
-                                 BorderThickness="0" 
-                                 Padding="16,12" 
-                                 CornerRadius="8" 
-                                 PlaceholderText="Enter your password"/>
-                </StackPanel>
+                <TextBlock Text="Password" Margin="0,0,0,4" FontWeight="Medium"/>
+                <Grid Style="{StaticResource InputFieldContainerStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Grid.Column="0" FontFamily="Segoe MDL2 Assets" Glyph="&#xE72E;" 
+                              Foreground="{ThemeResource SystemBaseMediumColor}" Margin="0,0,8,0"
+                              VerticalAlignment="Center"/>
 
-                <!-- Login Button -->
-                <Button Grid.Row="4" 
-                        Content="Sign In" 
-                        Style="{StaticResource DefaultButtonStyle}" 
-                        HorizontalAlignment="Stretch" 
-                        Padding="0,12" 
-                        Click="Login_Click"/>
-            </Grid>
+                    <PasswordBox x:Name="PasswordBox" Grid.Column="1"
+                                 Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernPasswordBoxStyle}"
+                                 PlaceholderText="Enter your password"
+                                 Visibility="{x:Bind ViewModel.IsPasswordVisible, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                    <TextBox Grid.Column="1"
+                             Text="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ModernTextBoxStyle}"
+                             PlaceholderText="Enter your password"
+                             Visibility="{x:Bind ViewModel.IsPasswordVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Grid.Column="2" Command="{x:Bind ViewModel.TogglePasswordVisibilityCommand}"
+                            Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Show/Hide Password">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" 
+                                  Glyph="{x:Bind ViewModel.IsPasswordVisible, Mode=OneWay, Converter={StaticResource BoolToSymbolConverter}, ConverterParameter='&#xE7B3;|&#xE7B2;'}"
+                                  Foreground="{ThemeResource SystemBaseMediumColor}"/>
+                    </Button>
+                </Grid>
+
+                <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                           Foreground="#D83B01"
+                           TextWrapping="Wrap"
+                           Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"
+                           Margin="0,4,0,16"/>
+
+                <Grid Margin="0,0,0,24">
+                    
+
+                    <CheckBox Content="Remember me" 
+                              IsChecked="{x:Bind ViewModel.RememberMe, Mode=TwoWay}"
+                              Foreground="{ThemeResource SystemBaseMediumColor}"/>
+
+                </Grid>
+
+                <Button
+                        Command="{x:Bind ViewModel.LoginCommand}"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <Grid>
+                            <TextBlock Text="Sign In" 
+                                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                      HorizontalAlignment="Center"/>
+                            <ProgressRing IsActive="True" 
+                                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        Width="20" Height="20" Foreground="White"/>
+                        </Grid>
+                    </Button.Content>
+                </Button>
+
+                <TextBlock HorizontalAlignment="Center" Margin="0,24,0,0">
+                    <Run Text="Don't have an account?" Foreground="{ThemeResource SystemBaseMediumColor}"/>
+                    <Hyperlink Click="RegisterLink_Click">Sign up</Hyperlink>
+                </TextBlock>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

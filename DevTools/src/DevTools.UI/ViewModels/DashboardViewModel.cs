@@ -130,6 +130,7 @@ namespace DevTools.UI.ViewModels
                 var toolGroups = await _toolGroupService.GetAllToolGroupsAsync();
 
                 ToolGroups.Clear();
+                Tools.Clear();
 
                 foreach (var group in toolGroups)
                 {

@@ -61,50 +61,51 @@
         </Grid.ColumnDefinitions>
 
         <!-- Side Panel -->
-        <Grid x:Name="SidePanel" 
-          Grid.Column="0" 
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="SidePanel" 
           Width="{StaticResource SidePanelExpandedWidth}"
           Background="{StaticResource SidePanelBackgroundBrush}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <Image Grid.Row="0" Source="/Assets/logo2.png" Width="100" Height="100" Stretch="Fill" Margin="0,0,0,0" VerticalAlignment="Center"/>
+                <Image Grid.Row="0" Source="/Assets/logo2.png" Width="100" Height="100" Stretch="Fill" Margin="0,0,0,0" VerticalAlignment="Center"/>
 
-            <!-- Tool Categories List -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ItemsRepeater x:Name="ToolGroupsRepeater" 
+                <!-- Tool Categories List -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ItemsRepeater x:Name="ToolGroupsRepeater" 
                            ItemsSource="{x:Bind ViewModel.ToolGroups, Mode=OneWay}">
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="model:ToolGroup">
-                            <Expander HorizontalAlignment="Stretch" 
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="model:ToolGroup">
+                                <Expander HorizontalAlignment="Stretch" 
                                   Header="{x:Bind Name}"
                                   IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
-                                <ListView ItemsSource="{x:Bind Tools}" 
+                                    <ListView ItemsSource="{x:Bind Tools}" 
                                       SelectionMode="Single"
                                       IsItemClickEnabled="True"
                                       ItemClick="SidebarToolItem_Click">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate x:DataType="model:Tool">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{x:Bind Name}" 
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="model:Tool">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{x:Bind Name}" 
                                                        TextTrimming="CharacterEllipsis"/>
-                                                <FontIcon Glyph="&#xEB29;" 
+                                                    <FontIcon Glyph="&#xEB29;" 
                                                       Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}" 
                                                       Foreground="Gold"
                                                       Margin="4,0,0,0"
                                                       FontSize="12"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </Expander>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </ScrollViewer>
-        </Grid>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </Expander>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </Grid>
+        </ScrollViewer>
 
         <!-- Main Content -->
         <Grid Grid.Column="1" Padding="20">

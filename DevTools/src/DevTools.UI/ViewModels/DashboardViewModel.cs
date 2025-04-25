@@ -147,6 +147,7 @@ namespace DevTools.UI.ViewModels
                         }
 
                         group.Tools.Add(tool);
+                        Tools.Add(tool);
                     }
 
                     ToolGroups.Add(group);

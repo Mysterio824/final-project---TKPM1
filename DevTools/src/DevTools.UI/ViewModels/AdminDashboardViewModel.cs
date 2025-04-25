@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -88,7 +89,11 @@ namespace DevTools.UI.ViewModels
         public string GroupName
         {
             get => _groupName;
-            set => SetProperty(ref _groupName, value);
+            set
+            {
+                SetProperty(ref _groupName, value);
+                (AddGroupCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         public string GroupDescription
@@ -440,14 +445,15 @@ namespace DevTools.UI.ViewModels
 
         private async Task AddGroupAsync()
         {
+            Debug.WriteLine(GroupName);
             try
             {
-                if (string.IsNullOrWhiteSpace(ToolName)) return;
+                if (string.IsNullOrWhiteSpace(GroupName)) return;
 
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                var groupId = await _toolGroupService.AddToolGroupAsync(ToolName, ToolDescription);
+                var groupId = await _toolGroupService.AddToolGroupAsync(GroupName, GroupDescription);
                 if (groupId > 0)
                 {
                     await LoadGroupsAsync();
@@ -472,12 +478,12 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
-                if (SelectedGroup == null || string.IsNullOrWhiteSpace(ToolName)) return;
+                if (SelectedGroup == null || string.IsNullOrWhiteSpace(GroupName)) return;
 
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                var success = await _toolGroupService.UpdateToolGroupAsync(SelectedGroup.Id, ToolName, ToolDescription);
+                var success = await _toolGroupService.UpdateToolGroupAsync(SelectedGroup.Id, GroupName, GroupDescription);
                 if (success)
                 {
                     await LoadGroupsAsync();
@@ -553,12 +559,12 @@ namespace DevTools.UI.ViewModels
             SelectedGroup = group;
             if (group != null)
             {
-                ToolName = group.Name;
-                ToolDescription = group.Description;
+                GroupName = group.Name;
+                GroupDescription = group.Description;
             }
             else
             {
-                ClearToolForm();
+                ClearGroupForm();
             }
         }
 
@@ -572,6 +578,11 @@ namespace DevTools.UI.ViewModels
             ToolFile = null;
             SelectedTool = null;
             SelectedGroup = null;
+        }
+        private void ClearGroupForm()
+        {
+            GroupName = string.Empty;
+            GroupDescription = string.Empty;
         }
     }
 }

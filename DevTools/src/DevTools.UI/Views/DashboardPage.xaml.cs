@@ -98,7 +98,8 @@ namespace DevTools.UI.Views
                 Content = "This tool is available only for premium users. Would you like to upgrade to premium?",
                 PrimaryButtonText = "Upgrade",
                 CloseButtonText = "Not Now",
-                DefaultButton = ContentDialogButton.Primary
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
             };
 
             ContentDialogResult result = await premiumDialog.ShowAsync();
@@ -115,7 +116,8 @@ namespace DevTools.UI.Views
                 Title = "Tool Unavailable",
                 Content = "This tool is currently unavailable. Please try again later.",
                 CloseButtonText = "OK",
-                DefaultButton = ContentDialogButton.Close
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
             };
 
             await unavailableDialog.ShowAsync();
@@ -233,7 +235,8 @@ namespace DevTools.UI.Views
                 Title = "About IT Tools",
                 Content = "IT Tools is a comprehensive collection of utilities for IT professionals. Version 1.0.0",
                 CloseButtonText = "Close",
-                DefaultButton = ContentDialogButton.Close
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
             };
 
             await infoDialog.ShowAsync();

@@ -31,6 +31,11 @@ namespace DevTools.UI.ViewModels
         private bool _isLoading;
         private string _errorMessage;
         private bool _isSidePanelExpanded = true;
+        private bool _showFavoritesOnly;
+        private object _contentFrameSource;
+        private bool _isContentFrameVisible;
+        private ObservableCollection<Tool> _filteredTools;
+
 
         public User CurrentUser
         {
@@ -81,6 +86,36 @@ namespace DevTools.UI.ViewModels
             set => SetProperty(ref _isSidePanelExpanded, value);
         }
 
+        public bool ShowFavoritesOnly
+        {
+            get => _showFavoritesOnly;
+            set
+            {
+                if (SetProperty(ref _showFavoritesOnly, value))
+                {
+                    FilterTools();
+                }
+            }
+        }
+
+        public object ContentFrameSource
+        {
+            get => _contentFrameSource;
+            set => SetProperty(ref _contentFrameSource, value);
+        }
+
+        public bool IsContentFrameVisible
+        {
+            get => _isContentFrameVisible;
+            set => SetProperty(ref _isContentFrameVisible, value);
+        }
+
+        public ObservableCollection<Tool> FilteredTools
+        {
+            get => _filteredTools;
+            set => SetProperty(ref _filteredTools, value);
+        }
+
         public bool IsAuthenticated => _currentUser != null;
         public bool IsPremium => _currentUser?.IsPremium ?? false;
         public bool IsAdmin => _currentUser?.IsAdmin ?? false;
@@ -93,6 +128,7 @@ namespace DevTools.UI.ViewModels
         public ICommand RequestPremiumCommand { get; }
         public ICommand RevokePremiumCommand { get; }
         public ICommand LogoutCommand { get; }
+        public ICommand ToggleFavoritesCommand { get; }
 
         public DashboardViewModel(ToolService toolService, ToolGroupService toolGroupService, AccountService accountService, AuthService authService, Action onLogout, User currentUser = null)
         {
@@ -103,8 +139,8 @@ namespace DevTools.UI.ViewModels
             CurrentUser = currentUser;
             _onLogout = onLogout;
             Tools = new ObservableCollection<Tool>();
+            FilteredTools = new ObservableCollection<Tool>();
             ToolGroups = new ObservableCollection<ToolGroup>();
-
             LoadToolGroupsWithToolsCommand = new AsyncCommand(LoadToolGroupsWithToolsAsync);
             SearchCommand = new AsyncCommand(ExecuteSearchAsync);
             AddToFavoritesCommand = new AsyncCommand<Tool>(AddToFavoritesAsync, CanModifyFavorites);
@@ -113,11 +149,12 @@ namespace DevTools.UI.ViewModels
             RequestPremiumCommand = new AsyncCommand(RequestPremiumAsync, () => !IsPremium);
             RevokePremiumCommand = new AsyncCommand(RevokePremiumAsync, () => IsPremium);
             LogoutCommand = new AsyncCommand(LogoutAsync);
+            ToggleFavoritesCommand = new RelayCommand(ToggleFavorites);
 
             if (IsAuthenticated)
             {
-                _toolService.SetAuthToken(_currentUser.Token);
-                _accountService.SetAuthToken(_currentUser.Token);
+                toolService.SetAuthToken(currentUser.Token);
+                accountService.SetAuthToken(currentUser.Token);
             }
         }
         public async Task LoadToolGroupsWithToolsAsync()
@@ -153,6 +190,7 @@ namespace DevTools.UI.ViewModels
 
                     ToolGroups.Add(group);
                 }
+                FilterTools();
             }
             catch (Exception ex)
             {
@@ -180,7 +218,7 @@ namespace DevTools.UI.ViewModels
                 IsLoading = true;
                 if (string.IsNullOrWhiteSpace(SearchQuery))
                 {
-                    //await LoadToolsAsync();
+                    await LoadToolGroupsWithToolsAsync();
                     return;
                 }
 
@@ -190,6 +228,7 @@ namespace DevTools.UI.ViewModels
                 {
                     Tools.Add(tool);
                 }
+                FilterTools();
             }
             catch (Exception ex)
             {
@@ -211,6 +250,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsFavorite = true;
                     OnPropertyChanged(nameof(Tools));
+                    FilterTools();
                 }
             }
             catch (Exception ex)
@@ -233,6 +273,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsFavorite = false;
                     OnPropertyChanged(nameof(Tools));
+                    FilterTools();
                 }
             }
             catch (Exception ex)
@@ -339,8 +380,23 @@ namespace DevTools.UI.ViewModels
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                await _authService.LogoutAsync(CurrentUser.Token);
-                _onLogout();
+                if (CurrentUser?.Token != null)
+                {
+                    await _authService.LogoutAsync(CurrentUser.Token);
+                }
+
+                CurrentUser = null;
+                ShowFavoritesOnly = false;
+
+                // Clear content frame if visible
+                if (IsContentFrameVisible)
+                {
+                    IsContentFrameVisible = false;
+                    ContentFrameSource = null;
+                }
+
+                // Call the logout action
+                _onLogout?.Invoke();
             }
             catch (Exception ex)
             {
@@ -355,6 +411,30 @@ namespace DevTools.UI.ViewModels
         {
             IsSidePanelExpanded = !IsSidePanelExpanded;
             OnPropertyChanged(nameof(IsSidePanelExpanded));
+        }
+        private void FilterTools()
+        {
+            FilteredTools.Clear();
+
+            if (ShowFavoritesOnly)
+            {
+                foreach (var tool in Tools.Where(t => t.IsFavorite))
+                {
+                    FilteredTools.Add(tool);
+                }
+            }
+            else
+            {
+                foreach (var tool in Tools)
+                {
+                    FilteredTools.Add(tool);
+                }
+            }
+        }
+
+        private void ToggleFavorites()
+        {
+            ShowFavoritesOnly = !ShowFavoritesOnly;
         }
     }
 }

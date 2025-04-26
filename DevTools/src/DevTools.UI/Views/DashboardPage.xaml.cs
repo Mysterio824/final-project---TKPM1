@@ -53,6 +53,7 @@ namespace DevTools.UI.Views
                 // Handle potential issues with Window.Current being null.
                 Debug.WriteLine("Window.Current is null. Ensure that the window is properly initialized.");
             }
+            UpdateSidePanelDisplay();
         }
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -67,9 +68,24 @@ namespace DevTools.UI.Views
 
         private void FavoritesButton_Click(object sender, RoutedEventArgs e)
         {
-            //Frame.Navigate(typeof(FavoritesPage), ViewModel);
-        }
+            ViewModel.ToggleFavoritesCommand.Execute(null);
 
+            UpdateFavoritesButtonStyle();
+        }
+        private void UpdateFavoritesButtonStyle()
+        {
+            // Style the favorites button based on state
+            if (ViewModel.ShowFavoritesOnly)
+            {
+                FavoritesButton.Background = new SolidColorBrush(Colors.LightGray);
+                FavoriteIcon.Foreground = new SolidColorBrush(Colors.Gold);
+            }
+            else
+            {
+                FavoritesButton.Background = new SolidColorBrush(Colors.Transparent);
+                FavoriteIcon.Foreground = new SolidColorBrush((Color)Resources["SystemBaseHighColor"]);
+            }
+        }
         private void ToolsGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var tool = e.ClickedItem as Tool;
@@ -85,7 +101,8 @@ namespace DevTools.UI.Views
                 }
                 else
                 {
-                    Frame.Navigate(typeof(ToolDetailPage), tool);
+                    ViewModel.ContentFrameSource = tool;
+                    ViewModel.IsContentFrameVisible = true;
                 }
             }
         }
@@ -122,31 +139,80 @@ namespace DevTools.UI.Views
 
             await unavailableDialog.ShowAsync();
         }
+        private void SidebarToolItem_Click(object sender, ItemClickEventArgs e)
+        {
+            var tool = e.ClickedItem as Tool;
+            if (tool != null)
+            {
+                if (tool.IsPremium && !ViewModel.IsPremium)
+                {
+                    ShowPremiumUpgradeDialog();
+                }
+                else if (!tool.IsEnabled)
+                {
+                    ShowToolUnavailableMessage();
+                }
+                else
+                {
+                    // Navigate to tool detail in content frame instead of full page navigation
+                    ViewModel.ContentFrameSource = tool;
+                    ViewModel.IsContentFrameVisible = true;
+                }
+            }
+        }
+
         private void ToggleSidePanel_Click(object sender, RoutedEventArgs e)
         {
-            string newGlyph;
-
+            ViewModel.ToggleSidePanel();
+            UpdateSidePanelDisplay();
+        }
+        private void UpdateSidePanelDisplay()
+        {
             if (ViewModel.IsSidePanelExpanded)
             {
-                SidePanel.Width = (double)Resources["SidePanelCollapsedWidth"];
-                newGlyph = "\uE76C";
+                SidePanel.Width = (double)Resources["SidePanelExpandedWidth"];
+                TogglePanelIcon.Glyph = "\uE76B";  // Collapse icon
+
+                // Show the text elements in side panel
+                SidePanelHeaderText.Visibility = Visibility.Visible;
+                // Make sure category names are visible
+                foreach (var group in ViewModel.ToolGroups)
+                {
+                    group.ShowHeader = true;
+                }
             }
             else
             {
-                SidePanel.Width = (double)Resources["SidePanelExpandedWidth"];
-                newGlyph = "\uE76B";
+                SidePanel.Width = (double)Resources["SidePanelCollapsedWidth"];
+                TogglePanelIcon.Glyph = "\uE76C";  // Expand icon
+
+                // Hide the text elements in side panel
+                SidePanelHeaderText.Visibility = Visibility.Collapsed;
+                // Hide category names
+                foreach (var group in ViewModel.ToolGroups)
+                {
+                    group.ShowHeader = false;
+                }
             }
-
-            TogglePanelIcon.Glyph = newGlyph;
-
-            ViewModel.ToggleSidePanel();
         }
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             // Clear search and reload all tools
             ViewModel.SearchQuery = string.Empty;
+            ViewModel.ShowFavoritesOnly = false;
+            ViewModel.IsContentFrameVisible = false;
+            ViewModel.ContentFrameSource = null;
             ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
+
+            // Update UI states
+            UpdateFavoritesButtonStyle();
+        }
+        private void ContentFrame_BackButtonClick(object sender, RoutedEventArgs e)
+        {
+            // Go back to main view
+            ViewModel.IsContentFrameVisible = false;
+            ViewModel.ContentFrameSource = null;
         }
 
         private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -192,26 +258,21 @@ namespace DevTools.UI.Views
         private void ThemeToggle_Click(object sender, RoutedEventArgs e)
         {
             var toggleButton = sender as ToggleButton;
-            if (toggleButton.IsChecked == true)
+            if (toggleButton != null)
             {
-                ThemeIcon.Glyph = "\uE708"; // Moon icon
-                                            // Apply dark theme
+                bool isDarkTheme = toggleButton.IsChecked == true;
+
+                // Update the icon based on the toggle state
+                ThemeIcon.Glyph = isDarkTheme ? "\uE708" : "\uE793";
+
+                // Apply the theme
                 if (Window.Current != null && Window.Current.Content is FrameworkElement rootElement)
                 {
-                    rootElement.RequestedTheme = ElementTheme.Dark;
-                }
-            }
-            else
-            {
-                ThemeIcon.Glyph = "\uE793"; // Sun icon
-                                            // Apply light theme
-                if (Window.Current != null && Window.Current.Content is FrameworkElement rootElement)
-                {
-                    rootElement.RequestedTheme = ElementTheme.Light;
+                    rootElement.RequestedTheme = isDarkTheme ? ElementTheme.Dark : ElementTheme.Light;
                 }
             }
         }
-
+        
         private void LanguageSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // Handle language change

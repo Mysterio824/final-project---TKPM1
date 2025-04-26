@@ -144,7 +144,7 @@ namespace DevTools.UI.ViewModels
                         tool.GroupName = group.Name;
                         if (string.IsNullOrEmpty(tool.SymbolGlyph))
                         {
-                            tool.SymbolGlyph = "\uE774";
+                            tool.SymbolGlyph = "\u002B";
                         }
 
                         group.Tools.Add(tool);

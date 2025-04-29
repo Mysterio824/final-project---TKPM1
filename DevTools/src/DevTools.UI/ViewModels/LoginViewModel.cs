@@ -102,6 +102,8 @@ namespace DevTools.UI.ViewModels
                 var user = await _authService.LoginAsync(Email, Password);
                 if (user != null)
                 {
+                    var app = Application.Current as App;
+                    app.CurrentUser = user;
                     if (RememberMe)
                     {
                         var vault = new Windows.Security.Credentials.PasswordVault();
@@ -113,11 +115,11 @@ namespace DevTools.UI.ViewModels
                     // Navigate based on user role
                     if (user.IsAdmin)
                     {
-                        _navigationService.NavigateTo(typeof(AdminDashboardPage));
+                        _navigationService.NavigateTo(typeof(AdminDashboardPage), user);
                     }
                     else
                     {
-                        _navigationService.NavigateTo(typeof(DashboardPage));
+                        _navigationService.NavigateTo(typeof(DashboardPage), user);
                     }
                 }
                 else

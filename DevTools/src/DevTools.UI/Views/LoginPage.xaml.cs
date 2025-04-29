@@ -17,6 +17,7 @@ using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
 using Microsoft.UI.Xaml.Media.Animation;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,12 +29,18 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class LoginPage : Page
     {
-        public LoginViewModel ViewModel { get; private set; }
+        public LoginViewModel ViewModel { get; }
+        private readonly INavigationService _navigationService;
 
-        public LoginPage()
+        public LoginPage(LoginViewModel viewModel, INavigationService navigationService)
         {
             this.InitializeComponent();
+            _navigationService = navigationService;
+            ViewModel = viewModel;
+            DataContext = ViewModel;
             this.Loaded += LoginPage_Loaded;
+
+            RegisterLink.Click += (s, e) => navigationService.NavigateTo(typeof(RegisterPage));
         }
 
         private void LoginPage_Loaded(object sender, RoutedEventArgs e)
@@ -45,67 +52,29 @@ namespace DevTools.UI.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
-            ViewModel = new LoginViewModel(authService, OnLoginSuccess);
+            //var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
+            //ViewModel = new LoginViewModel(authService, OnLoginSuccess);
             EmailTextBox.Focus(FocusState.Programmatic);
         }
 
-        private void OnLoginSuccess(User user)
+        private async void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            var exitAnimation = new Storyboard();
-            var fadeOut = new DoubleAnimation
+            Storyboard exitAnimation = new Storyboard();
+            DoubleAnimation fadeOut = new DoubleAnimation
             {
                 From = 1.0,
                 To = 0.0,
-                Duration = new Duration(TimeSpan.FromMilliseconds(300))
+                Duration = new Duration(TimeSpan.FromMilliseconds(200))
             };
             Storyboard.SetTarget(fadeOut, MainPanel);
             Storyboard.SetTargetProperty(fadeOut, "Opacity");
             exitAnimation.Children.Add(fadeOut);
 
-            var toolService = App.ServiceProvider.GetService(typeof(ToolService)) as ToolService;
-            var toolGroupService = App.ServiceProvider.GetService(typeof(ToolGroupService)) as ToolGroupService;
-            if (user.IsAdmin)
-            {
-                var adminViewModel = new AdminDashboardViewModel(
-                    toolService,
-                    toolGroupService,
-                    user
-                );
-
-                exitAnimation.Completed += (s, e) =>
-                {
-                    Frame.Navigate(typeof(AdminDashboardPage), adminViewModel);
-                };
-            }
-            else
-            {
-                var accountService = App.ServiceProvider.GetService(typeof(AccountService)) as AccountService;
-                var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
-                var viewModel = new DashboardViewModel(
-                    toolService,
-                    toolGroupService,
-                    accountService,
-                    authService,
-                    onLogout: () =>
-                    {
-                        Frame.Navigate(typeof(DashboardPage), new DashboardViewModel(toolService, toolGroupService, accountService, authService, () => { }));
-                    },
-                    user
-                );
-
-                exitAnimation.Completed += (s, e) =>
-                {
-                    Frame.Navigate(typeof(DashboardPage), viewModel);
-                };
-            }
-
             exitAnimation.Begin();
-        }
+            await Task.Delay(180);
 
-        private void RegisterLink_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(RegisterPage));
+            // Use navigationService instead of Frame.Navigate
+            _navigationService.NavigateTo(typeof(DashboardPage));
         }
     }
 }

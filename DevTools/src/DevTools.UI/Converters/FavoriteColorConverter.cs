@@ -1,24 +1,23 @@
-﻿using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Diagnostics;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI;
 
 namespace DevTools.UI.Converters
 {
-    public class StringToVisibilityConverter : IValueConverter
+    public class FavoriteColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is string stringValue)
+            if (value is bool isFavorite)
             {
-                bool isEmpty = string.IsNullOrEmpty(value?.ToString());
-                return isEmpty ? Visibility.Collapsed : Visibility.Visible;
+                return isFavorite ? new SolidColorBrush(Colors.Gold) : new SolidColorBrush(Colors.Gray);
             }
-            return Visibility.Collapsed;
+            return new SolidColorBrush(Colors.Gray);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

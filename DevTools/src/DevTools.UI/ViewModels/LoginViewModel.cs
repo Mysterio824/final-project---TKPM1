@@ -1,6 +1,7 @@
 ﻿using DevTools.UI.Models;
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
+using DevTools.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace DevTools.UI.ViewModels
     public class LoginViewModel : BaseViewModel
     {
         private readonly AuthService _authService;
-        private readonly Action<User> _onLoginSuccess;
+        private readonly INavigationService _navigationService;
         private string _email = string.Empty;
         private string _password = string.Empty;
         private string _errorMessage = string.Empty;
@@ -75,10 +76,10 @@ namespace DevTools.UI.ViewModels
         public ICommand TogglePasswordVisibilityCommand { get; }
         public ICommand ResetPasswordCommand { get; }
 
-        public LoginViewModel(AuthService authService, Action<User> onLoginSuccess)
+        public LoginViewModel(AuthService authService, INavigationService navigationService)
         {
             _authService = authService;
-            _onLoginSuccess = onLoginSuccess;
+            _navigationService = navigationService;
             LoginCommand = new AsyncCommand(ExecuteLoginAsync, CanExecuteLogin);
             TogglePasswordVisibilityCommand = new RelayCommand(ExecuteTogglePasswordVisibility);
         }
@@ -98,8 +99,6 @@ namespace DevTools.UI.ViewModels
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                await Task.Delay(500);
-
                 var user = await _authService.LoginAsync(Email, Password);
                 if (user != null)
                 {
@@ -107,13 +106,19 @@ namespace DevTools.UI.ViewModels
                     {
                         var vault = new Windows.Security.Credentials.PasswordVault();
                         var credential = new Windows.Security.Credentials.PasswordCredential(
-                            "DevTools",
-                            Email,
-                            Password
-                        );
+                            "DevTools", Email, Password);
                         vault.Add(credential);
                     }
-                    _onLoginSuccess(user);
+
+                    // Navigate based on user role
+                    if (user.IsAdmin)
+                    {
+                        _navigationService.NavigateTo(typeof(AdminDashboardPage));
+                    }
+                    else
+                    {
+                        _navigationService.NavigateTo(typeof(DashboardPage));
+                    }
                 }
                 else
                 {

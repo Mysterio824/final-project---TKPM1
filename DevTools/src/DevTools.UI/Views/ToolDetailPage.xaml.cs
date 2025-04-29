@@ -44,7 +44,7 @@ namespace DevTools.UI.Views
             }
             else if (e.Parameter is Tool tool)
             {
-                ViewModel = App.ServiceProvider.GetService<ToolDetailViewModel>();
+                //ViewModel = App.ServiceProvider.GetService<ToolDetailViewModel>();
                 LoadTool(tool);
             }
             this.DataContext = ViewModel;

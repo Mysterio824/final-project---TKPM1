@@ -22,7 +22,7 @@ namespace DevTools.UI.ViewModels
     public class ToolDetailViewModel : BaseViewModel
     {
         private readonly ToolService _toolService;
-        private readonly ToolLoader _toolLoader = ToolLoader.Instance;
+        private readonly ToolLoader _toolLoader;
         private Tool _tool;
         private UserControl _toolUI;
         private bool _isLoading;
@@ -83,9 +83,10 @@ namespace DevTools.UI.ViewModels
         public ICommand LoadToolCommand { get; }
         public ICommand ExecuteToolCommand { get; }
 
-        public ToolDetailViewModel(ToolService toolService)
+        public ToolDetailViewModel(ToolService toolService, ToolLoader toolLoader)
         {
             _toolService = toolService;
+            _toolLoader = toolLoader;
             LoadToolCommand = new AsyncCommand<Tool>(LoadToolAsync);
             ExecuteToolCommand = new AsyncCommand<object>(ExecuteToolAsync, CanExecuteTool);
         }

@@ -1,5 +1,6 @@
 ﻿using DevTools.UI.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,20 +12,16 @@ namespace DevTools.UI.Services
 {
     public class ToolLoader
     {
-        private static readonly ToolLoader _instance = new();
-        public static ToolLoader Instance => _instance;
-
-        private readonly Dictionary<string, ITool> _tools = new();
-        private readonly Dictionary<string, Assembly> _pluginAssemblies = new();
+        private readonly ConcurrentDictionary<string, ITool> _tools = new();
+        private readonly ConcurrentDictionary<string, Assembly> _pluginAssemblies = new();
 
         public event EventHandler<ToolAddedEventArgs> ToolAdded;
 
         public void RegisterTool(Tool tool, ITool toolInstance)
         {
-            string key = tool.Id.ToString(); // Use Tool.Id as the key
-            if (!_tools.ContainsKey(key))
+            string key = tool.Id.ToString();
+            if (_tools.TryAdd(key, toolInstance))
             {
-                _tools.Add(key, toolInstance);
                 ToolAdded?.Invoke(this, new ToolAddedEventArgs(toolInstance));
             }
         }
@@ -40,7 +37,7 @@ namespace DevTools.UI.Services
                     if (Activator.CreateInstance(type) is ITool toolInstance)
                     {
                         RegisterTool(tool, toolInstance);
-                        _pluginAssemblies[tool.Id.ToString()] = assembly;
+                        _pluginAssemblies.TryAdd(tool.Id.ToString(), assembly);
                         return toolInstance;
                     }
                 }

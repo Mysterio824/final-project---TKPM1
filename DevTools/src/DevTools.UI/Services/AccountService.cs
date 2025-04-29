@@ -6,85 +6,137 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using DevTools.UI.Models;
+using System.Net.Http.Json;
 
 namespace DevTools.UI.Services
 {
     public class AccountService
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AccountService(HttpClient httpClient, string baseUrl)
+        public AccountService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _baseUrl = baseUrl;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public void SetAuthToken(string token)
+        public async Task<(bool Succeeded, string ErrorMessage)> AddToFavoritesAsync(int toolId)
         {
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-            else
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = null;
-            }
-        }
-
-        public async Task<bool> AddToFavoritesAsync(int toolId)
-        {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Account/favorite/{toolId}/add", null);
-                return response.IsSuccessStatusCode;
+                var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"Account/favorite/{toolId}/add", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error adding tool to favorites: {response.StatusCode}");
+                    return (false, $"HTTP error: {response.StatusCode}");
+                }
+
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
+                if (!apiResponse.Succeeded)
+                {
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to add tool to favorites: {error}");
+                    return (false, error);
+                }
+
+                return (true, string.Empty);
             }
             catch (HttpRequestException ex)
             {
                 Debug.WriteLine($"Error adding tool to favorites: {ex.Message}");
-                return false;
+                return (false, ex.Message);
             }
         }
 
-        public async Task<bool> RemoveFromFavoritesAsync(int toolId)
+        public async Task<(bool Succeeded, string ErrorMessage)> RemoveFromFavoritesAsync(int toolId)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Account/favorite/{toolId}/remove", null);
-                return response.IsSuccessStatusCode;
+                var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"Account/favorite/{toolId}/remove", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error removing tool from favorites: {response.StatusCode}");
+                    return (false, $"HTTP error: {response.StatusCode}");
+                }
+
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
+                if (!apiResponse.Succeeded)
+                {
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to remove tool from favorites: {error}");
+                    return (false, error);
+                }
+
+                return (true, string.Empty);
             }
             catch (HttpRequestException ex)
             {
                 Debug.WriteLine($"Error removing tool from favorites: {ex.Message}");
-                return false;
+                return (false, ex.Message);
             }
         }
 
-        public async Task<bool> RequestPremiumUpgradeAsync()
+        public async Task<(bool Succeeded, string ErrorMessage)> RequestPremiumUpgradeAsync()
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Account/premium/request", null);
-                return response.IsSuccessStatusCode;
+                var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("Account/premium/request", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error requesting premium upgrade: {response.StatusCode}");
+                    return (false, $"HTTP error: {response.StatusCode}");
+                }
+
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
+                if (!apiResponse.Succeeded)
+                {
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to request premium upgrade: {error}");
+                    return (false, error);
+                }
+
+                return (true, string.Empty);
             }
             catch (HttpRequestException ex)
             {
                 Debug.WriteLine($"Error requesting premium upgrade: {ex.Message}");
-                return false;
+                return (false, ex.Message);
             }
         }
 
-        public async Task<bool> RevokePremiumAsync()
+        public async Task<(bool Succeeded, string ErrorMessage)> RevokePremiumAsync()
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Account/premium/revoke", null);
-                return response.IsSuccessStatusCode;
+                var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("Account/premium/revoke", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error revoking premium upgrade: {response.StatusCode}");
+                    return (false, $"HTTP error: {response.StatusCode}");
+                }
+
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
+                if (!apiResponse.Succeeded)
+                {
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to revoke premium upgrade: {error}");
+                    return (false, error);
+                }
+
+                return (true, string.Empty);
             }
             catch (HttpRequestException ex)
             {
-                Debug.WriteLine($"Error revoking premium status: {ex.Message}");
-                return false;
+                Debug.WriteLine($"Error revoking premium upgrade: {ex.Message}");
+                return (false, ex.Message);
             }
         }
     }

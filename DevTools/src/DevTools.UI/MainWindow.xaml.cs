@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.Views;
 using DevTools.UI.Services;
 using DevTools.UI.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,23 +27,13 @@ namespace DevTools.UI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(IServiceProvider serviceProvider)
         {
-            this.InitializeComponent();
-            var toolService = App.ServiceProvider.GetService(typeof(ToolService)) as ToolService;
-            var toolGroupService = App.ServiceProvider.GetService(typeof(ToolGroupService)) as ToolGroupService;
-            var accountService = App.ServiceProvider.GetService(typeof(AccountService)) as AccountService;
-            var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
-            var viewModel = new DashboardViewModel
-            (
-                toolService,
-                toolGroupService,
-                accountService,
-                authService,
-                onLogout: () => { },
-                null
-            );
-            shell.Navigate(typeof(DashboardPage), viewModel);
+            InitializeComponent();
+
+            var _navigationService = serviceProvider.GetService<INavigationService>();
+            _navigationService.Initialize(shell);
+            _navigationService.NavigateTo(typeof(DashboardPage));
         }
     }
 }

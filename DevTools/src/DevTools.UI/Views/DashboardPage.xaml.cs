@@ -17,6 +17,9 @@ using DevTools.UI.Models;
 using DevTools.UI.Services;
 using System.Diagnostics;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
+using Windows.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,50 +31,127 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class DashboardPage : Page
     {
-        public DashboardViewModel ViewModel { get; private set; }
-        private readonly Action<User> onLogout;
+        public DashboardViewModel ViewModel { get; }
 
-        public DashboardPage()
+        public DashboardPage(DashboardViewModel viewModel, INavigationService navigationService)
         {
             this.InitializeComponent();
+
+            ViewModel = viewModel;
+            DataContext = ViewModel;
+
+            // Set navigation actions
+            //ViewModel.NavigateToLogin = () => navigationService.NavigateTo(typeof(LoginPage));
+            //ViewModel.NavigateToRegister = () => navigationService.NavigateTo(typeof(RegisterPage));
+            //ViewModel.ShowMessage = message => ShowMessageDialog(message);
+            //ViewModel.ShowPremiumRequired = () => ShowMessageDialog("Premium subscription required to access this tool.");
+            //ViewModel.ShowToolUnavailable = () => ShowMessageDialog("This tool is currently unavailable.");
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            ViewModel = e.Parameter as DashboardViewModel;
+            base.OnNavigatedTo(e);
+            if (e.Parameter is User user)
+            {
+                ViewModel.CurrentUser = user;
+                ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
+            }
 
-            ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
+            // Setup ViewModel action handlers
+            ViewModel.ShowMessage = ShowMessage;
+            ViewModel.ShowPremiumRequired = () => ShowPremiumUpgradeDialog();
+            ViewModel.ShowToolUnavailable = () => ShowToolUnavailableMessage();
+
+            // Initialize UI
+            InitializeUI();
+        }
+
+        private void InitializeUI()
+        {
+            // Setup theme toggle based on current theme
             if (Window.Current != null && Window.Current.Content is FrameworkElement rootElement)
             {
-                ThemeToggle.IsChecked = rootElement.ActualTheme == ElementTheme.Dark;
-                ThemeIcon.Glyph = ThemeToggle.IsChecked == true ? "\uE708" : "\uE793";
+                ThemeToggle.IsOn = rootElement.ActualTheme == ElementTheme.Dark;
+                ThemeIcon.Glyph = ThemeToggle.IsOn == true ? "\uE708" : "\uE793";
+            }
+
+            // Update side panel state
+            UpdateSidePanelDisplay();
+
+            // Setup UI based on authentication state
+            UpdateAuthenticationUI();
+
+            // Setup favorites button state
+            UpdateFavoritesButtonStyle();
+
+            // Register for property changes
+            ViewModel.PropertyChanged += (s, e) => {
+                if (e.PropertyName == nameof(ViewModel.CurrentUser))
+                {
+                    UpdateAuthenticationUI();
+                }
+                else if (e.PropertyName == nameof(ViewModel.ShowFavoritesOnly))
+                {
+                    UpdateFavoritesButtonStyle();
+                }
+                else if (e.PropertyName == nameof(ViewModel.IsSidePanelExpanded))
+                {
+                    UpdateSidePanelDisplay();
+                }
+            };
+        }
+        private void UpdateAuthenticationUI()
+        {
+            // Update UI elements based on authentication state
+            if (ViewModel.IsAuthenticated)
+            {
+                // Show logged-in user UI
+                AnonymousUserPanel.Visibility = Visibility.Collapsed;
+                AuthenticatedUserPanel.Visibility = Visibility.Visible;
+                UserNameTextBlock.Text = ViewModel.CurrentUser.Name;
+
+                // Show/hide premium UI
+                PremiumPanel.Visibility = ViewModel.IsPremium ? Visibility.Visible : Visibility.Collapsed;
+                RegularUserPanel.Visibility = ViewModel.IsPremium ? Visibility.Collapsed : Visibility.Visible;
             }
             else
             {
-                // Handle potential issues with Window.Current being null.
-                Debug.WriteLine("Window.Current is null. Ensure that the window is properly initialized.");
+                // Show anonymous user UI
+                AnonymousUserPanel.Visibility = Visibility.Visible;
+                AuthenticatedUserPanel.Visibility = Visibility.Collapsed;
+                PremiumPanel.Visibility = Visibility.Collapsed;
+                RegularUserPanel.Visibility = Visibility.Collapsed;
             }
-            UpdateSidePanelDisplay();
         }
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(LoginPage));
+            ViewModel.NavigateToLoginCommand.Execute(null);
         }
 
         private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(RegisterPage));
+            ViewModel.NavigateToRegisterCommand.Execute(null);
+        }
+
+        private void LogoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LogoutCommand.Execute(null);
         }
 
         private void FavoritesButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.ToggleFavoritesCommand.Execute(null);
+            if (!ViewModel.IsAuthenticated)
+            {
+                ShowLoginRequiredDialog();
+                return;
+            }
 
-            UpdateFavoritesButtonStyle();
+            ViewModel.ToggleFavoritesCommand.Execute(null);
         }
+
         private void UpdateFavoritesButtonStyle()
         {
             // Style the favorites button based on state
@@ -86,24 +166,19 @@ namespace DevTools.UI.Views
                 FavoriteIcon.Foreground = new SolidColorBrush((Color)Resources["SystemBaseHighColor"]);
             }
         }
+
         private void ToolsGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            var tool = e.ClickedItem as Tool;
-            if (tool != null)
+            if (e.ClickedItem is Tool tool)
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
-                {
-                    ShowPremiumUpgradeDialog();
-                }
-                else if (!tool.IsEnabled)
-                {
-                    ShowToolUnavailableMessage();
-                }
-                else
-                {
-                    ViewModel.ContentFrameSource = tool;
-                    ViewModel.IsContentFrameVisible = true;
-                }
+                // Set the active tool
+                ViewModel.ActiveToolContent = tool;
+
+                // Set tool detail mode
+                ViewModel.IsToolDetailMode = true;
+
+                // Navigate to tool detail page with the tool ID
+                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
             }
         }
 
@@ -113,16 +188,24 @@ namespace DevTools.UI.Views
             {
                 Title = "Premium Feature",
                 Content = "This tool is available only for premium users. Would you like to upgrade to premium?",
-                PrimaryButtonText = "Upgrade",
+                PrimaryButtonText = ViewModel.IsAuthenticated ? "Upgrade" : "Login",
                 CloseButtonText = "Not Now",
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.XamlRoot
             };
 
             ContentDialogResult result = await premiumDialog.ShowAsync();
+
             if (result == ContentDialogResult.Primary)
             {
-                ViewModel.RequestPremiumCommand.Execute(null);
+                if (ViewModel.IsAuthenticated)
+                {
+                    ViewModel.RequestPremiumCommand.Execute(null);
+                }
+                else
+                {
+                    Frame.Navigate(typeof(LoginPage));
+                }
             }
         }
 
@@ -139,33 +222,32 @@ namespace DevTools.UI.Views
 
             await unavailableDialog.ShowAsync();
         }
-        private void SidebarToolItem_Click(object sender, ItemClickEventArgs e)
+
+        private async void ShowLoginRequiredDialog()
         {
-            var tool = e.ClickedItem as Tool;
-            if (tool != null)
+            ContentDialog loginDialog = new ContentDialog
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
-                {
-                    ShowPremiumUpgradeDialog();
-                }
-                else if (!tool.IsEnabled)
-                {
-                    ShowToolUnavailableMessage();
-                }
-                else
-                {
-                    // Navigate to tool detail in content frame instead of full page navigation
-                    ViewModel.ContentFrameSource = tool;
-                    ViewModel.IsContentFrameVisible = true;
-                }
+                Title = "Login Required",
+                Content = "You need to log in to use this feature.",
+                PrimaryButtonText = "Login",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            ContentDialogResult result = await loginDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                ViewModel.NavigateToLoginCommand.Execute(null);
             }
         }
 
         private void ToggleSidePanel_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.ToggleSidePanel();
-            UpdateSidePanelDisplay();
         }
+
         private void UpdateSidePanelDisplay()
         {
             if (ViewModel.IsSidePanelExpanded)
@@ -175,11 +257,6 @@ namespace DevTools.UI.Views
 
                 // Show the text elements in side panel
                 SidePanelHeaderText.Visibility = Visibility.Visible;
-                // Make sure category names are visible
-                foreach (var group in ViewModel.ToolGroups)
-                {
-                    group.ShowHeader = true;
-                }
             }
             else
             {
@@ -188,11 +265,6 @@ namespace DevTools.UI.Views
 
                 // Hide the text elements in side panel
                 SidePanelHeaderText.Visibility = Visibility.Collapsed;
-                // Hide category names
-                foreach (var group in ViewModel.ToolGroups)
-                {
-                    group.ShowHeader = false;
-                }
             }
         }
 
@@ -201,126 +273,244 @@ namespace DevTools.UI.Views
             // Clear search and reload all tools
             ViewModel.SearchQuery = string.Empty;
             ViewModel.ShowFavoritesOnly = false;
-            ViewModel.IsContentFrameVisible = false;
-            ViewModel.ContentFrameSource = null;
+            ViewModel.IsToolContentVisible = false;
+            ViewModel.IsToolDetailMode = false;
+            ContentFrame.Content = null;
+            // Continue from where the previous code ended
             ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
-
-            // Update UI states
-            UpdateFavoritesButtonStyle();
-        }
-        private void ContentFrame_BackButtonClick(object sender, RoutedEventArgs e)
-        {
-            // Go back to main view
-            ViewModel.IsContentFrameVisible = false;
-            ViewModel.ContentFrameSource = null;
         }
 
-        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        private void ThemeToggle_Toggled(object sender, RoutedEventArgs e)
         {
-            //if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            //{
-            //    // Debounce search or provide suggestions as user types
-            //    if (string.IsNullOrWhiteSpace(sender.Text))
-            //    {
-            //        sender.ItemsSource = null;
-            //    }
-            //    else if (sender.Text.Length >= 2)
-            //    {
-            //        // Async search for suggestions
-            //        SearchForSuggestions(sender.Text);
-            //    }
-            //}
-        }
-
-        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-            if (args.SelectedItem is Tool selectedTool)
+            if (Window.Current != null && Window.Current.Content is FrameworkElement rootElement)
             {
-                ViewModel.SelectedTool = selectedTool;
-                sender.Text = selectedTool.Name;
+                rootElement.RequestedTheme = ThemeToggle.IsOn == true
+                    ? ElementTheme.Dark
+                    : ElementTheme.Light;
+
+                ThemeIcon.Glyph = ThemeToggle.IsOn == true
+                    ? "\uE708"  // Moon icon
+                    : "\uE793"; // Sun icon
             }
         }
 
-        private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        private void LanguageButton_Click(object sender, RoutedEventArgs e)
         {
-            if (args.ChosenSuggestion is Tool selectedTool)
-            {
-                // Navigate to the selected tool
-                Frame.Navigate(typeof(ToolDetailPage), selectedTool);
-            }
-            else
-            {
-                // Execute search with current query
-                ViewModel.SearchCommand.Execute(null);
-            }
+            // Language selection functionality would go here
+            // For example, show a flyout with language options
+            LanguageFlyout.ShowAt(sender as FrameworkElement);
         }
 
-        private void ThemeToggle_Click(object sender, RoutedEventArgs e)
+        private void LanguageOption_Click(object sender, RoutedEventArgs e)
         {
-            var toggleButton = sender as ToggleButton;
-            if (toggleButton != null)
+            if (sender is MenuFlyoutItem item)
             {
-                bool isDarkTheme = toggleButton.IsChecked == true;
+                string language = item.Tag.ToString();
+                // Set the application language
+                // This would involve more complex localization logic
+                LanguageButton.Content = item.Text;
 
-                // Update the icon based on the toggle state
-                ThemeIcon.Glyph = isDarkTheme ? "\uE708" : "\uE793";
-
-                // Apply the theme
-                if (Window.Current != null && Window.Current.Content is FrameworkElement rootElement)
-                {
-                    rootElement.RequestedTheme = isDarkTheme ? ElementTheme.Dark : ElementTheme.Light;
-                }
-            }
-        }
-        
-        private void LanguageSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle language change
-            var combo = sender as ComboBox;
-            if (combo != null)
-            {
-                string selectedLanguage = (combo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                // Apply language change logic
+                // Close the flyout
+                LanguageFlyout.Hide();
             }
         }
 
-        private void InfoButton_Click(object sender, RoutedEventArgs e)
+        private void GithubButton_Click(object sender, RoutedEventArgs e)
         {
-            ShowInfoDialog();
+            OpenBrowserTo("https://github.com/Mysterio824/final-project---TKPM1");
         }
 
-        private async void ShowInfoDialog()
+        private async void AboutButton_Click(object sender, RoutedEventArgs e)
         {
-            ContentDialog infoDialog = new ContentDialog
+            // Show about dialog
+            ContentDialog aboutDialog = new ContentDialog
             {
-                Title = "About IT Tools",
-                Content = "IT Tools is a comprehensive collection of utilities for IT professionals. Version 1.0.0",
+                Title = "About Tool Platform",
+                Content = "Tool Platform is a comprehensive suite of utilities for developers and professionals. " +
+                         "Version 1.0.0\n\n" +
+                         "© 2025 Your Company. All rights reserved.",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot
             };
 
-            await infoDialog.ShowAsync();
+            await aboutDialog.ShowAsync();
         }
 
-        private void SidebarToolItem_Click(object sender, ItemClickEventArgs e)
+        private async void ShowMessage(string message)
         {
-            var tool = e.ClickedItem as Tool;
-            if (tool != null)
+            ContentDialog messageDialog = new ContentDialog
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
+                Title = "Information",
+                Content = message,
+                CloseButtonText = "OK",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            await messageDialog.ShowAsync();
+        }
+
+        private async void OpenBrowserTo(string url)
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Update search query in ViewModel
+            ViewModel.SearchQuery = SearchBox.Text;
+
+            // Show or hide suggestion box based on text existence
+            SearchSuggestionBox.Visibility = string.IsNullOrWhiteSpace(SearchBox.Text)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+            // Only update search if not typing
+            _searchDebounceTimer?.Stop();
+            _searchDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(300)
+            };
+            _searchDebounceTimer.Tick += (s, args) =>
+            {
+                _searchDebounceTimer.Stop();
+                // Execute search
+                ViewModel.SearchCommand.Execute(null);
+            };
+            _searchDebounceTimer.Start();
+
+            // Update suggestions
+            UpdateSearchSuggestions();
+        }
+
+        private DispatcherTimer _searchDebounceTimer;
+
+        private void UpdateSearchSuggestions()
+        {
+            if (string.IsNullOrWhiteSpace(SearchBox.Text))
+            {
+                SearchSuggestionBox.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            string searchText = SearchBox.Text.ToLowerInvariant();
+            var suggestions = ViewModel.AllTools
+                .Where(t => t.Name.ToLowerInvariant().Contains(searchText) ||
+                            (t.Description != null && t.Description.ToLowerInvariant().Contains(searchText)))
+                .Take(5)
+                .ToList();
+
+            SearchSuggestionsList.ItemsSource = suggestions;
+            SearchSuggestionBox.Visibility = suggestions.Any()
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        private void SearchSuggestionsList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is Tool tool)
+            {
+                // Clear search and select the tool
+                SearchBox.Text = "";
+                SearchSuggestionBox.Visibility = Visibility.Collapsed;
+                ViewModel.ActiveToolContent = tool;
+
+                // Set tool detail mode
+                ViewModel.IsToolDetailMode = true;
+
+                // Navigate to tool detail page with the tool ID
+                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
+            }
+        }
+
+        private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Execute search
+                ViewModel.SearchCommand.Execute(null);
+                SearchSuggestionBox.Visibility = Visibility.Collapsed;
+                SearchBox.Focus(FocusState.Programmatic); // Keep focus in the search box
+            }
+        }
+
+        private void SortByComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel != null && SortByComboBox.SelectedItem is string sortBy)
+            {
+                ViewModel.SortBy = sortBy;
+            }
+        }
+
+        private void FilterGroupComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel != null && FilterGroupComboBox.SelectedItem is string filterGroup)
+            {
+                ViewModel.FilterGroup = filterGroup;
+            }
+        }
+
+        private void GroupHeader_Click(object sender, RoutedEventArgs e)
+        {
+            // Toggle group expansion when header is clicked
+            if (sender is FrameworkElement element && element.DataContext is ToolGroup group)
+            {
+                group.IsExpanded = !group.IsExpanded;
+            }
+        }
+
+        private void ToolItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Tool tool)
+            {
+                // Set the active tool
+                ViewModel.ActiveToolContent = tool;
+
+                // Set tool detail mode
+                ViewModel.IsToolDetailMode = true;
+
+                // Navigate to tool detail page with the tool ID
+                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
+            }
+        }
+
+        private void FavoriteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is Tool tool)
+            {
+                if (!ViewModel.IsAuthenticated)
                 {
-                    ShowPremiumUpgradeDialog();
+                    ShowLoginRequiredDialog();
+                    return;
                 }
-                else if (!tool.IsEnabled)
+
+                if (tool.IsFavorite)
                 {
-                    ShowToolUnavailableMessage();
+                    ViewModel.RemoveFromFavoritesCommand.Execute(tool);
                 }
                 else
                 {
-                    Frame.Navigate(typeof(ToolDetailPage), tool);
+                    ViewModel.AddToFavoritesCommand.Execute(tool);
                 }
             }
+        }
+
+        private void BackToHomeButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Close tool content and return to grid view
+            ViewModel.CloseToolContentCommand.Execute(null);
+        }
+
+        private void PremiumRequestButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ViewModel.IsAuthenticated)
+            {
+                ShowLoginRequiredDialog();
+                return;
+            }
+
+            ViewModel.RequestPremiumCommand.Execute(null);
         }
     }
 }

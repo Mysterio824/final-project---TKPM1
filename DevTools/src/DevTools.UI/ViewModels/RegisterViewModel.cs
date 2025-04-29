@@ -1,8 +1,11 @@
 ﻿using DevTools.UI.Models;
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
+using DevTools.UI.Views;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +16,7 @@ namespace DevTools.UI.ViewModels
     public class RegisterViewModel : BaseViewModel
     {
         private readonly AuthService _authService;
-        private readonly Action<User> _onRegisterSuccess;
+        private readonly INavigationService _navigationService;
 
         private string _username;
         private string _email;
@@ -69,11 +72,10 @@ namespace DevTools.UI.ViewModels
 
         public ICommand RegisterCommand { get; }
 
-        public RegisterViewModel(AuthService authService, Action<User> onRegisterSuccess)
+        public RegisterViewModel(AuthService authService, INavigationService navigationService)
         {
             _authService = authService;
-            _onRegisterSuccess = onRegisterSuccess;
-
+            _navigationService = navigationService;
             RegisterCommand = new AsyncCommand(ExecuteRegisterAsync, CanExecuteRegister);
         }
 
@@ -92,7 +94,9 @@ namespace DevTools.UI.ViewModels
                 var user = await _authService.RegisterAsync(Username, Email, Password);
                 if (user != null)
                 {
-                    _onRegisterSuccess(user);
+                    var app = Application.Current as App;
+                    app.CurrentUser = user;
+                    _navigationService.NavigateTo(typeof(DashboardPage), user);
                 }
                 else
                 {

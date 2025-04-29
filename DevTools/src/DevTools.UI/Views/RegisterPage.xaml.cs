@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using DevTools.UI.Services;
 using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,32 +27,22 @@ namespace DevTools.UI.Views
     /// </summary>
     public sealed partial class RegisterPage : Page
     {
-        public RegisterViewModel ViewModel { get; private set; }
+        public RegisterViewModel ViewModel { get; }
 
-        public RegisterPage()
+        public RegisterPage(RegisterViewModel viewModel, INavigationService navigationService)
         {
-            this.InitializeComponent();
+            InitializeComponent();
+            ViewModel = viewModel;
+            DataContext = ViewModel;
+
+            // Handle navigation to LoginPage
+            LoginLink.Click += (s, e) => navigationService.NavigateTo(typeof(LoginPage));
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            var authService = App.ServiceProvider.GetService(typeof(AuthService)) as AuthService;
-            ViewModel = new RegisterViewModel(authService, OnRegisterSuccess);
-
             UsernameTextBox.Focus(FocusState.Programmatic);
-        }
-
-        private void OnRegisterSuccess(User user)
-        {
-            // Navigate to main page with the newly registered user
-            //Frame.Navigate(typeof(MainPage), user);
-        }
-
-        private void LoginLink_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(LoginPage));
         }
     }
 }

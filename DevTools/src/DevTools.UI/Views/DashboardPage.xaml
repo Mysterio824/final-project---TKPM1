@@ -11,339 +11,316 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-	<Page.Resources>
-		<cv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
-		<cv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-	    <cv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
-		<cv:EmptyCollectionToVisibilityConverter x:Key="EmptyCollectionToVisibilityConverter"/>
-		<cv:PremiumButtonTextConverter x:Key="PremiumButtonTextConverter"/>
-		<cv:PremiumCommandConverter x:Key="PremiumCommandConverter"/>
-
-        <SolidColorBrush x:Key="SidePanelBackgroundBrush" Color="{ThemeResource SystemChromeMediumLowColor}"/>
-        <SolidColorBrush x:Key="SidePanelBorderBrush" Color="{ThemeResource SystemChromeMediumColor}"/>
+    <Page.Resources>
         <x:Double x:Key="SidePanelExpandedWidth">250</x:Double>
-        <x:Double x:Key="SidePanelCollapsedWidth">48</x:Double>
+        <x:Double x:Key="SidePanelCollapsedWidth">50</x:Double>
+        <x:Double x:Key="HeaderHeight">48</x:Double>
 
-        <Style x:Key="ToolCardStyle" TargetType="Grid">
-            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
-            <Setter Property="Padding" Value="15"/>
-        </Style>
-        <Style x:Key="SidePanelButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-        </Style>
-
-        <DataTemplate x:Key="SearchResultItemTemplate" x:DataType="model:Tool">
-            <Grid Padding="12" Background="Transparent">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <FontIcon Grid.Column="0" 
-                      Glyph="{x:Bind SymbolGlyph}" 
-                      Margin="0,0,12,0"
-                      VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="{x:Bind Name}" 
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           FontWeight="SemiBold"/>
-                    <TextBlock Text="{x:Bind Description}" 
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           TextTrimming="CharacterEllipsis"
-                           Opacity="0.6"/>
-                </StackPanel>
+        <!-- Tool Item Template -->
+        <DataTemplate x:Key="ToolItemTemplate" x:DataType="model:Tool">
+            <Grid Width="200" Height="240" Margin="8" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                  BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" BorderThickness="1"
+                  CornerRadius="8" Tapped="ToolItem_Click">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <!-- Tool Header with Icon -->
+                <Grid Grid.Row="0" Height="48" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Symbol -->
+                    <TextBlock Grid.Column="0" Text="{x:Bind SymbolGlyph}" FontFamily="Segoe MDL2 Assets" 
+                               FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <!-- Name -->
+                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="16"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <!-- Premium Badge -->
+                    <Border Grid.Column="2" Background="Gold" CornerRadius="10" Padding="6,2" 
+                            Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="PRO" FontSize="10" FontWeight="Bold" Foreground="Black"/>
+                    </Border>
+                </Grid>
+                <!-- Group Name -->
+                <TextBlock Grid.Row="1" Text="{x:Bind GroupName}" FontSize="12" Opacity="0.7" 
+                           Margin="12,8,12,0" TextWrapping="Wrap"/>
+                <!-- Tool Description -->
+                <TextBlock Grid.Row="2" Text="{x:Bind Description}" Margin="12,8,12,8" TextWrapping="Wrap" 
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Top"/>
+                <!-- Tool Footer -->
+                <Grid Grid.Row="3" Padding="12,8">
+                    <Button x:Name="FavoriteButton" Background="Transparent" BorderThickness="0"
+                            Click="FavoriteButton_Click" HorizontalAlignment="Right"
+                            Tag="{x:Bind Id}">
+                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xE734;" 
+                                  Foreground="{x:Bind IsFavorite, Converter={StaticResource FavoriteColorConverter}}"/>
+                    </Button>
+                </Grid>
             </Grid>
         </DataTemplate>
-    </Page.Resources>
-
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="SidebarColumn" Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <!-- Side Panel -->
-        <Border Grid.Column="0" 
-            Background="{StaticResource SidePanelBackgroundBrush}"
-            BorderBrush="{StaticResource SidePanelBorderBrush}"
-            BorderThickness="0,0,1,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <Grid x:Name="SidePanel" 
-                  Width="{StaticResource SidePanelExpandedWidth}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Logo and Header -->
-                    <StackPanel Grid.Row="0" Margin="10">
-                        <Image Source="/Assets/logo2.png" Width="80" Height="80" Stretch="Fill" HorizontalAlignment="Left"/>
-                        <TextBlock x:Name="SidePanelHeaderText" Text="IT Tools" FontSize="18" FontWeight="SemiBold" Margin="5,10,0,10"/>
-                    </StackPanel>
-
-                    <!-- Tool Categories List - Improved styling -->
-                    <ItemsRepeater Grid.Row="1" 
-                               x:Name="ToolGroupsRepeater" 
-                               ItemsSource="{x:Bind ViewModel.ToolGroups, Mode=OneWay}"
-                               Margin="0,10,0,0">
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="model:ToolGroup">
-                                <Expander HorizontalAlignment="Stretch" 
-                                      Margin="5,2"
-                                      Padding="5"
-                                      Background="Transparent"
-                                      IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
-                                    <Expander.Header>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{x:Bind Name}" />
-                                        </StackPanel>
-                                    </Expander.Header>
-                                    <ListView ItemsSource="{x:Bind Tools}" 
-                                          SelectionMode="Single"
-                                          IsItemClickEnabled="True"
-                                          ItemClick="SidebarToolItem_Click"
-                                          Padding="0"
-                                          BorderThickness="0"
-                                          Background="Transparent">
-                                        <ListView.ItemContainerStyle>
-                                            <Style TargetType="ListViewItem">
-                                                <Setter Property="Padding" Value="5"/>
-                                                <Setter Property="Margin" Value="0,2"/>
-                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            </Style>
-                                        </ListView.ItemContainerStyle>
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate x:DataType="model:Tool">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <FontIcon Grid.Column="0" 
-                                                          Glyph="{x:Bind SymbolGlyph}" 
-                                                          FontSize="14" 
-                                                          Margin="0,0,8,0"/>
-
-                                                    <TextBlock Grid.Column="1" 
-                                                           Text="{x:Bind Name}" 
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Visibility="{Binding DataContext.IsSidePanelExpanded, ElementName=ToolGroupsRepeater, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                                                    <FontIcon Grid.Column="2" 
-                                                          Glyph="&#xEB29;" 
-                                                          Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}" 
-                                                          Foreground="Gold"
-                                                          FontSize="12"
-                                                          Margin="4,0,0,0"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
-                                </Expander>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+        <!-- Tool Group Template for Side Panel -->
+        <DataTemplate x:Key="ToolGroupTemplate" x:DataType="model:ToolGroup">
+            <StackPanel>
+                <!-- Group Header -->
+                <Grid Background="{ThemeResource SystemControlBackgroundListLowBrush}" Tapped="GroupHeader_Click">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" Margin="4" 
+                               Visibility="{Binding ShowHeader, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <FontIcon Grid.Column="2" Glyph="&#xE70D;" Margin="8,4" 
+                              Visibility="{Binding ShowHeader, Converter={StaticResource BoolToVisibilityConverter}}"
+                              FontSize="10"/>
                 </Grid>
-            </ScrollViewer>
-        </Border>
-        <!-- Main Content -->
-        <Grid Grid.Column="1" Padding="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Enhanced Header -->
-            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <!-- Group Tools List -->
+                <ItemsControl ItemsSource="{x:Bind Tools}" 
+                              Visibility="{x:Bind IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="model:Tool">
+                            <Grid Tapped="ToolItem_Click" Background="Transparent" Height="36">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Grid.Column="0" Glyph="{x:Bind SymbolGlyph}" Margin="16,0,0,0" FontSize="14"/>
+                                <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" Margin="8,0" 
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding DataContext.ShowHeader, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </DataTemplate>
+        <!-- Search Suggestion Template -->
+        <DataTemplate x:Key="SearchSuggestionTemplate" x:DataType="model:Tool">
+            <Grid Padding="8" Height="60">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-
-                <!-- Toggle Button for side panel -->
-                <Button Grid.Column="0" 
-                    x:Name="ToggleSidePanelButton"
-                    Margin="0,0,12,0"
-                    Click="ToggleSidePanel_Click"
-                    Background="Transparent"
-                    BorderBrush="Transparent">
-                    <FontIcon x:Name="TogglePanelIcon" Glyph="&#xE76B;"/>
-                </Button>
-
-                <!-- Home Button -->
-                <Button Grid.Column="1" 
-                    x:Name="HomeButton"
-                    Margin="0,0,12,0"
-                    Click="HomeButton_Click"
-                    Background="Transparent"
-                    BorderBrush="Transparent">
-                    <FontIcon Glyph="&#xE80F;"/>
-                </Button>
-
-                <!-- Search Bar with Suggestions -->
-                <AutoSuggestBox Grid.Column="2"
-                           x:Name="SearchBox" 
-                           PlaceholderText="Search tools..." 
-                           Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           QueryIcon="Find"
-                           TextChanged="SearchBox_TextChanged"
-                           SuggestionChosen="SearchBox_SuggestionChosen"
-                           QuerySubmitted="SearchBox_QuerySubmitted"
-                           ItemTemplate="{StaticResource SearchResultItemTemplate}"/>
-
-                <!-- Right Header Controls -->
-                <StackPanel Grid.Column="3" 
-                        Orientation="Horizontal" 
-                        HorizontalAlignment="Right">
-
-                    <!-- Language Selector -->
-                    <ComboBox x:Name="LanguageSelector"
-                          Width="100"
-                          Margin="5,0"
-                          VerticalAlignment="Center"
-                          SelectedIndex="0"
-                          SelectionChanged="LanguageSelector_SelectionChanged">
-                        <ComboBoxItem Content="English"/>
-                        <ComboBoxItem Content="Spanish"/>
-                        <ComboBoxItem Content="French"/>
-                        <ComboBoxItem Content="German"/>
-                    </ComboBox>
-
-                    <!-- Theme Toggle -->
-                    <ToggleButton x:Name="ThemeToggle"
-                              Click="ThemeToggle_Click"
-                              ToolTipService.ToolTip="Toggle Theme"
-                              Background="Transparent"
-                              BorderBrush="Transparent"
-                              Margin="5,0">
-                        <FontIcon x:Name="ThemeIcon" Glyph="&#xE793;"/>
-                    </ToggleButton>
-
-                    <!-- Info Button -->
-                    <Button x:Name="InfoButton"
-                        Click="InfoButton_Click"
-                        ToolTipService.ToolTip="About"
-                            Background="Transparent"
-                            BorderBrush="Transparent">
-                        <FontIcon Glyph="&#xE946;"/>
-                    </Button>
-
-                    <!-- GitHub Link -->
-                    <HyperlinkButton x:Name="GitHubLink"
-                                 NavigateUri="https://github.com/yourusername/ittools"
-                                 ToolTipService.ToolTip="GitHub Repository"
-                                     Background="Transparent"
-                                    BorderBrush="Transparent">
-                        <Image Grid.Row="0" Source="/Assets/github.svg" Width="20" Height="20" VerticalAlignment="Center"/>
-                    </HyperlinkButton>
-
-                    <!-- Anonymous UI -->
-                    <StackPanel x:Name="AnonymousUI" 
-                            Orientation="Horizontal" 
-                            Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                        <Button x:Name="LoginButton" Content="Login" Margin="5,0" Click="LoginButton_Click"/>
-                        <Button x:Name="RegisterButton" Content="Register" Margin="5,0" Click="RegisterButton_Click"/>
-                    </StackPanel>
-
-                    <!-- User UI -->
-                    <StackPanel x:Name="UserUI" 
-                            Orientation="Horizontal" 
-                            Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{x:Bind ViewModel.CurrentUser.Name, Mode=OneWay}" 
-                               VerticalAlignment="Center" 
-                               Margin="0,0,10,0"/>
-                        <Button x:Name="FavoritesButton" 
-                            ToolTipService.ToolTip="My Favorites" 
-                            Margin="5,0" 
-                            Click="FavoritesButton_Click"
-                            Background="Transparent"
-                            BorderBrush="Transparent">
-                            <FontIcon x:Name="FavoriteIcon" Glyph="&#xE00B;"/>
-                        </Button>
-                        <Button x:Name="RequestPremiumButton" 
-                            ToolTipService.ToolTip="Get Premium"
-                            Margin="5,0" 
-                            Command="{x:Bind ViewModel.RequestPremiumCommand}"
-                            Visibility="{x:Bind ViewModel.IsPremium, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                            <Button.Content>
-                                <Image Source="/Assets/premium.svg" Width="120" Height="120" VerticalAlignment="Center"/>
-                            </Button.Content>
-                        </Button>
-                        <Button x:Name="LogoutButton" 
-                            Command="{x:Bind ViewModel.LogoutCommand}" 
-                            ToolTipService.ToolTip="Logout"
-                            Margin="5,0"
-                            Background="Transparent"
-                            BorderBrush="Transparent">
-                            <FontIcon Glyph="&#xE7E8;"/>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
-
-            <!-- Error Message -->
-            <TextBlock Grid.Row="1" 
-                   Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
-                   Foreground="Red" 
-                   TextWrapping="Wrap" 
-                   Margin="0,0,0,10"
-                   Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"/>
-
-            <!-- Main Tool Grid -->
-            <Grid Visibility="{x:Bind ViewModel.IsContentFrameVisible, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-
-                <!-- Error Message -->
-                <TextBlock Grid.Row="0" 
-                           Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
-                           Foreground="Red" 
-                           TextWrapping="Wrap" 
-                           Padding="20,10"
-                           Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"/>
-
-                <!-- Tools Grid -->
-                <Grid Grid.Row="1" Padding="20">
-                    <GridView ItemsSource="{x:Bind ViewModel.FilteredTools, Mode=OneWay}" 
-                              SelectedItem="{x:Bind ViewModel.SelectedTool, Mode=TwoWay}"
-                              SelectionMode="Single"
-                              IsItemClickEnabled="True"
-                              ItemClick="ToolsGridView_ItemClick">
-                        <!-- ItemTemplate stays the same -->
-                        <GridView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsWrapGrid Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </GridView.ItemsPanel>
-                    </GridView>
-
-                    <!-- Loading Indicator -->
-                    <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
-                                  Width="50" 
-                                  Height="50" 
-                                  HorizontalAlignment="Center" 
-                                  VerticalAlignment="Center"/>
-
-                    <!-- No Results Message -->
-                    <TextBlock Text="No tools found matching your criteria." 
-                               HorizontalAlignment="Center" 
-                               VerticalAlignment="Center"
-                               Visibility="{x:Bind ViewModel.FilteredTools.Count, Mode=OneWay, Converter={StaticResource EmptyCollectionToVisibilityConverter}}"/>
+                <TextBlock Grid.Column="0" Grid.RowSpan="2" Text="{x:Bind SymbolGlyph}" 
+                           FontFamily="Segoe MDL2 Assets" FontSize="24" Margin="0,0,12,0"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Grid.Row="0" Text="{x:Bind Name}" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="1" Grid.Row="1" Text="{x:Bind Description}" TextTrimming="CharacterEllipsis"
+                           FontSize="12" Opacity="0.7"/>
+            </Grid>
+        </DataTemplate>
+        <!-- Converters -->
+        <cv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <cv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <cv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <cv:FavoriteColorConverter x:Key="FavoriteColorConverter"/>
+    </Page.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <!-- Header Bar -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Height="{StaticResource HeaderHeight}"
+              Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" BorderThickness="0,0,0,1"
+              BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" Padding="12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Home button -->
+                <ColumnDefinition Width="*"/>
+                <!-- Search -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- Account actions and tools -->
+            </Grid.ColumnDefinitions>
+            <!-- Home button -->
+            <Button Grid.Column="0" x:Name="HomeButton" Background="Transparent" BorderThickness="0"
+                    Click="HomeButton_Click" ToolTipService.ToolTip="Home">
+                <FontIcon Glyph="&#xE80F;" FontSize="16"/>
+            </Button>
+            <!-- Search Box with Suggestions -->
+            <Grid Grid.Column="1" Margin="12,4">
+                <Grid HorizontalAlignment="Left" Width="400">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE721;" Opacity="0.5" VerticalAlignment="Center" Margin="8,0" FontSize="16"/>
+                    <TextBox x:Name="SearchBox"
+                             Grid.Column="1"
+                             PlaceholderText="Search tools..."
+                             TextChanged="SearchBox_TextChanged"
+                             KeyDown="SearchBox_KeyDown"
+                             Padding="8,8"
+                             BorderThickness="1"
+                             BorderBrush="#CCC"/>
                 </Grid>
+                <!-- Search Suggestions -->
+                <Popup x:Name="SearchSuggestionBox" IsLightDismissEnabled="True" IsOpen="False">
+                    <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" 
+                            BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" BorderThickness="1" 
+                            Width="400" MaxHeight="300">
+                        <ListView x:Name="SearchSuggestionsList" ItemTemplate="{StaticResource SearchSuggestionTemplate}"
+                                  ItemClick="SearchSuggestionsList_ItemClick" IsItemClickEnabled="True">
+                        </ListView>
+                    </Border>
+                </Popup>
+            </Grid>
+            <!-- Right side tools -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Anonymous User Panel -->
+                <StackPanel x:Name="AnonymousUserPanel" Orientation="Horizontal" Visibility="Visible">
+                    <Button x:Name="LoginButton" Content="Login" Click="LoginButton_Click" Margin="4,0"/>
+                    <Button x:Name="RegisterButton" Content="Register" Click="RegisterButton_Click" Margin="4,0"/>
+                </StackPanel>
+                <!-- Authenticated User Panel -->
+                <StackPanel x:Name="AuthenticatedUserPanel" Orientation="Horizontal" Visibility="Collapsed">
+                    <!-- Regular user controls -->
+                    <StackPanel x:Name="RegularUserPanel" Orientation="Horizontal" Visibility="Collapsed">
+                        <Button x:Name="PremiumRequestButton" Content="Go Premium" Click="PremiumRequestButton_Click" 
+                                Margin="4,0" Background="Gold" Foreground="Black"/>
+                    </StackPanel>
+                    <!-- Premium user controls -->
+                    <StackPanel x:Name="PremiumPanel" Orientation="Horizontal" Visibility="Collapsed">
+                        <TextBlock Text="PREMIUM" VerticalAlignment="Center" Foreground="Gold" FontWeight="Bold" 
+                                   Margin="4,0"/>
+                    </StackPanel>
+                    <!-- Common for all logged in users -->
+                    <TextBlock x:Name="UserNameTextBlock" Text="User Name" VerticalAlignment="Center" Margin="8,0"/>
+                    <Button x:Name="LogoutButton" Content="Logout" Click="LogoutButton_Click" Margin="4,0"/>
+                </StackPanel>
+                <!-- Language Button -->
+                <Button x:Name="LanguageButton" Content="EN" Click="LanguageButton_Click" Margin="4,0">
+                    <Button.Flyout>
+                        <MenuFlyout x:Name="LanguageFlyout">
+                            <MenuFlyoutItem Text="English" Tag="en" Click="LanguageOption_Click"/>
+                            <MenuFlyoutItem Text="Español" Tag="es" Click="LanguageOption_Click"/>
+                            <MenuFlyoutItem Text="Français" Tag="fr" Click="LanguageOption_Click"/>
+                            <MenuFlyoutItem Text="Deutsch" Tag="de" Click="LanguageOption_Click"/>
+                            <MenuFlyoutItem Text="中文" Tag="zh" Click="LanguageOption_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <!-- GitHub Button -->
+                <Button x:Name="GithubButton" Background="Transparent" BorderThickness="0" 
+                        Click="GithubButton_Click" Margin="4,0" ToolTipService.ToolTip="GitHub Repository">
+                    <Image Width="24" Height="24" Source="/Assets/github.svg"/>
+                </Button>
+                <!-- About Button -->
+                <Button x:Name="AboutButton" Background="Transparent" BorderThickness="0" 
+                        Click="AboutButton_Click" Margin="4,0" ToolTipService.ToolTip="About">
+                    <FontIcon Glyph="&#xE946;"/>
+                </Button>
+                <!-- Theme Toggle -->
+                <FontIcon x:Name="ThemeIcon" Glyph="&#xE793;" Margin="10,10"/>
+                <ToggleSwitch x:Name="ThemeToggle" Toggled="ThemeToggle_Toggled" 
+                              OffContent="" OnContent="">
+                </ToggleSwitch>
+            </StackPanel>
+        </Grid>
+        <!-- Side Panel -->
+        <Grid Grid.Column="0" Grid.Row="1" Width="{StaticResource SidePanelExpandedWidth}" x:Name="SidePanel"
+              Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" BorderThickness="0,0,1,0"
+              BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- Side Panel Header -->
+            <Grid Grid.Row="0" Height="40" Padding="12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="SidePanelHeaderText" Text="Tool Groups" 
+                           VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <Button Grid.Column="1" x:Name="TogglePanelButton" Background="Transparent" BorderThickness="0"
+                        Click="ToggleSidePanel_Click" VerticalAlignment="Center" Padding="4">
+                    <FontIcon x:Name="TogglePanelIcon" Glyph="&#xE76B;" FontSize="12"/>
+                </Button>
+            </Grid>
+            <!-- Tool Groups -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding ToolGroups}" ItemTemplate="{StaticResource ToolGroupTemplate}"/>
+            </ScrollViewer>
+        </Grid>
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- Toolbar -->
+            <Grid Grid.Row="0" Padding="12" BorderThickness="0,0,0,1"
+                  BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <!-- Filter Controls -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <ComboBox x:Name="SortByComboBox" Header="Sort By" Width="130" Margin="0,0,12,0"
+                              SelectedItem="{Binding SortBy, Mode=TwoWay}" SelectionChanged="SortByComboBox_SelectionChanged">
+                        <x:String>Name</x:String>
+                        <x:String>GroupName</x:String>
+                    </ComboBox>
+                    <ComboBox x:Name="FilterGroupComboBox" Header="Filter By Group" Width="160" Margin="0,0,12,0"
+                              ItemsSource="{Binding FilterGroups}" SelectedItem="{Binding FilterGroup, Mode=TwoWay}"
+                              SelectionChanged="FilterGroupComboBox_SelectionChanged"/>
+                </StackPanel>
+                <!-- Favorites Toggle -->
+                <Button Grid.Column="2" x:Name="FavoritesButton" Background="Transparent" BorderThickness="1"
+                        BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" Click="FavoritesButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xE734;" Margin="0,0,8,0"/>
+                        <TextBlock Text="Favorites"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+            <!-- Content Area -->
+            <Grid Grid.Row="1">
+                <!-- Content Frame for Navigation -->
+                <Frame x:Name="ContentFrame" Visibility="{Binding IsToolDetailMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <!-- Tools Grid View -->
+                <GridView x:Name="ToolsGridView" ItemsSource="{Binding FilteredTools}" 
+                          ItemTemplate="{StaticResource ToolItemTemplate}"
+                          IsItemClickEnabled="True" ItemClick="ToolsGridView_ItemClick"
+                          Padding="16" Visibility="{Binding IsToolDetailMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4"/>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                </GridView>
+
+                <!-- Loading Indicator -->
+                <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" 
+                      Background="{ThemeResource SystemControlBackgroundAltMediumHighBrush}" Opacity="0.7">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ProgressRing IsActive="True" Width="40" Height="40" Margin="0,0,0,12"/>
+                        <TextBlock Text="Loading..." FontSize="16"/>
+                    </StackPanel>
+                </Grid>
+                <!-- Error Message -->
+                <Border Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"
+                        Background="#FFED4B4B" CornerRadius="4" Padding="12" Margin="12"
+                        VerticalAlignment="Top" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="White" TextWrapping="Wrap"/>
+                </Border>
             </Grid>
         </Grid>
     </Grid>

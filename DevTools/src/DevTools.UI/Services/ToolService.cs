@@ -15,32 +15,19 @@ namespace DevTools.UI.Services
 {
     public class ToolService
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public ToolService(HttpClient httpClient, string baseUrl)
+        public ToolService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _baseUrl = baseUrl;
-        }
-
-        public void SetAuthToken(string token)
-        {
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-            else
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = null;
-            }
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<List<Tool>> GetAllToolsAsync()
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/Tool/all");
+                var response = await _httpClient.GetAsync("Tool/all");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -80,9 +67,10 @@ namespace DevTools.UI.Services
 
         public async Task<Tool> GetToolByIdAsync(int id)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/Tool/{id}");
+                var response = await _httpClient.GetAsync($"Tool/{id}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -127,9 +115,10 @@ namespace DevTools.UI.Services
 
         public async Task<bool> DeleteToolAsync(int id)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/Tool/{id}");
+                var response = await _httpClient.DeleteAsync($"Tool/{id}");
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -141,9 +130,10 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> SearchToolsAsync(string name)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/Tool/search?name={Uri.EscapeDataString(name)}");
+                var response = await _httpClient.GetAsync($"Tool/search?name={Uri.EscapeDataString(name)}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -183,9 +173,10 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> GetFavoriteToolsAsync()
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/Tool/favorite/all");
+                var response = await _httpClient.GetAsync("Tool/favorite/all");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -226,6 +217,7 @@ namespace DevTools.UI.Services
         // Admin methods
         public async Task<int> AddToolAsync(string name, string description, bool isPremium, int groupId, bool isEnabled, IFormFile file)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
                 using var content = new MultipartFormDataContent();
@@ -240,7 +232,7 @@ namespace DevTools.UI.Services
                 var fileContent = new StreamContent(fileStream);
                 content.Add(fileContent, "File", file.FileName);
 
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/Tool/add", content);
+                var response = await _httpClient.PostAsync("Tool/add", content);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -266,9 +258,10 @@ namespace DevTools.UI.Services
 
         public async Task<bool> UpdateToolStatusAsync(int id, string action)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.PatchAsync($"{_baseUrl}/api/Tool/{id}/{action}", null);
+                var response = await _httpClient.PatchAsync($"Tool/{id}/{action}", null);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -280,6 +273,7 @@ namespace DevTools.UI.Services
 
         public async Task<bool> EditToolAsync(int id, string name, string description, bool isPremium, int groupId, bool isEnabled, IFormFile file = null)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
                 using var content = new MultipartFormDataContent();
@@ -298,7 +292,7 @@ namespace DevTools.UI.Services
                     content.Add(fileContent, "File", file.FileName);
                 }
 
-                var response = await _httpClient.PutAsync($"{_baseUrl}/api/Tool/edit", content);
+                var response = await _httpClient.PutAsync("Tool/edit", content);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)

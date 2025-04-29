@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -17,14 +18,12 @@ namespace DevTools.UI.ViewModels
     {
         private readonly ToolService _toolService;
         private readonly ToolGroupService _toolGroupService;
-
         private bool _isLoading;
         private string _errorMessage;
         private ObservableCollection<Tool> _tools;
         private ObservableCollection<ToolGroup> _groups;
         private Tool _selectedTool;
         private ToolGroup _selectedGroup;
-
         private string _toolName;
         private string _toolDescription;
         private bool _isPremium;
@@ -33,6 +32,8 @@ namespace DevTools.UI.ViewModels
         private string _groupName;
         private string _groupDescription;
         private IFormFile _toolFile;
+        public bool IsGroupListEmpty => Groups == null || !Groups.Any();
+        public bool IsToolListEmpty => Tools == null || !Tools.Any();
 
         public bool IsLoading
         {
@@ -55,7 +56,19 @@ namespace DevTools.UI.ViewModels
         public ObservableCollection<ToolGroup> Groups
         {
             get => _groups;
-            set => SetProperty(ref _groups, value);
+            set
+            {
+                if (SetProperty(ref _groups, value))
+                {
+                    // Subscribe to collection change events
+                    if (_groups != null)
+                    {
+                        _groups.CollectionChanged += Groups_CollectionChanged;
+                    }
+
+                    OnPropertyChanged(nameof(IsGroupListEmpty)); // Ensure it’s set initially
+                }
+            }
         }
 
         public Tool SelectedTool
@@ -77,6 +90,7 @@ namespace DevTools.UI.ViewModels
             {
                 SetProperty(ref _toolName, value);
                 (AddToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (UpdateToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -93,6 +107,7 @@ namespace DevTools.UI.ViewModels
             {
                 SetProperty(ref _groupName, value);
                 (AddGroupCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (UpdateGroupCommand as AsyncCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -101,6 +116,7 @@ namespace DevTools.UI.ViewModels
             get => _groupDescription;
             set => SetProperty(ref _groupDescription, value);
         }
+
         public bool IsPremium
         {
             get => _isPremium;
@@ -120,6 +136,7 @@ namespace DevTools.UI.ViewModels
             {
                 SetProperty(ref _selectedGroupId, value);
                 (AddToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (UpdateToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -131,6 +148,10 @@ namespace DevTools.UI.ViewModels
                 SetProperty(ref _toolFile, value);
                 (AddToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
             }
+        }
+        private void Groups_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(IsGroupListEmpty));
         }
 
         public ICommand LoadToolsCommand { get; }
@@ -148,47 +169,69 @@ namespace DevTools.UI.ViewModels
 
         public AdminDashboardViewModel(ToolService toolService, ToolGroupService toolGroupService, User adminUser)
         {
-            _toolService = toolService;
-            _toolGroupService = toolGroupService;
+            _toolService = toolService ?? throw new ArgumentNullException(nameof(toolService));
+            _toolGroupService = toolGroupService ?? throw new ArgumentNullException(nameof(toolGroupService));
 
+            // Initialize collections
             Tools = new ObservableCollection<Tool>();
             Groups = new ObservableCollection<ToolGroup>();
 
+            // Set default values
+            IsEnabled = true;
+
+            // Initialize commands
             LoadToolsCommand = new AsyncCommand(LoadToolsAsync);
             LoadGroupsCommand = new AsyncCommand(LoadGroupsAsync);
             AddToolCommand = new AsyncCommand(AddToolAsync, CanAddTool);
             UpdateToolCommand = new AsyncCommand(UpdateToolAsync, CanUpdateTool);
-            DeleteToolCommand = new AsyncCommand<Tool>(DeleteToolAsync);
+            DeleteToolCommand = new AsyncCommand<Tool>(DeleteToolAsync, CanDeleteTool);
             EnableToolCommand = new AsyncCommand<Tool>(EnableToolAsync);
             DisableToolCommand = new AsyncCommand<Tool>(DisableToolAsync);
             SetPremiumCommand = new AsyncCommand<Tool>(SetToolPremiumAsync);
             SetFreeCommand = new AsyncCommand<Tool>(SetToolFreeAsync);
-            AddGroupCommand = new AsyncCommand(AddGroupAsync);
-            UpdateGroupCommand = new AsyncCommand(UpdateGroupAsync);
-            DeleteGroupCommand = new AsyncCommand<ToolGroup>(DeleteGroupAsync);
+            AddGroupCommand = new AsyncCommand(AddGroupAsync, CanAddGroup);
+            UpdateGroupCommand = new AsyncCommand(UpdateGroupAsync, CanUpdateGroup);
+            DeleteGroupCommand = new AsyncCommand<ToolGroup>(DeleteGroupAsync, CanDeleteGroup);
 
-            _toolService.SetAuthToken(adminUser.Token);
-            _toolGroupService.SetAuthToken(adminUser.Token);
-
-            IsEnabled = true;
+            // Set auth tokens if needed
+            //if (adminUser?.Token != null)
+            //{
+            //    _toolService.SetAuthToken(adminUser.Token);
+            //    _toolGroupService.SetAuthToken(adminUser.Token);
+            //}
         }
 
         private bool CanAddTool() =>
             !string.IsNullOrWhiteSpace(ToolName) &&
-            SelectedGroupId > 0 &&
+            SelectedGroupId.HasValue &&
+            SelectedGroupId.Value > 0 &&
             ToolFile != null;
 
         private bool CanUpdateTool() =>
             SelectedTool != null &&
             !string.IsNullOrWhiteSpace(ToolName) &&
-            SelectedGroupId > 0;
+            SelectedGroupId.HasValue &&
+            SelectedGroupId.Value > 0;
+
+        private bool CanDeleteTool(Tool tool) => tool != null;
+
+        private bool CanAddGroup() => !string.IsNullOrWhiteSpace(GroupName);
+
+        private bool CanUpdateGroup() =>
+            SelectedGroup != null &&
+            !string.IsNullOrWhiteSpace(GroupName);
+
+        private bool CanDeleteGroup(ToolGroup group) => group != null;
 
         public async Task LoadToolsAsync()
         {
             try
             {
                 IsLoading = true;
+                ErrorMessage = string.Empty;
+
                 var tools = await _toolService.GetAllToolsAsync();
+
                 Tools.Clear();
                 foreach (var tool in tools)
                 {
@@ -198,6 +241,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error loading tools: {ex.Message}";
+                Debug.WriteLine($"Exception in LoadToolsAsync: {ex}");
             }
             finally
             {
@@ -210,7 +254,10 @@ namespace DevTools.UI.ViewModels
             try
             {
                 IsLoading = true;
+                ErrorMessage = string.Empty;
+
                 var groups = await _toolGroupService.GetAllToolGroupsAsync();
+
                 Groups.Clear();
                 foreach (var group in groups)
                 {
@@ -220,6 +267,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error loading groups: {ex.Message}";
+                Debug.WriteLine($"Exception in LoadGroupsAsync: {ex}");
             }
             finally
             {
@@ -231,6 +279,8 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (!CanAddTool()) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
@@ -238,7 +288,7 @@ namespace DevTools.UI.ViewModels
                     ToolName,
                     ToolDescription,
                     IsPremium,
-                    SelectedGroupId?? 0,
+                    SelectedGroupId.Value,
                     IsEnabled,
                     ToolFile);
 
@@ -249,12 +299,13 @@ namespace DevTools.UI.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Failed to add tool.";
+                    ErrorMessage = "Failed to add tool. Please check your input and try again.";
                 }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error adding tool: {ex.Message}";
+                Debug.WriteLine($"Exception in AddToolAsync: {ex}");
             }
             finally
             {
@@ -266,7 +317,7 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
-                if (SelectedTool == null) return;
+                if (!CanUpdateTool()) return;
 
                 IsLoading = true;
                 ErrorMessage = string.Empty;
@@ -276,7 +327,7 @@ namespace DevTools.UI.ViewModels
                     ToolName,
                     ToolDescription,
                     IsPremium,
-                    SelectedGroupId?? 0,
+                    SelectedGroupId.Value,
                     IsEnabled,
                     ToolFile);
 
@@ -287,12 +338,13 @@ namespace DevTools.UI.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Failed to update tool.";
+                    ErrorMessage = "Failed to update tool. Please check your input and try again.";
                 }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error updating tool: {ex.Message}";
+                Debug.WriteLine($"Exception in UpdateToolAsync: {ex}");
             }
             finally
             {
@@ -304,10 +356,13 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (tool == null) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolService.DeleteToolAsync(tool.Id);
+
                 if (success)
                 {
                     Tools.Remove(tool);
@@ -318,12 +373,13 @@ namespace DevTools.UI.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Failed to delete tool.";
+                    ErrorMessage = "Failed to delete tool. It may be in use by the system.";
                 }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error deleting tool: {ex.Message}";
+                Debug.WriteLine($"Exception in DeleteToolAsync: {ex}");
             }
             finally
             {
@@ -335,10 +391,13 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (tool == null) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "enable");
+
                 if (success)
                 {
                     tool.IsEnabled = true;
@@ -352,6 +411,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error enabling tool: {ex.Message}";
+                Debug.WriteLine($"Exception in EnableToolAsync: {ex}");
             }
             finally
             {
@@ -363,10 +423,13 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (tool == null) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "disable");
+
                 if (success)
                 {
                     tool.IsEnabled = false;
@@ -380,6 +443,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error disabling tool: {ex.Message}";
+                Debug.WriteLine($"Exception in DisableToolAsync: {ex}");
             }
             finally
             {
@@ -391,10 +455,13 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (tool == null) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "setpremium");
+
                 if (success)
                 {
                     tool.IsPremium = true;
@@ -408,6 +475,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error setting tool as premium: {ex.Message}";
+                Debug.WriteLine($"Exception in SetToolPremiumAsync: {ex}");
             }
             finally
             {
@@ -419,10 +487,13 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (tool == null) return;
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "setfree");
+
                 if (success)
                 {
                     tool.IsPremium = false;
@@ -436,6 +507,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error setting tool as free: {ex.Message}";
+                Debug.WriteLine($"Exception in SetToolFreeAsync: {ex}");
             }
             finally
             {
@@ -445,19 +517,19 @@ namespace DevTools.UI.ViewModels
 
         private async Task AddGroupAsync()
         {
-            Debug.WriteLine(GroupName);
             try
             {
-                if (string.IsNullOrWhiteSpace(GroupName)) return;
+                if (!CanAddGroup()) return;
 
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var groupId = await _toolGroupService.AddToolGroupAsync(GroupName, GroupDescription);
+
                 if (groupId > 0)
                 {
                     await LoadGroupsAsync();
-                    ClearToolForm();
+                    ClearGroupForm();
                 }
                 else
                 {
@@ -467,6 +539,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error adding tool group: {ex.Message}";
+                Debug.WriteLine($"Exception in AddGroupAsync: {ex}");
             }
             finally
             {
@@ -478,16 +551,20 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
-                if (SelectedGroup == null || string.IsNullOrWhiteSpace(GroupName)) return;
+                if (!CanUpdateGroup()) return;
 
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
-                var success = await _toolGroupService.UpdateToolGroupAsync(SelectedGroup.Id, GroupName, GroupDescription);
+                var success = await _toolGroupService.UpdateToolGroupAsync(
+                    SelectedGroup.Id,
+                    GroupName,
+                    GroupDescription);
+
                 if (success)
                 {
                     await LoadGroupsAsync();
-                    ClearToolForm();
+                    ClearGroupForm();
                 }
                 else
                 {
@@ -497,6 +574,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error updating tool group: {ex.Message}";
+                Debug.WriteLine($"Exception in UpdateGroupAsync: {ex}");
             }
             finally
             {
@@ -508,16 +586,27 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                if (group == null) return;
+
+                // Check if any tools are using this group before deletion
+                bool toolsUsingGroup = Tools.Any(t => t.GroupName == group.Name);
+                if (toolsUsingGroup)
+                {
+                    ErrorMessage = "Cannot delete group that has associated tools. Remove or reassign the tools first.";
+                    return;
+                }
+
                 IsLoading = true;
                 ErrorMessage = string.Empty;
 
                 var success = await _toolGroupService.DeleteToolGroupAsync(group.Id);
+
                 if (success)
                 {
                     Groups.Remove(group);
                     if (SelectedGroup == group)
                     {
-                        ClearToolForm();
+                        ClearGroupForm();
                     }
                 }
                 else
@@ -528,6 +617,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error deleting tool group: {ex.Message}";
+                Debug.WriteLine($"Exception in DeleteGroupAsync: {ex}");
             }
             finally
             {
@@ -538,15 +628,17 @@ namespace DevTools.UI.ViewModels
         public void SelectTool(Tool tool)
         {
             SelectedTool = tool;
+
             if (tool != null)
             {
+                // Populate form fields with tool data
                 ToolName = tool.Name;
                 ToolDescription = tool.Description;
                 IsPremium = tool.IsPremium;
                 IsEnabled = tool.IsEnabled;
 
-                var group = Groups.FirstOrDefault(g => g.Name == tool.Name);
-                SelectedGroupId = group?.Id ?? 0;
+                // Find the correct group by ID
+                SelectedGroupId = SelectedGroup.Id;
             }
             else
             {
@@ -557,8 +649,10 @@ namespace DevTools.UI.ViewModels
         public void SelectGroup(ToolGroup group)
         {
             SelectedGroup = group;
+
             if (group != null)
             {
+                // Populate form fields with group data
                 GroupName = group.Name;
                 GroupDescription = group.Description;
             }
@@ -568,21 +662,22 @@ namespace DevTools.UI.ViewModels
             }
         }
 
-        private void ClearToolForm()
+        public void ClearToolForm()
         {
             ToolName = string.Empty;
             ToolDescription = string.Empty;
             IsPremium = false;
             IsEnabled = true;
-            SelectedGroupId = 0;
+            SelectedGroupId = null;
             ToolFile = null;
             SelectedTool = null;
-            SelectedGroup = null;
         }
-        private void ClearGroupForm()
+
+        public void ClearGroupForm()
         {
             GroupName = string.Empty;
             GroupDescription = string.Empty;
+            SelectedGroup = null;
         }
     }
 }

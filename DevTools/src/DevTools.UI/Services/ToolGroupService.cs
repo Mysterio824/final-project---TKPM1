@@ -14,35 +14,22 @@ namespace DevTools.UI.Services
 {
     public class ToolGroupService
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
-
-        public ToolGroupService(HttpClient httpClient, string baseUrl)
+        private readonly IHttpClientFactory _httpClientFactory;
+        public ToolGroupService(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _baseUrl = baseUrl;
-        }
-
-        public void SetAuthToken(string token)
-        {
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-            else
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = null;
-            }
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<List<ToolGroup>> GetAllToolGroupsAsync()
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/ToolGroup");
+                var response = await _httpClient.GetAsync("ToolGroup");
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    Debug.WriteLine($"HTTP error getting tool groups: {response.StatusCode}");
                     return new List<ToolGroup>();
                 }
 
@@ -50,7 +37,8 @@ namespace DevTools.UI.Services
 
                 if (!apiResponse.Succeeded)
                 {
-                    Debug.WriteLine($"Failed to get tool groups: {string.Join(", ", apiResponse.Errors)}");
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to get tool groups: {error}");
                     return new List<ToolGroup>();
                 }
 
@@ -75,16 +63,23 @@ namespace DevTools.UI.Services
                 Debug.WriteLine($"Error getting tool groups: {ex.Message}");
                 return new List<ToolGroup>();
             }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"Error parsing tool groups response: {ex.Message}");
+                return new List<ToolGroup>();
+            }
         }
 
         public async Task<List<Tool>> GetToolsByGroupIdAsync(int groupId)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/ToolGroup/{groupId}/todoItems");
+                var response = await _httpClient.GetAsync($"ToolGroup/{groupId}/todoItems");
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    Debug.WriteLine($"HTTP error getting tools by group id: {response.StatusCode}");
                     return new List<Tool>();
                 }
 
@@ -92,7 +87,8 @@ namespace DevTools.UI.Services
 
                 if (!apiResponse.Succeeded)
                 {
-                    Debug.WriteLine($"Failed to get tools by group: {string.Join(", ", apiResponse.Errors)}");
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to get tools by group: {error}");
                     return new List<Tool>();
                 }
 
@@ -117,18 +113,25 @@ namespace DevTools.UI.Services
                 Debug.WriteLine($"Error getting tools by group ID: {ex.Message}");
                 return new List<Tool>();
             }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"Error parsing tool groups response: {ex.Message}");
+                return new List<Tool>();
+            }
         }
 
         // Admin methods
         public async Task<int> AddToolGroupAsync(string name, string description = null)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
                 var groupData = new { name, description };
-                var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/ToolGroup/add", groupData);
+                var response = await _httpClient.PostAsJsonAsync("ToolGroup/add", groupData);
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    Debug.WriteLine($"HTTP error adding tool group: {response.StatusCode}");
                     return -1;
                 }
 
@@ -136,7 +139,8 @@ namespace DevTools.UI.Services
 
                 if (!apiResponse.Succeeded)
                 {
-                    Debug.WriteLine($"Adding tool group failed: {string.Join(", ", apiResponse.Errors)}");
+                    var error = string.Join(", ", apiResponse.Errors);
+                    Debug.WriteLine($"Failed to add tool group: {error}");
                     return -1;
                 }
 
@@ -147,15 +151,25 @@ namespace DevTools.UI.Services
                 Debug.WriteLine($"Error adding tool group: {ex.Message}");
                 return -1;
             }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"Error parsing tool groups response: {ex.Message}");
+                return -1;
+            }
         }
 
         public async Task<bool> UpdateToolGroupAsync(int id, string name, string description = null)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
                 var groupData = new { id, name, description };
-                var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/api/ToolGroup/update/{id}", groupData);
-
+                var response = await _httpClient.PutAsJsonAsync($"ToolGroup/update/{id}", groupData);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error updating tool group: {response.StatusCode}");
+                    return false;
+                }
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -167,9 +181,15 @@ namespace DevTools.UI.Services
 
         public async Task<bool> DeleteToolGroupAsync(int id)
         {
+            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var response = await _httpClient.DeleteAsync($"{_baseUrl}/api/ToolGroup/{id}");
+                var response = await _httpClient.DeleteAsync($"ToolGroup/{id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"HTTP error deleting tool group: {response.StatusCode}");
+                    return false;
+                }
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)

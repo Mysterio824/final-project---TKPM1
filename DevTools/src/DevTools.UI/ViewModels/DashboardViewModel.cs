@@ -21,21 +21,23 @@ namespace DevTools.UI.ViewModels
         private readonly ToolGroupService _toolGroupService;
         private readonly AccountService _accountService;
         private readonly AuthService _authService;
-        private readonly Action _onLogout;
+        private readonly INavigationService _navigationService;
 
         private string _searchQuery;
-        private ObservableCollection<Tool> _tools;
-        private ObservableCollection<ToolGroup> _toolGroup;
+        private ObservableCollection<Tool> _allTools;
+        private ObservableCollection<ToolGroup> _toolGroups;
         private Tool _selectedTool;
         private User _currentUser;
         private bool _isLoading;
         private string _errorMessage;
         private bool _isSidePanelExpanded = true;
         private bool _showFavoritesOnly;
-        private object _contentFrameSource;
-        private bool _isContentFrameVisible;
+        private Tool _activeToolContent;
+        private bool _isToolContentVisible;
         private ObservableCollection<Tool> _filteredTools;
-
+        private string _sortBy = "Name";
+        private string _filterGroup = "All";
+        private ObservableCollection<string> _filterGroups;
 
         public User CurrentUser
         {
@@ -49,18 +51,25 @@ namespace DevTools.UI.ViewModels
             set
             {
                 if (SetProperty(ref _searchQuery, value))
-                    SearchCommand.Execute(null);
+                {
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        FilterAndSortTools();
+                    }
+                }
             }
         }
-        public ObservableCollection<Tool> Tools
+
+        public ObservableCollection<Tool> AllTools
         {
-            get => _tools;
-            set => SetProperty(ref _tools, value);
+            get => _allTools;
+            set => SetProperty(ref _allTools, value);
         }
+
         public ObservableCollection<ToolGroup> ToolGroups
         {
-            get => _toolGroup;
-            set => SetProperty(ref _toolGroup, value);
+            get => _toolGroups;
+            set => SetProperty(ref _toolGroups, value);
         }
 
         public Tool SelectedTool
@@ -80,6 +89,7 @@ namespace DevTools.UI.ViewModels
             get => _errorMessage;
             set => SetProperty(ref _errorMessage, value);
         }
+
         public bool IsSidePanelExpanded
         {
             get => _isSidePanelExpanded;
@@ -93,21 +103,21 @@ namespace DevTools.UI.ViewModels
             {
                 if (SetProperty(ref _showFavoritesOnly, value))
                 {
-                    FilterTools();
+                    FilterAndSortTools();
                 }
             }
         }
 
-        public object ContentFrameSource
+        public Tool ActiveToolContent
         {
-            get => _contentFrameSource;
-            set => SetProperty(ref _contentFrameSource, value);
+            get => _activeToolContent;
+            set => SetProperty(ref _activeToolContent, value);
         }
 
-        public bool IsContentFrameVisible
+        public bool IsToolContentVisible
         {
-            get => _isContentFrameVisible;
-            set => SetProperty(ref _isContentFrameVisible, value);
+            get => _isToolContentVisible;
+            set => SetProperty(ref _isToolContentVisible, value);
         }
 
         public ObservableCollection<Tool> FilteredTools
@@ -116,10 +126,40 @@ namespace DevTools.UI.ViewModels
             set => SetProperty(ref _filteredTools, value);
         }
 
-        public bool IsAuthenticated => _currentUser != null;
-        public bool IsPremium => _currentUser?.IsPremium ?? false;
-        public bool IsAdmin => _currentUser?.IsAdmin ?? false;
+        public string SortBy
+        {
+            get => _sortBy;
+            set
+            {
+                if (SetProperty(ref _sortBy, value))
+                {
+                    FilterAndSortTools();
+                }
+            }
+        }
 
+        public string FilterGroup
+        {
+            get => _filterGroup;
+            set
+            {
+                if (SetProperty(ref _filterGroup, value))
+                {
+                    FilterAndSortTools();
+                }
+            }
+        }
+
+        public ObservableCollection<string> FilterGroups
+        {
+            get => _filterGroups;
+            set => SetProperty(ref _filterGroups, value);
+        }
+
+        public bool IsAuthenticated => CurrentUser != null;
+        public bool IsPremium => CurrentUser?.IsPremium ?? false;
+        public bool IsAdmin => CurrentUser?.IsAdmin ?? false;
+        public bool IsToolDetailMode { get; set; } = false;
         public ICommand LoadToolGroupsWithToolsCommand { get; }
         public ICommand SearchCommand { get; }
         public ICommand AddToFavoritesCommand { get; }
@@ -129,34 +169,49 @@ namespace DevTools.UI.ViewModels
         public ICommand RevokePremiumCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand ToggleFavoritesCommand { get; }
+        public ICommand NavigateToLoginCommand { get; }
+        public ICommand NavigateToRegisterCommand { get; }
+        public ICommand CloseToolContentCommand { get; }
 
-        public DashboardViewModel(ToolService toolService, ToolGroupService toolGroupService, AccountService accountService, AuthService authService, Action onLogout, User currentUser = null)
+        public Action<string> ShowMessage { get; set; }
+        public Action ShowPremiumRequired { get; set; }
+        public Action ShowToolUnavailable { get; set; }
+
+        public DashboardViewModel(
+            ToolService toolService,
+            ToolGroupService toolGroupService,
+            AccountService accountService,
+            AuthService authService,
+            INavigationService navigationService,
+            User currentUser = null)
         {
-            _toolService = toolService;
-            _toolGroupService = toolGroupService;
-            _accountService = accountService;
-            _authService = authService;
+            _toolService = toolService ?? throw new ArgumentNullException(nameof(toolService));
+            _toolGroupService = toolGroupService ?? throw new ArgumentNullException(nameof(toolGroupService));
+            _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+
             CurrentUser = currentUser;
-            _onLogout = onLogout;
-            Tools = new ObservableCollection<Tool>();
+
+            AllTools = new ObservableCollection<Tool>();
             FilteredTools = new ObservableCollection<Tool>();
             ToolGroups = new ObservableCollection<ToolGroup>();
+            FilterGroups = new ObservableCollection<string> { "All" };
+
             LoadToolGroupsWithToolsCommand = new AsyncCommand(LoadToolGroupsWithToolsAsync);
             SearchCommand = new AsyncCommand(ExecuteSearchAsync);
             AddToFavoritesCommand = new AsyncCommand<Tool>(AddToFavoritesAsync, CanModifyFavorites);
             RemoveFromFavoritesCommand = new AsyncCommand<Tool>(RemoveFromFavoritesAsync, CanModifyFavorites);
             UploadToolCommand = new AsyncCommand<Tool>(UploadToolAsync, CanUploadTool);
-            RequestPremiumCommand = new AsyncCommand(RequestPremiumAsync, () => !IsPremium);
-            RevokePremiumCommand = new AsyncCommand(RevokePremiumAsync, () => IsPremium);
-            LogoutCommand = new AsyncCommand(LogoutAsync);
-            ToggleFavoritesCommand = new RelayCommand(ToggleFavorites);
-
-            if (IsAuthenticated)
-            {
-                toolService.SetAuthToken(currentUser.Token);
-                accountService.SetAuthToken(currentUser.Token);
-            }
+            RequestPremiumCommand = new AsyncCommand(RequestPremiumAsync, () => IsAuthenticated && !IsPremium);
+            RevokePremiumCommand = new AsyncCommand(RevokePremiumAsync, () => IsAuthenticated && IsPremium);
+            LogoutCommand = new AsyncCommand(LogoutAsync, () => IsAuthenticated);
+            ToggleFavoritesCommand = new RelayCommand(ToggleFavorites, () => IsAuthenticated);
+            NavigateToLoginCommand = new RelayCommand(NavigateToLogin);
+            NavigateToRegisterCommand = new RelayCommand(NavigateToRegister);
+            CloseToolContentCommand = new RelayCommand(CloseToolContent);
         }
+
         public async Task LoadToolGroupsWithToolsAsync()
         {
             try
@@ -165,17 +220,21 @@ namespace DevTools.UI.ViewModels
                 ErrorMessage = string.Empty;
 
                 var toolGroups = await _toolGroupService.GetAllToolGroupsAsync();
-
                 ToolGroups.Clear();
-                Tools.Clear();
+                AllTools.Clear();
+                FilterGroups.Clear();
+                FilterGroups.Add("All");
 
                 foreach (var group in toolGroups)
                 {
-                    group.IsExpanded = group.IsExpanded;
+                    if (!FilterGroups.Contains(group.Name))
+                    {
+                        FilterGroups.Add(group.Name);
+                    }
 
                     var tools = await _toolGroupService.GetToolsByGroupIdAsync(group.Id);
-
                     group.Tools.Clear();
+
                     foreach (var tool in tools)
                     {
                         tool.GroupName = group.Name;
@@ -185,12 +244,13 @@ namespace DevTools.UI.ViewModels
                         }
 
                         group.Tools.Add(tool);
-                        Tools.Add(tool);
+                        AllTools.Add(tool);
                     }
 
                     ToolGroups.Add(group);
                 }
-                FilterTools();
+
+                FilterAndSortTools();
             }
             catch (Exception ex)
             {
@@ -202,7 +262,9 @@ namespace DevTools.UI.ViewModels
                 IsLoading = false;
             }
         }
+
         private bool CanModifyFavorites(Tool tool) => IsAuthenticated && tool != null;
+
         private bool CanUploadTool(Tool tool)
         {
             if (tool == null) return false;
@@ -216,23 +278,33 @@ namespace DevTools.UI.ViewModels
             try
             {
                 IsLoading = true;
+
                 if (string.IsNullOrWhiteSpace(SearchQuery))
                 {
-                    await LoadToolGroupsWithToolsAsync();
+                    FilterAndSortTools();
                     return;
                 }
 
                 var results = await _toolService.SearchToolsAsync(SearchQuery);
-                Tools.Clear();
+
+                AllTools.Clear();
                 foreach (var tool in results)
                 {
-                    Tools.Add(tool);
+                    var group = ToolGroups.FirstOrDefault(g => g.Tools.Any(t => t.Id == tool.Id));
+                    if (group != null)
+                    {
+                        tool.GroupName = group.Name;
+                    }
+
+                    AllTools.Add(tool);
                 }
-                FilterTools();
+
+                FilterAndSortTools();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error searching tools: {ex.Message}");
+                ErrorMessage = "Search failed. Please try again.";
             }
             finally
             {
@@ -242,20 +314,34 @@ namespace DevTools.UI.ViewModels
 
         private async Task AddToFavoritesAsync(Tool tool)
         {
+            if (!IsAuthenticated)
+            {
+                NavigateToLogin();
+                return;
+            }
+
             try
             {
                 IsLoading = true;
-                var success = await _accountService.AddToFavoritesAsync(tool.Id);
-                if (success)
+                var (succeeded, error) = await _accountService.AddToFavoritesAsync(tool.Id);
+                if (succeeded)
                 {
                     tool.IsFavorite = true;
-                    OnPropertyChanged(nameof(Tools));
-                    FilterTools();
+                    UpdateToolCollections(tool);
+                    if (ShowFavoritesOnly)
+                    {
+                        FilterAndSortTools();
+                    }
+                }
+                else
+                {
+                    ErrorMessage = $"Failed to add tool to favorites: {error}";
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error adding to favorites: {ex.Message}");
+                ErrorMessage = "Failed to add tool to favorites.";
             }
             finally
             {
@@ -265,20 +351,34 @@ namespace DevTools.UI.ViewModels
 
         private async Task RemoveFromFavoritesAsync(Tool tool)
         {
+            if (!IsAuthenticated)
+            {
+                NavigateToLogin();
+                return;
+            }
+
             try
             {
                 IsLoading = true;
-                var success = await _accountService.RemoveFromFavoritesAsync(tool.Id);
-                if (success)
+                var (succeeded, error) = await _accountService.RemoveFromFavoritesAsync(tool.Id);
+                if (succeeded)
                 {
                     tool.IsFavorite = false;
-                    OnPropertyChanged(nameof(Tools));
-                    FilterTools();
+                    UpdateToolCollections(tool);
+                    if (ShowFavoritesOnly)
+                    {
+                        FilterAndSortTools();
+                    }
+                }
+                else
+                {
+                    ErrorMessage = $"Failed to remove tool from favorites: {error}";
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error removing from favorites: {ex.Message}");
+                ErrorMessage = "Failed to remove tool from favorites.";
             }
             finally
             {
@@ -286,12 +386,31 @@ namespace DevTools.UI.ViewModels
             }
         }
 
+        private void UpdateToolCollections(Tool tool)
+        {
+            var allToolItem = AllTools.FirstOrDefault(t => t.Id == tool.Id);
+            if (allToolItem != null) allToolItem.IsFavorite = tool.IsFavorite;
+
+            var filteredToolItem = FilteredTools.FirstOrDefault(t => t.Id == tool.Id);
+            if (filteredToolItem != null) filteredToolItem.IsFavorite = tool.IsFavorite;
+
+            if (ActiveToolContent?.Id == tool.Id)
+            {
+                ActiveToolContent.IsFavorite = tool.IsFavorite;
+            }
+        }
+
         private async Task UploadToolAsync(Tool tool)
         {
+            if (tool.IsPremium && !IsPremium)
+            {
+                ShowPremiumRequired();
+                return;
+            }
+
             try
             {
                 IsLoading = true;
-
                 var fullTool = await _toolService.GetToolByIdAsync(tool.Id);
                 if (fullTool?.FileData != null)
                 {
@@ -301,6 +420,7 @@ namespace DevTools.UI.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error downloading tool: {ex.Message}");
+                ErrorMessage = "Failed to download tool. Please try again.";
             }
             finally
             {
@@ -308,31 +428,42 @@ namespace DevTools.UI.ViewModels
             }
         }
 
-        private async void SaveToolToLocalStorage(Tool tool)
+        private void SaveToolToLocalStorage(Tool tool)
         {
-            string dllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{tool.Id}_{tool.Name}.dll");
-            using var filestream = new FileStream(dllPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            filestream.Write(tool.FileData, 0, tool.FileData.Length);
-            Debug.WriteLine($"Tool {tool.Name} saved to local storage");
+            try
+            {
+                string dllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{tool.Id}_{tool.Name}.dll");
+                using var filestream = new FileStream(dllPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                filestream.Write(tool.FileData, 0, tool.FileData.Length);
+                Debug.WriteLine($"Tool {tool.Name} saved to local storage at {dllPath}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving tool to local storage: {ex.Message}");
+                ErrorMessage = "Failed to save tool locally.";
+            }
         }
 
         private async Task RequestPremiumAsync()
         {
+            if (!IsAuthenticated)
+            {
+                NavigateToLogin();
+                return;
+            }
+
             try
             {
                 IsLoading = true;
                 ErrorMessage = string.Empty;
-
-                //var success = await _accountService.RequestPremiumUpgradeAsync();
-                //stimulation
-                var success = true;
+                var (success, error) = await _accountService.RequestPremiumUpgradeAsync();
                 if (success)
                 {
                     ErrorMessage = "Premium request submitted successfully!";
                 }
                 else
                 {
-                    ErrorMessage = "Failed to submit premium request.";
+                    ErrorMessage = $"Failed to submit premium request: {error}";
                 }
             }
             catch (Exception ex)
@@ -347,20 +478,35 @@ namespace DevTools.UI.ViewModels
 
         private async Task RevokePremiumAsync()
         {
+            if (!IsAuthenticated || !IsPremium)
+            {
+                return;
+            }
+
             try
             {
                 IsLoading = true;
                 ErrorMessage = string.Empty;
+                var (success, error) = await _accountService.RevokePremiumAsync();
 
-                var success = await _accountService.RevokePremiumAsync();
                 if (success)
                 {
-                    // Update local user state
                     ErrorMessage = "Premium status revoked successfully!";
+                    CurrentUser = new User
+                    {
+                        Id = CurrentUser.Id,
+                        Name = CurrentUser.Name,
+                        Email = CurrentUser.Email,
+                        Token = CurrentUser.Token,
+                        RefreshToken = CurrentUser.RefreshToken,
+                        Role = 1 // Set to regular user
+                    };
+
+                    await LoadToolGroupsWithToolsAsync();
                 }
                 else
                 {
-                    ErrorMessage = "Failed to revoke premium status.";
+                    ErrorMessage = $"Failed to revoke premium status: {error}";
                 }
             }
             catch (Exception ex)
@@ -388,15 +534,16 @@ namespace DevTools.UI.ViewModels
                 CurrentUser = null;
                 ShowFavoritesOnly = false;
 
-                // Clear content frame if visible
-                if (IsContentFrameVisible)
+                if (IsToolContentVisible)
                 {
-                    IsContentFrameVisible = false;
-                    ContentFrameSource = null;
+                    IsToolContentVisible = false;
+                    ActiveToolContent = null;
                 }
 
-                // Call the logout action
-                _onLogout?.Invoke();
+                await LoadToolGroupsWithToolsAsync();
+
+                // Navigate to LoginPage instead of invoking onLogout
+                _navigationService.NavigateTo(typeof(LoginPage));
             }
             catch (Exception ex)
             {
@@ -407,34 +554,76 @@ namespace DevTools.UI.ViewModels
                 IsLoading = false;
             }
         }
+
         public void ToggleSidePanel()
         {
             IsSidePanelExpanded = !IsSidePanelExpanded;
-            OnPropertyChanged(nameof(IsSidePanelExpanded));
         }
-        private void FilterTools()
+
+        private void FilterAndSortTools()
         {
-            FilteredTools.Clear();
+            var query = AllTools.AsEnumerable();
 
             if (ShowFavoritesOnly)
             {
-                foreach (var tool in Tools.Where(t => t.IsFavorite))
-                {
-                    FilteredTools.Add(tool);
-                }
+                query = query.Where(t => t.IsFavorite);
             }
-            else
+
+            if (!string.IsNullOrEmpty(FilterGroup) && FilterGroup != "All")
             {
-                foreach (var tool in Tools)
-                {
-                    FilteredTools.Add(tool);
-                }
+                query = query.Where(t => t.GroupName == FilterGroup);
+            }
+
+            switch (SortBy)
+            {
+                case "Name":
+                    query = query.OrderBy(t => t.Name);
+                    break;
+                case "GroupName":
+                    query = query.OrderBy(t => t.GroupName).ThenBy(t => t.Name);
+                    break;
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+            {
+                string searchLower = SearchQuery.ToLowerInvariant();
+                query = query.Where(t =>
+                    t.Name.ToLowerInvariant().Contains(searchLower) ||
+                    (t.Description != null && t.Description.ToLowerInvariant().Contains(searchLower)));
+            }
+
+            FilteredTools.Clear();
+            foreach (var tool in query)
+            {
+                FilteredTools.Add(tool);
             }
         }
 
         private void ToggleFavorites()
         {
+            if (!IsAuthenticated)
+            {
+                NavigateToLogin();
+                return;
+            }
+
             ShowFavoritesOnly = !ShowFavoritesOnly;
+        }
+
+        public void NavigateToLogin()
+        {
+            _navigationService.NavigateTo(typeof(LoginPage));
+        }
+
+        public void NavigateToRegister()
+        {
+            _navigationService.NavigateTo(typeof(RegisterPage));
+        }
+
+        private void CloseToolContent()
+        {
+            IsToolContentVisible = false;
+            ActiveToolContent = null;
         }
     }
 }

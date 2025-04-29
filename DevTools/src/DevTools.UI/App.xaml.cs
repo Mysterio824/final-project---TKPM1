@@ -15,10 +15,14 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
-using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
+using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Configuration;
 using DevTools.UI.Services;
 using DevTools.UI.ViewModels;
+using DevTools.UI.Models;
+using Microsoft.Extensions.DependencyInjection;
+using DevTools.UI.Views;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,7 +42,8 @@ namespace DevTools.UI
         {
             this.InitializeComponent();
         }
-        public static IServiceProvider ServiceProvider { get; private set; }
+        public User? CurrentUser { get; set; } = null;
+
 
         /// <summary>
         /// Invoked when the application is launched.
@@ -47,51 +52,54 @@ namespace DevTools.UI
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             var builder = new ServiceCollection();
+            var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-            // Register HttpClient and AuthService
-            builder.AddSingleton<HttpClient>(new HttpClient(new HttpClientHandler
+            builder.AddHttpClient("ApiClient", client =>
+            {
+                client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            })
+            .AddHttpMessageHandler<AuthHandler>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, error) => true // Use cautiously
+            });
+            builder.AddHttpClient("UnauthenticatedApiClient", client =>
+            {
+                client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, error) => true
-            }));
-            builder.AddSingleton<AuthService>(provider =>
-            {
-                // Provide the base URL for the API
-                var httpClient = provider.GetRequiredService<HttpClient>();
-                var baseUrl = "https://localhost:5000";
-                return new AuthService(httpClient, baseUrl);
             });
-            builder.AddSingleton<ToolService>(provider =>
-            {
-                // Provide the base URL for the API
-                var httpClient = provider.GetRequiredService<HttpClient>();
-                var baseUrl = "https://localhost:5000";
-                return new ToolService(httpClient, baseUrl);
-            });
-            builder.AddSingleton<AccountService>(provider =>
-            {
-                // Provide the base URL for the API
-                var httpClient = provider.GetRequiredService<HttpClient>();
-                var baseUrl = "https://localhost:5000";
-                return new AccountService(httpClient, baseUrl);
-            });
-            builder.AddSingleton<ToolGroupService>(provider =>
-            {
-                // Provide the base URL for the API
-                var httpClient = provider.GetRequiredService<HttpClient>();
-                var baseUrl = "https://localhost:5000";
-                return new ToolGroupService(httpClient, baseUrl);
-            });
-            builder.AddTransient<LoginViewModel>();
+            builder.AddSingleton<AuthHandler>();
+            builder.AddSingleton<AuthService>();
+            builder.AddSingleton<ToolService>();
+            builder.AddSingleton<AccountService>();
+            builder.AddSingleton<ToolGroupService>();
+            builder.AddSingleton<INavigationService, NavigationService>();
+            builder.AddSingleton<ToolLoader>();
+
+            // Register pages and ViewModels
+            builder.AddTransient<RegisterPage>();
             builder.AddTransient<RegisterViewModel>();
-            builder.AddTransient<AdminDashboardViewModel>();
+            builder.AddTransient<LoginPage>();
+            builder.AddTransient<LoginViewModel>();
+            builder.AddTransient<DashboardPage>();
             builder.AddTransient<DashboardViewModel>();
+            builder.AddTransient<AdminDashboardPage>();
+            builder.AddTransient<AdminDashboardViewModel>();
+            builder.AddTransient<ToolDetailPage>();
             builder.AddTransient<ToolDetailViewModel>();
 
-            ServiceProvider = builder.BuildServiceProvider();
-            
-            m_window = new MainWindow();
-            m_window.Activate();
+            IServiceProvider serviceProvider = builder.BuildServiceProvider();
+
+            var mainWindow = new MainWindow(serviceProvider);
+            mainWindow.Activate();
         }
-        public static Window? m_window;
     }
 }

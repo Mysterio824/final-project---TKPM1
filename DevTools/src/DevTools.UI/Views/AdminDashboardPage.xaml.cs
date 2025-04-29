@@ -20,6 +20,7 @@ using Windows.Storage;
 using DevTools.UI.ViewModels;
 using Microsoft.AspNetCore.Http.Internal;
 using System.Diagnostics;
+using DevTools.UI.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -33,20 +34,16 @@ namespace DevTools.UI.Views
     {
         public AdminDashboardViewModel ViewModel { get; private set; }
 
-        public AdminDashboardPage()
+        public AdminDashboardPage(AdminDashboardViewModel viewModel, INavigationService navigationService)
         {
             this.InitializeComponent();
+            ViewModel = viewModel;
+            DataContext = ViewModel;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            if (e.Parameter is AdminDashboardViewModel viewModel)
-            {
-                ViewModel = viewModel;
-            }
-
             LoadData();
         }
 
@@ -56,24 +53,47 @@ namespace DevTools.UI.Views
             await ViewModel.LoadToolsAsync();
         }
 
+        private async void OnRefreshDataClick(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.LoadGroupsAsync();
+            await ViewModel.LoadToolsAsync();
+        }
+
         private async void OnSelectFileClick(object sender, RoutedEventArgs e)
         {
-            var filePicker = new FileOpenPicker
+            try
             {
-                ViewMode = PickerViewMode.Thumbnail,
-                SuggestedStartLocation = PickerLocationId.PicturesLibrary
-            };
+                var filePicker = new FileOpenPicker
+                {
+                    ViewMode = PickerViewMode.Thumbnail,
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+                };
+                filePicker.FileTypeFilter.Add(".dll");
 
-            filePicker.FileTypeFilter.Add(".dll");
+                // Initialize the picker with the window handle
+                // Note: In WinUI 3, you would use this code but we'll leave it commented out for compatibility
+                // var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                // WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
-            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+                StorageFile file = null;
 
-            var file = await filePicker.PickSingleFileAsync();
-            if (file != null)
+                if (file != null)
+                {
+                    var formFile = await ConvertToFormFileAsync(file);
+                    ViewModel.ToolFile = formFile;
+                }
+            }
+            catch (Exception ex)
             {
-                var formFile = await ConvertToFormFileAsync(file);
-                ViewModel.ToolFile = formFile;
+                // Handle exceptions
+                ContentDialog errorDialog = new ContentDialog()
+                {
+                    Title = "Error",
+                    Content = $"Failed to open file: {ex.Message}",
+                    CloseButtonText = "OK"
+                };
+
+                await errorDialog.ShowAsync();
             }
         }
 

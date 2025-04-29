@@ -8,7 +8,7 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="22948cc0-e404-46a6-b727-8c5db0df893f"
+    Name="22948cc0-el04-46a6-b727-8c5db0df893f"
     Publisher="CN=gnoulh"
     Version="1.0.0.0" />
 
@@ -16,7 +16,7 @@
 
   <Properties>
     <DisplayName>DevTools.UI</DisplayName>
-    <PublisherDisplayName>gnoulh</PublisherDisplayName>
+    <PublisherDisplayName>gnoul</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

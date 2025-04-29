@@ -22,7 +22,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<ToolGroup>> GetAllToolGroupsAsync()
         {
-            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
             try
             {
                 var response = await _httpClient.GetAsync("ToolGroup");
@@ -72,7 +72,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> GetToolsByGroupIdAsync(int groupId)
         {
-            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
             try
             {
                 var response = await _httpClient.GetAsync($"ToolGroup/{groupId}/todoItems");

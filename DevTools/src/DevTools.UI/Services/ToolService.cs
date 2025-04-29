@@ -24,7 +24,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> GetAllToolsAsync()
         {
-            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
             try
             {
                 var response = await _httpClient.GetAsync("Tool/all");
@@ -67,7 +67,7 @@ namespace DevTools.UI.Services
 
         public async Task<Tool> GetToolByIdAsync(int id)
         {
-            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
             try
             {
                 var response = await _httpClient.GetAsync($"Tool/{id}");
@@ -130,7 +130,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> SearchToolsAsync(string name)
         {
-            var _httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
             try
             {
                 var response = await _httpClient.GetAsync($"Tool/search?name={Uri.EscapeDataString(name)}");

@@ -96,7 +96,7 @@ namespace DevTools.UI.ViewModels
                 {
                     var app = Application.Current as App;
                     app.CurrentUser = user;
-                    _navigationService.NavigateTo(typeof(DashboardPage), user);
+                    _navigationService.NavigateTo(typeof(DashboardPage));
                 }
                 else
                 {

@@ -182,8 +182,7 @@ namespace DevTools.UI.ViewModels
             ToolGroupService toolGroupService,
             AccountService accountService,
             AuthService authService,
-            INavigationService navigationService,
-            User currentUser = null)
+            INavigationService navigationService)
         {
             _toolService = toolService ?? throw new ArgumentNullException(nameof(toolService));
             _toolGroupService = toolGroupService ?? throw new ArgumentNullException(nameof(toolGroupService));
@@ -191,7 +190,8 @@ namespace DevTools.UI.ViewModels
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
-            CurrentUser = currentUser;
+            var app = Application.Current as App;
+            CurrentUser = app.CurrentUser;
 
             AllTools = new ObservableCollection<Tool>();
             FilteredTools = new ObservableCollection<Tool>();
@@ -532,6 +532,8 @@ namespace DevTools.UI.ViewModels
                 }
 
                 CurrentUser = null;
+                var app = Application.Current as App;
+                app.CurrentUser = null;
                 ShowFavoritesOnly = false;
 
                 if (IsToolContentVisible)

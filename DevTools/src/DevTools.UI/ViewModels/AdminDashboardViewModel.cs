@@ -167,7 +167,7 @@ namespace DevTools.UI.ViewModels
         public ICommand UpdateGroupCommand { get; }
         public ICommand DeleteGroupCommand { get; }
 
-        public AdminDashboardViewModel(ToolService toolService, ToolGroupService toolGroupService, User adminUser)
+        public AdminDashboardViewModel(ToolService toolService, ToolGroupService toolGroupService)
         {
             _toolService = toolService ?? throw new ArgumentNullException(nameof(toolService));
             _toolGroupService = toolGroupService ?? throw new ArgumentNullException(nameof(toolGroupService));

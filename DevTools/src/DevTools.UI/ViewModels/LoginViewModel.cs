@@ -115,11 +115,11 @@ namespace DevTools.UI.ViewModels
                     // Navigate based on user role
                     if (user.IsAdmin)
                     {
-                        _navigationService.NavigateTo(typeof(AdminDashboardPage), user);
+                        _navigationService.NavigateTo(typeof(AdminDashboardPage));
                     }
                     else
                     {
-                        _navigationService.NavigateTo(typeof(DashboardPage), user);
+                        _navigationService.NavigateTo(typeof(DashboardPage));
                     }
                 }
                 else

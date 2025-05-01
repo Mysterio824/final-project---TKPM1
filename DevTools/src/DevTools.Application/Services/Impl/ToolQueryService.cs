@@ -12,7 +12,8 @@ namespace DevTools.Application.Services.Impl
         IToolRepository toolRepository,
         IFavoriteToolRepository favoriteToolRepository,
         ILogger<ToolQueryService> logger,
-        IMapper mapper) : IToolQueryService
+        IMapper mapper
+    ) : IToolQueryService
     {
         private readonly IToolRepository _toolRepository = toolRepository ?? throw new ArgumentNullException(nameof(toolRepository));
         private readonly IFavoriteToolRepository _favoriteToolRepository = favoriteToolRepository ?? throw new ArgumentNullException(nameof(favoriteToolRepository));
@@ -54,7 +55,12 @@ namespace DevTools.Application.Services.Impl
             if (tool == null) throw new NotFoundException($"Tool with id {id} not found.");
 
             var isFavorite = userId != -1 && await _favoriteToolRepository.GetAsync(userId, id) != null;
-            return await MapToToolDTO(tool, role, isFavorite);
+            var res = await MapToToolDTO(tool, role, isFavorite);
+            if (res.IsEnabled == false)
+            {
+                throw new BadRequestException($"Tool with id {id} is disabled.");
+            }
+            return res;
         }
 
         public async Task<IEnumerable<ToolItemResponseDto>> GetToolsByNameAsync(string name, UserRole role, int userId = -1)

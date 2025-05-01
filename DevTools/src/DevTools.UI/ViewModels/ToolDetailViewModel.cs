@@ -93,7 +93,10 @@ namespace DevTools.UI.ViewModels
         {
             _toolService = toolService;
             _toolLoader = toolLoader;
-            IsAdmin = (Application.Current as App).CurrentUser.IsAdmin;
+
+            var currentUser = (Application.Current as App)?.CurrentUser;
+            IsAdmin = currentUser != null && currentUser.IsAdmin;
+
             LoadToolCommand = new AsyncCommand<Tool>(LoadToolAsync);
             ExecuteToolCommand = new AsyncCommand<object>(ExecuteToolAsync, CanExecuteTool);
         }

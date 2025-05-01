@@ -23,6 +23,7 @@ using DevTools.UI.ViewModels;
 using DevTools.UI.Models;
 using Microsoft.Extensions.DependencyInjection;
 using DevTools.UI.Views;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -43,6 +44,9 @@ namespace DevTools.UI
             this.InitializeComponent();
         }
         public User? CurrentUser { get; set; } = null;
+        public static MainWindow? mainWindow { get; private set; }
+        public IServiceProvider serviceProvider { get; private set; }
+        public Tool? SelectedTool { get; set; } = null;
 
 
         /// <summary>
@@ -52,11 +56,15 @@ namespace DevTools.UI
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             var builder = new ServiceCollection();
+            string basePath = AppContext.BaseDirectory;
+            DirectoryInfo dir = new DirectoryInfo(basePath);
+            DirectoryInfo projectDir = dir.Parent?.Parent?.Parent?.Parent?.Parent?.Parent;
+            string projectPath = projectDir?.FullName;
+
             var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
+            .SetBasePath(projectPath)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
-
             builder.AddHttpClient("ApiClient", client =>
             {
                 client.BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"]);
@@ -76,12 +84,14 @@ namespace DevTools.UI
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, error) => true
             });
+            builder.AddSingleton(this);
             builder.AddSingleton<AuthHandler>();
             builder.AddSingleton<AuthService>();
             builder.AddSingleton<ToolService>();
             builder.AddSingleton<AccountService>();
             builder.AddSingleton<ToolGroupService>();
             builder.AddSingleton<INavigationService, NavigationService>();
+            builder.AddSingleton<ICurrentUserService, CurrentUserService>();
             builder.AddSingleton<ToolLoader>();
 
             // Register pages and ViewModels
@@ -96,9 +106,9 @@ namespace DevTools.UI
             builder.AddTransient<ToolDetailPage>();
             builder.AddTransient<ToolDetailViewModel>();
 
-            IServiceProvider serviceProvider = builder.BuildServiceProvider();
+            serviceProvider = builder.BuildServiceProvider();
 
-            var mainWindow = new MainWindow(serviceProvider);
+            mainWindow = new MainWindow(serviceProvider);
             mainWindow.Activate();
         }
     }

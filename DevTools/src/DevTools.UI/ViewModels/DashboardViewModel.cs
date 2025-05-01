@@ -2,6 +2,7 @@
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
 using DevTools.UI.Views;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,8 @@ namespace DevTools.UI.ViewModels
         private bool _showFavoritesOnly;
         private Tool _activeToolContent;
         private bool _isToolContentVisible;
+        private bool _isToolDetailMode;
+        private bool _showHeader;
         private ObservableCollection<Tool> _filteredTools;
         private string _sortBy = "Name";
         private string _filterGroup = "All";
@@ -43,6 +46,11 @@ namespace DevTools.UI.ViewModels
         {
             get => _currentUser;
             set => SetProperty(ref _currentUser, value);
+        }
+        public bool ShowHeader
+        {
+            get => _showHeader;
+            set => SetProperty(ref _showHeader, value);
         }
 
         public string SearchQuery
@@ -83,7 +91,11 @@ namespace DevTools.UI.ViewModels
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
-
+        public bool IsToolDetailMode
+        {
+            get => _isToolDetailMode;
+            set => SetProperty(ref _isToolDetailMode, value);
+        }
         public string ErrorMessage
         {
             get => _errorMessage;
@@ -159,7 +171,6 @@ namespace DevTools.UI.ViewModels
         public bool IsAuthenticated => CurrentUser != null;
         public bool IsPremium => CurrentUser?.IsPremium ?? false;
         public bool IsAdmin => CurrentUser?.IsAdmin ?? false;
-        public bool IsToolDetailMode { get; set; } = false;
         public ICommand LoadToolGroupsWithToolsCommand { get; }
         public ICommand SearchCommand { get; }
         public ICommand AddToFavoritesCommand { get; }

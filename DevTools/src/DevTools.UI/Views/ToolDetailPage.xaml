@@ -27,29 +27,22 @@
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="*"/>
 				<ColumnDefinition Width="Auto"/>
-			</Grid.ColumnDefinitions>
+            </Grid.ColumnDefinitions>
 
-			<StackPanel Grid.Column="0" Spacing="4">
-				<TextBlock Text="{x:Bind ViewModel.Tool.Name, Mode=OneWay}"
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="{x:Bind ViewModel.Tool.Name, Mode=OneWay}"
                            FontSize="28"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
                            Visibility="{x:Bind ViewModel.Tool, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"/>
-				<TextBlock Text="{x:Bind ViewModel.Tool.Description, Mode=OneWay}"
+                <TextBlock Text="{x:Bind ViewModel.Tool.Description, Mode=OneWay}"
                            FontSize="14"
                            Opacity="0.7"
                            TextWrapping="Wrap"
                            Visibility="{x:Bind ViewModel.Tool, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"/>
-			</StackPanel>
-
-			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-				<Button x:Name="BackButton"
-                        Click="BackButton_Click"
-                        Style="{StaticResource DefaultButtonStyle}">
-					<SymbolIcon Symbol="Back"/>
-				</Button>
-			</StackPanel>
-		</Grid>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Back" Click="Button_Click" Padding="10" FontSize="15" Visibility="{Binding IsAdmin, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </Grid>
 
 		<Grid Grid.Row="1">
 			<ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"

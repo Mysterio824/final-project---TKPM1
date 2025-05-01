@@ -20,6 +20,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Windows.UI;
+using System.Security.AccessControl;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,24 +41,7 @@ namespace DevTools.UI.Views
             ViewModel = viewModel;
             DataContext = ViewModel;
 
-            // Set navigation actions
-            //ViewModel.NavigateToLogin = () => navigationService.NavigateTo(typeof(LoginPage));
-            //ViewModel.NavigateToRegister = () => navigationService.NavigateTo(typeof(RegisterPage));
-            //ViewModel.ShowMessage = message => ShowMessageDialog(message);
-            //ViewModel.ShowPremiumRequired = () => ShowMessageDialog("Premium subscription required to access this tool.");
-            //ViewModel.ShowToolUnavailable = () => ShowMessageDialog("This tool is currently unavailable.");
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-
-            base.OnNavigatedTo(e);
-            if (e.Parameter is User user)
-            {
-                ViewModel.CurrentUser = user;
-                ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
-            }
+            ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
 
             // Setup ViewModel action handlers
             ViewModel.ShowMessage = ShowMessage;
@@ -66,6 +50,11 @@ namespace DevTools.UI.Views
 
             // Initialize UI
             InitializeUI();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
         }
 
         private void InitializeUI()
@@ -177,8 +166,9 @@ namespace DevTools.UI.Views
                 // Set tool detail mode
                 ViewModel.IsToolDetailMode = true;
 
-                // Navigate to tool detail page with the tool ID
-                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
+                (Application.Current as App).SelectedTool = tool;
+                var page = (Application.Current as App).serviceProvider.GetService(typeof(ToolDetailPage)) as Page;
+                ContentFrame.Content = page;
             }
         }
 
@@ -420,7 +410,9 @@ namespace DevTools.UI.Views
                 ViewModel.IsToolDetailMode = true;
 
                 // Navigate to tool detail page with the tool ID
-                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
+                (Application.Current as App).SelectedTool = tool;
+                var page = (Application.Current as App).serviceProvider.GetService(typeof(ToolDetailPage)) as Page;
+                ContentFrame.Content = page;
             }
         }
 
@@ -451,30 +443,6 @@ namespace DevTools.UI.Views
             }
         }
 
-        private void GroupHeader_Click(object sender, RoutedEventArgs e)
-        {
-            // Toggle group expansion when header is clicked
-            if (sender is FrameworkElement element && element.DataContext is ToolGroup group)
-            {
-                group.IsExpanded = !group.IsExpanded;
-            }
-        }
-
-        private void ToolItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Tool tool)
-            {
-                // Set the active tool
-                ViewModel.ActiveToolContent = tool;
-
-                // Set tool detail mode
-                ViewModel.IsToolDetailMode = true;
-
-                // Navigate to tool detail page with the tool ID
-                ContentFrame.Navigate(typeof(ToolDetailPage), tool.Id);
-            }
-        }
-
         private void FavoriteButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is Tool tool)
@@ -484,7 +452,7 @@ namespace DevTools.UI.Views
                     ShowLoginRequiredDialog();
                     return;
                 }
-
+                Debug.WriteLine(tool.IsFavorite);
                 if (tool.IsFavorite)
                 {
                     ViewModel.RemoveFromFavoritesCommand.Execute(tool);
@@ -511,6 +479,33 @@ namespace DevTools.UI.Views
             }
 
             ViewModel.RequestPremiumCommand.Execute(null);
+        }
+
+        private void GroupHeader_Click(object sender, TappedRoutedEventArgs e)
+        {
+            ViewModel.ShowHeader = !ViewModel.ShowHeader;
+            // Toggle group expansion when header is clicked
+            if (sender is FrameworkElement element && element.DataContext is ToolGroup group)
+            {
+                group.IsExpanded = !group.IsExpanded;
+            }
+        }
+
+        private void ToolItem_Click(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Tool tool)
+            {
+                // Set the active tool
+                ViewModel.ActiveToolContent = tool;
+
+                // Set tool detail mode
+                ViewModel.IsToolDetailMode = true;
+
+                // Navigate to tool detail page with the tool ID
+                (Application.Current as App).SelectedTool = tool;
+                var page = (Application.Current as App).serviceProvider.GetService(typeof(ToolDetailPage)) as Page;
+                ContentFrame.Content = page;
+            }
         }
     }
 }

@@ -16,6 +16,8 @@ using DevTools.UI.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using DevTools.UI.Utils;
 using DevTools.UI.Models;
+using System.Diagnostics;
+using DevTools.UI.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,26 +30,23 @@ namespace DevTools.UI.Views
     public sealed partial class ToolDetailPage : Page
     {
         public ToolDetailViewModel ViewModel { get; private set; }
+        private readonly INavigationService _navigationService;
 
-        public ToolDetailPage()
+        public ToolDetailPage(ToolDetailViewModel viewModel, INavigationService navigationService)
         {
+            ViewModel = viewModel;
+            DataContext = ViewModel;
+            _navigationService = navigationService;
             this.InitializeComponent();
+            if ((Application.Current as App).SelectedTool != null)
+            {
+                LoadTool((Application.Current as App).SelectedTool);
+            }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            if (e.Parameter is ToolDetailViewModel viewModel)
-            {
-                ViewModel = viewModel;
-            }
-            else if (e.Parameter is Tool tool)
-            {
-                //ViewModel = App.ServiceProvider.GetService<ToolDetailViewModel>();
-                LoadTool(tool);
-            }
-            this.DataContext = ViewModel;
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -69,20 +68,17 @@ namespace DevTools.UI.Views
             }
         }
 
-        private void BackButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.Frame.CanGoBack)
-            {
-                this.Frame.GoBack();
-            }
-        }
-
         private void RetryButton_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.Tool != null)
             {
                 ViewModel.LoadToolCommand.Execute(ViewModel.Tool.Id);
             }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            _navigationService.NavigateTo(typeof(AdminDashboardPage));
         }
     }
 }

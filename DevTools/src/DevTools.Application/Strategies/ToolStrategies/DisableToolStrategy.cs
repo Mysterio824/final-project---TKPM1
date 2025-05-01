@@ -10,7 +10,6 @@ namespace DevTools.Application.Strategies.ToolStrategies
 
         public async Task<UpdateToolResponseDto> ExecuteAsync(int id)
         {
-            await _toolService.DisableTool(id);
             return await _toolService.DisableTool(id);
         }
     }

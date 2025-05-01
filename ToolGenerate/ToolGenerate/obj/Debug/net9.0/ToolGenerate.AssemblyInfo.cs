@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ToolGenerate")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a00a825b8c76b58ca2abfe77e8cca49316fd4ca8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f1383fa714cde2820f9801cb2786b140d0248181")]
 [assembly: System.Reflection.AssemblyProductAttribute("ToolGenerate")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ToolGenerate")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

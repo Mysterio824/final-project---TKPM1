@@ -1,5 +1,6 @@
 ﻿using DevTools.UI.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,7 +25,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> GetAllToolsAsync()
         {
-            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
+            var _httpClient = _httpClientFactory.CreateClient((Application.Current as App).CurrentUser == null ? "UnauthenticatedApiClient" : "ApiClient");
             try
             {
                 var response = await _httpClient.GetAsync("Tool/all");
@@ -67,7 +68,7 @@ namespace DevTools.UI.Services
 
         public async Task<Tool> GetToolByIdAsync(int id)
         {
-            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
+            var _httpClient = _httpClientFactory.CreateClient((Application.Current as App).CurrentUser == null ? "UnauthenticatedApiClient" : "ApiClient");
             try
             {
                 var response = await _httpClient.GetAsync($"Tool/{id}");
@@ -130,7 +131,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> SearchToolsAsync(string name)
         {
-            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
+            var _httpClient = _httpClientFactory.CreateClient((Application.Current as App).CurrentUser == null ? "UnauthenticatedApiClient" : "ApiClient");
             try
             {
                 var response = await _httpClient.GetAsync($"Tool/search?name={Uri.EscapeDataString(name)}");
@@ -262,6 +263,7 @@ namespace DevTools.UI.Services
             try
             {
                 var response = await _httpClient.PatchAsync($"Tool/{id}/{action}", null);
+                Debug.WriteLine($"{id} {response.Content}");
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)

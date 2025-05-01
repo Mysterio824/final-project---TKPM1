@@ -5,7 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using IToolsApp.Core.Interfaces;
+using DevTools.UI.Models;
 using Microsoft.UI.Xaml.Controls;
 
 namespace HashGeneratorTool

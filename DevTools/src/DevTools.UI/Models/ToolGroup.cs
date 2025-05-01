@@ -12,10 +12,6 @@ namespace DevTools.UI.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
-        public bool IsPremium { get; set; }
-        public bool IsEnabled { get; set; }
-        public bool IsFavorite { get; set; }
         private bool _isExpanded;
         public bool IsExpanded
         {

@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Net.Http.Json;
+using Microsoft.UI.Xaml;
 
 namespace DevTools.UI.Services
 {
@@ -22,7 +23,7 @@ namespace DevTools.UI.Services
 
         public async Task<List<ToolGroup>> GetAllToolGroupsAsync()
         {
-            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
+            var _httpClient = _httpClientFactory.CreateClient((Application.Current as App).CurrentUser == null ? "UnauthenticatedApiClient" : "ApiClient");
             try
             {
                 var response = await _httpClient.GetAsync("ToolGroup");
@@ -48,11 +49,7 @@ namespace DevTools.UI.Services
                     toolGroups.Add(new ToolGroup
                     {
                         Id = item.GetProperty("id").GetInt32(),
-                        Name = item.GetProperty("name").GetString(),
-                        Description = item.TryGetProperty("description", out var desc) ? desc.GetString() : null,
-                        IsPremium = item.GetProperty("isPremium").GetBoolean(),
-                        IsEnabled = item.GetProperty("isEnabled").GetBoolean(),
-                        IsFavorite = item.GetProperty("isFavorite").GetBoolean()
+                        Name = item.GetProperty("name").GetString()
                     });
                 }
 
@@ -72,10 +69,10 @@ namespace DevTools.UI.Services
 
         public async Task<List<Tool>> GetToolsByGroupIdAsync(int groupId)
         {
-            var _httpClient = _httpClientFactory.CreateClient("UnauthenticatedApiClient");
+            var _httpClient = _httpClientFactory.CreateClient((Application.Current as App).CurrentUser == null ? "UnauthenticatedApiClient" : "ApiClient");
             try
             {
-                var response = await _httpClient.GetAsync($"ToolGroup/{groupId}/todoItems");
+                var response = await _httpClient.GetAsync($"ToolGroup/{groupId}/tools");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -104,6 +101,7 @@ namespace DevTools.UI.Services
                         IsEnabled = item.GetProperty("isEnabled").GetBoolean(),
                         IsFavorite = item.GetProperty("isFavorite").GetBoolean()
                     });
+                    Debug.WriteLine($"isFavorite: {item.GetProperty("isFavorite")}");
                 }
 
                 return tools;
@@ -126,7 +124,7 @@ namespace DevTools.UI.Services
             var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var groupData = new { name, description };
+                var groupData = new { name };
                 var response = await _httpClient.PostAsJsonAsync("ToolGroup/add", groupData);
 
                 if (!response.IsSuccessStatusCode)
@@ -158,12 +156,12 @@ namespace DevTools.UI.Services
             }
         }
 
-        public async Task<bool> UpdateToolGroupAsync(int id, string name, string description = null)
+        public async Task<bool> UpdateToolGroupAsync(int id, string name, string description)
         {
             var _httpClient = _httpClientFactory.CreateClient("ApiClient");
             try
             {
-                var groupData = new { id, name, description };
+                var groupData = new { id, name };
                 var response = await _httpClient.PutAsJsonAsync($"ToolGroup/update/{id}", groupData);
                 if (!response.IsSuccessStatusCode)
                 {

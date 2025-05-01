@@ -4,20 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI;
 
 namespace DevTools.UI.Converters
 {
-    public class FavoriteColorConverter : IValueConverter
+    public class StringToBoolConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is bool isFavorite)
+            if (value is string str)
             {
-                return isFavorite ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Gray);
+                return !string.IsNullOrEmpty(str);
             }
-            return new SolidColorBrush(Colors.Gray);
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

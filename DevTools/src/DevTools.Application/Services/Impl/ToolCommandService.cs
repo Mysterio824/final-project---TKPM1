@@ -165,6 +165,7 @@ namespace DevTools.Application.Services.Impl
             var tool = await _toolRepository.GetByIdAsync(id)
                 ?? throw new NotFoundException($"Tool {id} not found.");
 
+            _logger.LogInformation($"Tool {tool.Id}, IsEnable: {tool.IsEnabled}");
             if (tool.IsEnabled == enable)
                 throw new BadRequestException($"Tool is already {(enable ? "enabled" : "disabled")}.");
 

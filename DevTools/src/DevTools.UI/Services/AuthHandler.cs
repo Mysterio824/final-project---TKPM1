@@ -11,20 +11,18 @@ namespace DevTools.UI.Services
 {
     public class AuthHandler : DelegatingHandler
     {
-        private readonly App _app;
+        private readonly ICurrentUserService _currentUserService;
 
-        public AuthHandler(App app)
+        public AuthHandler(ICurrentUserService currentUserService)
         {
-            _app = app;
-            InnerHandler = new HttpClientHandler();
+            _currentUserService = currentUserService;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Add Bearer token if available
-            if (!string.IsNullOrEmpty(_app.CurrentUser?.Token))
+            if (!string.IsNullOrEmpty(_currentUserService.CurrentUser?.Token))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _app.CurrentUser.Token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _currentUserService.CurrentUser.Token);
             }
 
             return await base.SendAsync(request, cancellationToken);

@@ -13,7 +13,7 @@
 
     <Page.Resources>
         <x:Double x:Key="SidePanelExpandedWidth">250</x:Double>
-        <x:Double x:Key="SidePanelCollapsedWidth">50</x:Double>
+        <x:Double x:Key="SidePanelCollapsedWidth">0</x:Double>
         <x:Double x:Key="HeaderHeight">48</x:Double>
 
         <!-- Tool Item Template -->
@@ -57,7 +57,7 @@
                     <Button x:Name="FavoriteButton" Background="Transparent" BorderThickness="0"
                             Click="FavoriteButton_Click" HorizontalAlignment="Right"
                             Tag="{x:Bind Id}">
-                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xE734;" 
+                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xEB51;" 
                                   Foreground="{x:Bind IsFavorite, Converter={StaticResource FavoriteColorConverter}}"/>
                     </Button>
                 </Grid>
@@ -140,18 +140,23 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <!-- Home button -->
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <!-- Search -->
                 <ColumnDefinition Width="Auto"/>
                 <!-- Account actions and tools -->
             </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" x:Name="TogglePanelButton" Background="Transparent" BorderThickness="0"
+                  Click="ToggleSidePanel_Click" VerticalAlignment="Center" Padding="5">
+                <FontIcon x:Name="TogglePanelIcon" Glyph="&#xE76B;" FontSize="12"/>
+            </Button>
             <!-- Home button -->
-            <Button Grid.Column="0" x:Name="HomeButton" Background="Transparent" BorderThickness="0"
+            <Button Grid.Column="1" x:Name="HomeButton" Background="Transparent" BorderThickness="0"
                     Click="HomeButton_Click" ToolTipService.ToolTip="Home">
                 <FontIcon Glyph="&#xE80F;" FontSize="16"/>
             </Button>
             <!-- Search Box with Suggestions -->
-            <Grid Grid.Column="1" Margin="12,4">
+            <Grid Grid.Column="2" Margin="12,4">
                 <Grid HorizontalAlignment="Left" Width="400">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -181,19 +186,19 @@
             <!-- Right side tools -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <!-- Anonymous User Panel -->
-                <StackPanel x:Name="AnonymousUserPanel" Orientation="Horizontal" Visibility="Visible">
+                <StackPanel x:Name="AnonymousUserPanel" Orientation="Horizontal" Visibility="{Binding IsAuthenticated, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                     <Button x:Name="LoginButton" Content="Login" Click="LoginButton_Click" Margin="4,0"/>
                     <Button x:Name="RegisterButton" Content="Register" Click="RegisterButton_Click" Margin="4,0"/>
                 </StackPanel>
                 <!-- Authenticated User Panel -->
-                <StackPanel x:Name="AuthenticatedUserPanel" Orientation="Horizontal" Visibility="Collapsed">
+                <StackPanel x:Name="AuthenticatedUserPanel" Orientation="Horizontal" Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisibilityConverter}}">
                     <!-- Regular user controls -->
-                    <StackPanel x:Name="RegularUserPanel" Orientation="Horizontal" Visibility="Collapsed">
+                    <StackPanel x:Name="RegularUserPanel" Orientation="Horizontal" Visibility="{Binding IsPremium, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <Button x:Name="PremiumRequestButton" Content="Go Premium" Click="PremiumRequestButton_Click" 
                                 Margin="4,0" Background="Gold" Foreground="Black"/>
                     </StackPanel>
                     <!-- Premium user controls -->
-                    <StackPanel x:Name="PremiumPanel" Orientation="Horizontal" Visibility="Collapsed">
+                    <StackPanel x:Name="PremiumPanel" Orientation="Horizontal" Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="PREMIUM" VerticalAlignment="Center" Foreground="Gold" FontWeight="Bold" 
                                    Margin="4,0"/>
                     </StackPanel>
@@ -240,16 +245,8 @@
             </Grid.RowDefinitions>
             <!-- Side Panel Header -->
             <Grid Grid.Row="0" Height="40" Padding="12,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" x:Name="SidePanelHeaderText" Text="Tool Groups" 
-                           VerticalAlignment="Center" FontWeight="SemiBold"/>
-                <Button Grid.Column="1" x:Name="TogglePanelButton" Background="Transparent" BorderThickness="0"
-                        Click="ToggleSidePanel_Click" VerticalAlignment="Center" Padding="4">
-                    <FontIcon x:Name="TogglePanelIcon" Glyph="&#xE76B;" FontSize="12"/>
-                </Button>
+                           VerticalAlignment="Center" FontWeight="SemiBold" FontSize="20"/>
             </Grid>
             <!-- Tool Groups -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -264,7 +261,8 @@
             </Grid.RowDefinitions>
             <!-- Toolbar -->
             <Grid Grid.Row="0" Padding="12" BorderThickness="0,0,0,1"
-                  BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}">
+                  BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}"
+                  Visibility="{Binding IsToolDetailMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -285,7 +283,7 @@
                 <Button Grid.Column="2" x:Name="FavoritesButton" Background="Transparent" BorderThickness="1"
                         BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" Click="FavoritesButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xE734;" Margin="0,0,8,0"/>
+                        <FontIcon x:Name="FavoriteIcon" Glyph="&#xEB51;" Margin="0,0,8,0"/>
                         <TextBlock Text="Favorites"/>
                     </StackPanel>
                 </Button>

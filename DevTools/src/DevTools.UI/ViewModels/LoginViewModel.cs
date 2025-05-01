@@ -3,6 +3,7 @@ using DevTools.UI.Services;
 using DevTools.UI.Utils;
 using DevTools.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

@@ -1,7 +1,9 @@
 ﻿using DevTools.UI.Models;
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
+using DevTools.UI.Views;
 using Microsoft.AspNetCore.Http;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,14 +18,17 @@ namespace DevTools.UI.ViewModels
 {
     public class AdminDashboardViewModel : BaseViewModel
     {
+        private readonly AuthService _authService;
         private readonly ToolService _toolService;
         private readonly ToolGroupService _toolGroupService;
+        private readonly INavigationService _navigationService;
         private bool _isLoading;
         private string _errorMessage;
         private ObservableCollection<Tool> _tools;
         private ObservableCollection<ToolGroup> _groups;
         private Tool _selectedTool;
         private ToolGroup _selectedGroup;
+        private User _admin;
         private string _toolName;
         private string _toolDescription;
         private bool _isPremium;
@@ -149,6 +154,12 @@ namespace DevTools.UI.ViewModels
                 (AddToolCommand as AsyncCommand)?.RaiseCanExecuteChanged();
             }
         }
+        public User Admin
+        {
+            get => _admin;
+            set => SetProperty(ref _admin, value);
+        }
+
         private void Groups_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(IsGroupListEmpty));
@@ -166,11 +177,14 @@ namespace DevTools.UI.ViewModels
         public ICommand AddGroupCommand { get; }
         public ICommand UpdateGroupCommand { get; }
         public ICommand DeleteGroupCommand { get; }
+        public ICommand LogoutCommand { get; }
 
-        public AdminDashboardViewModel(ToolService toolService, ToolGroupService toolGroupService)
+        public AdminDashboardViewModel(AuthService authService, ToolService toolService, ToolGroupService toolGroupService, INavigationService navigationService)
         {
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _toolService = toolService ?? throw new ArgumentNullException(nameof(toolService));
             _toolGroupService = toolGroupService ?? throw new ArgumentNullException(nameof(toolGroupService));
+            _navigationService = navigationService;
 
             // Initialize collections
             Tools = new ObservableCollection<Tool>();
@@ -178,6 +192,8 @@ namespace DevTools.UI.ViewModels
 
             // Set default values
             IsEnabled = true;
+            var app = Application.Current as App;
+            Admin = app.CurrentUser;
 
             // Initialize commands
             LoadToolsCommand = new AsyncCommand(LoadToolsAsync);
@@ -192,13 +208,7 @@ namespace DevTools.UI.ViewModels
             AddGroupCommand = new AsyncCommand(AddGroupAsync, CanAddGroup);
             UpdateGroupCommand = new AsyncCommand(UpdateGroupAsync, CanUpdateGroup);
             DeleteGroupCommand = new AsyncCommand<ToolGroup>(DeleteGroupAsync, CanDeleteGroup);
-
-            // Set auth tokens if needed
-            //if (adminUser?.Token != null)
-            //{
-            //    _toolService.SetAuthToken(adminUser.Token);
-            //    _toolGroupService.SetAuthToken(adminUser.Token);
-            //}
+            LogoutCommand = new AsyncCommand(LogoutAsync);
         }
 
         private bool CanAddTool() =>
@@ -263,6 +273,7 @@ namespace DevTools.UI.ViewModels
                 {
                     Groups.Add(group);
                 }
+                Debug.WriteLine($"abc: {Groups.Count()}");
             }
             catch (Exception ex)
             {
@@ -402,6 +413,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsEnabled = true;
                     OnPropertyChanged(nameof(Tools));
+                    await LoadToolsAsync();
                 }
                 else
                 {
@@ -434,6 +446,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsEnabled = false;
                     OnPropertyChanged(nameof(Tools));
+                    await LoadToolsAsync();
                 }
                 else
                 {
@@ -466,6 +479,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsPremium = true;
                     OnPropertyChanged(nameof(Tools));
+                    await LoadToolsAsync();
                 }
                 else
                 {
@@ -498,6 +512,7 @@ namespace DevTools.UI.ViewModels
                 {
                     tool.IsPremium = false;
                     OnPropertyChanged(nameof(Tools));
+                    await LoadToolsAsync();
                 }
                 else
                 {
@@ -638,7 +653,7 @@ namespace DevTools.UI.ViewModels
                 IsEnabled = tool.IsEnabled;
 
                 // Find the correct group by ID
-                SelectedGroupId = SelectedGroup.Id;
+                SelectedGroupId = SelectedGroup?.Id;
             }
             else
             {
@@ -652,9 +667,7 @@ namespace DevTools.UI.ViewModels
 
             if (group != null)
             {
-                // Populate form fields with group data
                 GroupName = group.Name;
-                GroupDescription = group.Description;
             }
             else
             {
@@ -678,6 +691,33 @@ namespace DevTools.UI.ViewModels
             GroupName = string.Empty;
             GroupDescription = string.Empty;
             SelectedGroup = null;
+        }
+        private async Task LogoutAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = string.Empty;
+
+                if (Admin?.Token != null)
+                {
+                    await _authService.LogoutAsync(Admin.Token);
+                }
+
+                Admin = null;
+                var app = Application.Current as App;
+                app.CurrentUser = null;
+                
+                _navigationService.NavigateTo(typeof(DashboardPage));
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error during logout: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
     }
 }

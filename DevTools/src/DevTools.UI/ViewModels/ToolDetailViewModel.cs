@@ -1,6 +1,7 @@
 ﻿using DevTools.UI.Models;
 using DevTools.UI.Services;
 using DevTools.UI.Utils;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
@@ -31,7 +32,7 @@ namespace DevTools.UI.ViewModels
         private ITool _toolInstance;
         private object _lastResult;
         private bool _hasResult;
-
+        private bool _isAdmin;
         public Tool Tool
         {
             get => _tool;
@@ -61,6 +62,11 @@ namespace DevTools.UI.ViewModels
             get => _isToolLoaded;
             set => SetProperty(ref _isToolLoaded, value);
         }
+        public bool IsAdmin
+        {
+            get => _isAdmin;
+            set => SetProperty(ref _isAdmin, value);
+        }
 
         public object LastResult
         {
@@ -87,6 +93,7 @@ namespace DevTools.UI.ViewModels
         {
             _toolService = toolService;
             _toolLoader = toolLoader;
+            IsAdmin = (Application.Current as App).CurrentUser.IsAdmin;
             LoadToolCommand = new AsyncCommand<Tool>(LoadToolAsync);
             ExecuteToolCommand = new AsyncCommand<object>(ExecuteToolAsync, CanExecuteTool);
         }
@@ -100,6 +107,7 @@ namespace DevTools.UI.ViewModels
         {
             try
             {
+                Debug.WriteLine($"{tool.Name}");
                 ClearPreviousState();
                 IsLoading = true;
                 ErrorMessage = string.Empty;

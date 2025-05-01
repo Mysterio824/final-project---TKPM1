@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Globals">
     <WebView2LoaderPreference>Dynamic</WebView2LoaderPreference>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -14,8 +15,8 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250310001" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="IToolsApp.Core">
-      <HintPath>..\..\ITToolsApp\IToolsApp.Core\bin\Debug\net8.0-windows10.0.19041.0\IToolsApp.Core.dll</HintPath>
+    <Reference Include="DevTools.UI">
+      <HintPath>..\..\DevTools\src\DevTools.UI\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\DevTools.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   

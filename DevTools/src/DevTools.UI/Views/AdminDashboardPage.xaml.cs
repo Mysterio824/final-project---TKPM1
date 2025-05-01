@@ -33,18 +33,20 @@ namespace DevTools.UI.Views
     public sealed partial class AdminDashboardPage : Page
     {
         public AdminDashboardViewModel ViewModel { get; private set; }
+        private readonly INavigationService _navigationService;
 
         public AdminDashboardPage(AdminDashboardViewModel viewModel, INavigationService navigationService)
         {
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = ViewModel;
+            _navigationService = navigationService;
+            LoadData();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            LoadData();
         }
 
         private async void LoadData()
@@ -70,12 +72,10 @@ namespace DevTools.UI.Views
                 };
                 filePicker.FileTypeFilter.Add(".dll");
 
-                // Initialize the picker with the window handle
-                // Note: In WinUI 3, you would use this code but we'll leave it commented out for compatibility
-                // var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                // WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.mainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
 
-                StorageFile file = null;
+                StorageFile file = await filePicker.PickSingleFileAsync();
 
                 if (file != null)
                 {
@@ -119,7 +119,8 @@ namespace DevTools.UI.Views
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is Tool tool)
             {
-                ViewModel.SelectTool(tool);
+                (Application.Current as App).SelectedTool = tool;
+                _navigationService.NavigateTo(typeof(ToolDetailPage));
             }
         }
 
@@ -136,6 +137,50 @@ namespace DevTools.UI.Views
             if (sender is Button button && button.CommandParameter is Tool tool)
             {
                 ViewModel.SelectTool(tool);
+            }
+        }
+        private void LogoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LogoutCommand.Execute(null);
+        }
+
+        private async void EnableButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.EnableToolCommand.Execute(tool);
+            }
+        }
+
+        private async void DisableButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.DisableToolCommand.Execute(tool);
+            }
+        }
+
+        private async void SetPremiumButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.SetPremiumCommand.Execute(tool);
+            }
+        }
+
+        private async void SetFreeButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.SetFreeCommand.Execute(tool);
+            }
+        }
+
+        private async void DeleteButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is Tool tool)
+            {
+                ViewModel.DeleteToolCommand.Execute(tool);
             }
         }
     }

@@ -161,8 +161,8 @@ public class DatabaseContextSeed(
                 Name = "JSON to CSV",
                 Description = "Convert JSON to CSV with automatic header detection.",
                 Group = "Development",
-                IsPremium = true,
-                IsEnabled = true,
+                IsPremium = false,
+                IsEnabled = false,
                 DllPath = "Tools/JsonToCsvTool.dll"
             },
             new
@@ -189,7 +189,7 @@ public class DatabaseContextSeed(
                 Description = "Find the vendor and manufacturer of a device by its MAC address.",
                 Group = "Network",
                 IsPremium = false,
-                IsEnabled = true,
+                IsEnabled = false,
                 DllPath = "Tools/MacAddressLookupTool.dll"
             },
             new
@@ -270,7 +270,7 @@ public class DatabaseContextSeed(
                 Description = "Hash a text string using the function you need : MD5, SHA1, SHA256, SHA224, SHA512, SHA384, SHA3 or RIPEMD160",
                 Group = "Crypto",
                 IsPremium = false,
-                IsEnabled = true,
+                IsEnabled = false,
                 DllPath = "Tools/HashGeneratorTool.dll"
             },
         };

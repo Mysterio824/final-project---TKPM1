@@ -46,7 +46,6 @@ app.publish/
 azds.yaml
 
 # C# Compiled Files
-*.dll
 *.exe
 *.pdb
 *.cache

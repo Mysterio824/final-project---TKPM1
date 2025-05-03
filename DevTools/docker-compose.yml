@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_HTTPS_PORT:-5000}:${APP_HTTPS_PORT:-5000}"
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://0.0.0.0:${APP_HTTPS_PORT:-5000}
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=DevTools
+      - Jwt__Audience=DevToolsUsers
+      - applicationUrl=https://localhost:${APP_HTTPS_PORT:-5000}
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION}
+      - Redis__ConnectionString=${REDIS_CONNECTION}
+      - Redis__InstanceName=DevTools
+      - EmailSettings__SmtpHost=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__EnableSsl=true
+      - EmailSettings__Username=${EMAIL_USERNAME}
+      - EmailSettings__Password=${EMAIL_PASSWORD}
+      - EmailSettings__FromEmail=nhminh22@clc.fitus.edu.vn
+      - EmailSettings__FromName=DevTools Support
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./certificates:/app/certificates:ro
+      - ./src/DevTools.Application/Tools:/app/Tools
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=devtools_db
+      - POSTGRES_PORT=${DB_PORT:-5432}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

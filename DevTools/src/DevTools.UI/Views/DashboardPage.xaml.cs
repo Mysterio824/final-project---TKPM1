@@ -336,10 +336,10 @@ namespace DevTools.UI.Views
             // Show about dialog
             ContentDialog aboutDialog = new ContentDialog
             {
-                Title = "About Tool Platform",
-                Content = "Tool Platform is a comprehensive suite of utilities for developers and professionals. " +
+                Title = "About DevTools",
+                Content = "DevTools is a comprehensive suite of utilities for developers and professionals. A project for Software Design - 22CLC02 - HCMUS. Author: 22127254 - 22127268." +
                          "Version 1.0.0\n\n" +
-                         "© 2025 Your Company. All rights reserved.",
+                         "© 2025 HCMUS. All rights reserved.",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot

@@ -19,19 +19,16 @@ namespace MacAddressLookupTool
         private Button _copyButton;
         private SolidColorBrush _errorBrush;
         private SolidColorBrush _defaultBrush;
-
         public MacAddressLookupToolUI(MacAddressLookupTool tool)
         {
             _tool = tool;
             InitializeUI();
         }
-
         private void InitializeUI()
         {
             // Create color brushes
             _errorBrush = new SolidColorBrush(Microsoft.UI.Colors.Red);
             _defaultBrush = new SolidColorBrush(Microsoft.UI.Colors.Black);
-
             // Creating StackPanel to hold other controls
             var stack = new StackPanel
             {
@@ -39,12 +36,10 @@ namespace MacAddressLookupTool
                 Padding = new Microsoft.UI.Xaml.Thickness(20),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-
             // MAC Address input section
             var inputPanel = new Grid();
             inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             inputPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
             // Create and configure TextBox (Input)
             _macAddressBox = new TextBox
             {
@@ -55,7 +50,6 @@ namespace MacAddressLookupTool
             _macAddressBox.TextChanged += OnMacAddressTextChanged;
             Grid.SetColumn(_macAddressBox, 0);
             inputPanel.Children.Add(_macAddressBox);
-
             // Clear button
             _clearButton = new Button
             {
@@ -67,7 +61,6 @@ namespace MacAddressLookupTool
             _clearButton.Click += OnClearButtonClicked;
             Grid.SetColumn(_clearButton, 1);
             inputPanel.Children.Add(_clearButton);
-
             // Validation message
             _validationMessage = new TextBlock
             {
@@ -75,7 +68,6 @@ namespace MacAddressLookupTool
                 Visibility = Visibility.Collapsed,
                 Margin = new Microsoft.UI.Xaml.Thickness(0, 5, 0, 0)
             };
-
             // Vendor info section
             _vendorInfoBlock = new TextBlock
             {
@@ -84,7 +76,6 @@ namespace MacAddressLookupTool
                 Width = 350,
                 Margin = new Microsoft.UI.Xaml.Thickness(0, 15, 0, 0)
             };
-
             // Copy button
             _copyButton = new Button
             {
@@ -94,21 +85,17 @@ namespace MacAddressLookupTool
                 IsEnabled = false
             };
             _copyButton.Click += OnCopyButtonClicked;
-
             // Add controls to StackPanel
             stack.Children.Add(inputPanel);
             stack.Children.Add(_validationMessage);
             stack.Children.Add(_vendorInfoBlock);
             stack.Children.Add(_copyButton);
-
             // Set the content of UserControl
             this.Content = stack;
         }
-
         private void OnMacAddressTextChanged(object sender, TextChangedEventArgs e)
         {
             string macAddress = _macAddressBox.Text;
-
             if (string.IsNullOrEmpty(macAddress))
             {
                 // Reset UI state
@@ -118,17 +105,14 @@ namespace MacAddressLookupTool
                 _copyButton.IsEnabled = false;
                 return;
             }
-
             if (_tool.IsValidMacAddress(macAddress))
             {
                 // Valid MAC address
                 _validationMessage.Visibility = Visibility.Collapsed;
                 _macAddressBox.BorderBrush = null; // Default border
-
-                // Look up vendor info
+                                                   // Look up vendor info
                 string vendorInfo = _tool.LookupVendor(macAddress);
                 _vendorInfoBlock.Text = vendorInfo;
-
                 // Enable/disable copy button based on whether vendor is known
                 _copyButton.IsEnabled = !vendorInfo.Contains("Unknown vendor");
             }
@@ -137,12 +121,11 @@ namespace MacAddressLookupTool
                 // Invalid MAC address
                 _validationMessage.Text = "Invalid MAC address";
                 _validationMessage.Visibility = Visibility.Visible;
-                _macAddressBox.BorderBrush = _errorBrush;
+                _macAddressBox.BorderBrush = _errorBrush; // FIXED LINE
                 _vendorInfoBlock.Text = "Enter a valid MAC address to see vendor information";
                 _copyButton.IsEnabled = false;
             }
         }
-
         private void OnClearButtonClicked(object sender, RoutedEventArgs e)
         {
             _macAddressBox.Text = string.Empty;
@@ -151,7 +134,6 @@ namespace MacAddressLookupTool
             _vendorInfoBlock.Text = "Enter a MAC address to see vendor information";
             _copyButton.IsEnabled = false;
         }
-
         private void OnCopyButtonClicked(object sender, RoutedEventArgs e)
         {
             if (!string.IsNullOrEmpty(_vendorInfoBlock.Text) && _copyButton.IsEnabled)
@@ -164,6 +146,7 @@ namespace MacAddressLookupTool
                 }
                 catch (Exception)
                 {
+                    // Handle clipboard error
                 }
             }
         }

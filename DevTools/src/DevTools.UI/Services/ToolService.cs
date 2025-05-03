@@ -104,7 +104,7 @@ namespace DevTools.UI.Services
                     string base64 = fileElement.GetString();
                     tool.FileData = Convert.FromBase64String(base64);
                 }
-
+                Debug.WriteLine(tool.FileData.Length);
                 return tool;
             }
             catch (HttpRequestException ex)

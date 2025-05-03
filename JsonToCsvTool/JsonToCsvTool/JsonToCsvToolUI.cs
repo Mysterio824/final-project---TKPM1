@@ -30,7 +30,8 @@ namespace JsonToCsvTool
             var stack = new StackPanel
             {
                 Spacing = 10,
-                Padding = new Microsoft.UI.Xaml.Thickness(20)
+                Padding = new Microsoft.UI.Xaml.Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center
             };
 
             // Create and configure TextBox (Input)

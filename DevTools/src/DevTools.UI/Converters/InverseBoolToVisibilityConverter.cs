@@ -17,7 +17,8 @@ namespace DevTools.UI.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
-            return (Visibility)value != Visibility.Visible;
+            //return (Visibility)value != Visibility.Visible;
+            throw new NotImplementedException();
         }
     }
 }

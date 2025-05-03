@@ -58,6 +58,10 @@ namespace DevTools.Application.Services.Impl
             var res = await MapToToolDTO(tool, role, isFavorite);
             if (res.IsEnabled == false)
             {
+                if (role == UserRole.Admin)
+                {
+                    return res;
+                }
                 throw new BadRequestException($"Tool with id {id} is disabled.");
             }
             return res;

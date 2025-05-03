@@ -29,7 +29,8 @@ namespace SQLPrettifierTool
             var mainStack = new StackPanel
             {
                 Spacing = 10,
-                Padding = new Microsoft.UI.Xaml.Thickness(20)
+                Padding = new Microsoft.UI.Xaml.Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center
             };
 
             // Input section

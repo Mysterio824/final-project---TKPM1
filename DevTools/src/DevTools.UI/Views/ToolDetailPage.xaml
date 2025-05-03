@@ -74,24 +74,25 @@
                             Click="RetryButton_Click"/>
 				</StackPanel>
 			</Grid>
-
-			<Grid Visibility="{x:Bind ViewModel.IsToolLoaded, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+            <Grid Visibility="Collapsed">
+                <Grid Visibility="{x:Bind ViewModel.IsToolLoaded, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"
                   MaxWidth="600">
-				<StackPanel Spacing="16" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-					<FontIcon Glyph="&#xE72E;"
+                    <StackPanel Spacing="16" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <FontIcon Glyph="&#xE72E;"
                               FontSize="48"
                               Foreground="{ThemeResource SystemAccentColor}"
                               HorizontalAlignment="Center"/>
-					<TextBlock Text="Tool not loaded"
+                        <TextBlock Text="Tool not loaded"
                                Style="{StaticResource SubtitleTextBlockStyle}"
                                TextAlignment="Center"/>
-					<TextBlock Text="Select a tool to continue"
+                        <TextBlock Text="Select a tool to continue"
                                TextAlignment="Center"
                                Opacity="0.7"/>
-				</StackPanel>
-			</Grid>
+                    </StackPanel>
+                </Grid>
+            </Grid>
             <ScrollViewer>
                 <Grid Visibility="{x:Bind ViewModel.IsToolLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                   BorderThickness="1"

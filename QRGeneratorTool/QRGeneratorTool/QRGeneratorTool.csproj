@@ -12,5 +12,10 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.4" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DevTools.UI">
+      <HintPath>..\..\DevTools\src\DevTools.UI\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\DevTools.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   
 </Project>

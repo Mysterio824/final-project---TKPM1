@@ -32,9 +32,7 @@ namespace DevTools.Application.MappingProfiles
 
         private static bool IsToolAccessible(Tool tool, UserRole role)
         {
-            return role == UserRole.Admin || (!tool.IsPremium && tool.IsEnabled) ||
-                (tool.IsPremium && role != UserRole.User && role != UserRole.Anonymous && tool.IsEnabled);
-
+            return tool.IsEnabled;
         }
     }
 }

@@ -13,110 +13,52 @@ using Windows.Storage;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using QRGeneratorTool.WinRT.Interop;
 using System.Runtime.InteropServices;
+using Microsoft.UI.Text;
+using System.IO;
+using Microsoft.UI.Xaml.Shapes;
+using System.Drawing;
 
 namespace QRGeneratorTool
 {
-    public class QRGeneratorToolUI : UserControl
+    class QRGeneratorToolUI : UserControl
     {
         private readonly QRGeneratorTool _tool;
         private TextBox _inputBox;
-        private ComboBox _errorCorrectionComboBox;
-        private Button _fgColorButton;
-        private Button _bgColorButton;
-        private Image _qrCodeImage;
+        private ComboBox _errorLevelComboBox;
+        private TextBox _foregroundColorBox;
+        private Microsoft.UI.Xaml.Shapes.Rectangle _foregroundColorPreview;
+        private TextBox _backgroundColorBox;
+        private Microsoft.UI.Xaml.Shapes.Rectangle _backgroundColorPreview;
+        private Microsoft.UI.Xaml.Controls.Image _qrCodeImage;
         private byte[] _currentQRCodeBytes;
-        private Popup _popup;
-        private System.Drawing.Color _foregroundColor = System.Drawing.Color.Black;
-        private System.Drawing.Color _backgroundColor = System.Drawing.Color.White;
-        private Button _downloadButton;
 
         public QRGeneratorToolUI(QRGeneratorTool tool)
         {
             _tool = tool;
-            this.Loaded += QRGeneratorToolUI_Loaded;
-        }
-
-        private void QRGeneratorToolUI_Loaded(object sender, RoutedEventArgs e)
-        {
-            // Initialize UI after the control is loaded in the visual tree
             InitializeUI();
         }
 
         private void InitializeUI()
         {
-            var stack = new StackPanel { Spacing = 10, Padding = new Thickness(20) };
-            _popup = new Popup
+            // Creating StackPanel to hold other controls
+            var stack = new StackPanel
             {
-                IsOpen = false,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                XamlRoot = this.XamlRoot // Set XamlRoot when the control is loaded
+                Spacing = 10,
+                Padding = new Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center
             };
 
+            // Create and configure TextBox (Input)
             _inputBox = new TextBox
             {
                 Header = "Input Text or URL",
                 Width = 350,
-                Height = 100,
-                TextWrapping = TextWrapping.Wrap,
-                AcceptsReturn = true,
-                Margin = new Thickness(0, 5, 0, 0)
+                Margin = new Thickness(0, 5, 0, 0),
+                PlaceholderText = "Enter text or URL to encode"
             };
 
-            var colorGrid = new Grid();
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            colorGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            _fgColorButton = new Button
-            {
-                Content = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Children =
-                {
-                    new Border
-                    {
-                        Width = 20,
-                        Height = 20,
-                        Background = new SolidColorBrush(Microsoft.UI.Colors.Black),
-                        Margin = new Thickness(0, 0, 10, 0)
-                    },
-                    new TextBlock { Text = "Foreground: #000000" }
-                }
-                },
-                Margin = new Thickness(0, 10, 5, 0)
-            };
-            _fgColorButton.Click += OnFgColorButtonClicked;
-
-            _bgColorButton = new Button
-            {
-                Content = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Children =
-                {
-                    new Border
-                    {
-                        Width = 20,
-                        Height = 20,
-                        Background = new SolidColorBrush(Microsoft.UI.Colors.White),
-                        BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
-                        BorderThickness = new Thickness(1),
-                        Margin = new Thickness(0, 0, 10, 0)
-                    },
-                    new TextBlock { Text = "Background: #FFFFFF" }
-                }
-                },
-                Margin = new Thickness(5, 10, 0, 0)
-            };
-            _bgColorButton.Click += OnBgColorButtonClicked;
-
-            Grid.SetColumn(_fgColorButton, 0);
-            Grid.SetColumn(_bgColorButton, 1);
-            colorGrid.Children.Add(_fgColorButton);
-            colorGrid.Children.Add(_bgColorButton);
-
-            _errorCorrectionComboBox = new ComboBox
+            // Create error level selector
+            _errorLevelComboBox = new ComboBox
             {
                 Header = "Error Correction Level",
                 Width = 350,
@@ -125,6 +67,93 @@ namespace QRGeneratorTool
                 SelectedIndex = 1 // Default to Medium
             };
 
+            // Create foreground color selector
+            var foregroundPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            _foregroundColorBox = new TextBox
+            {
+                Header = "Foreground Color (Hex)",
+                PlaceholderText = "#000000",
+                Text = "#000000",
+                Width = 250
+            };
+
+            _foregroundColorPreview = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Width = 80,
+                Height = 30,
+                Margin = new Thickness(10, 20, 0, 0),
+                Fill = new SolidColorBrush(Microsoft.UI.Colors.Black)
+            };
+
+            _foregroundColorBox.TextChanged += (s, e) => {
+                try
+                {
+                    var colorText = _foregroundColorBox.Text;
+                    if (!colorText.StartsWith("#"))
+                        colorText = "#" + colorText;
+
+                    var color = HexToColor(colorText);
+                    _foregroundColorPreview.Fill = new SolidColorBrush(
+                        Microsoft.UI.ColorHelper.FromArgb(255, color.R, color.G, color.B));
+                }
+                catch
+                {
+                    // Invalid color code - keep current preview
+                }
+            };
+
+            foregroundPanel.Children.Add(_foregroundColorBox);
+            foregroundPanel.Children.Add(_foregroundColorPreview);
+
+            // Create background color selector
+            var backgroundPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            _backgroundColorBox = new TextBox
+            {
+                Header = "Background Color (Hex)",
+                PlaceholderText = "#FFFFFF",
+                Text = "#FFFFFF",
+                Width = 250
+            };
+
+            _backgroundColorPreview = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Width = 80,
+                Height = 30,
+                Margin = new Thickness(10, 20, 0, 0),
+                Fill = new SolidColorBrush(Microsoft.UI.Colors.White)
+            };
+
+            _backgroundColorBox.TextChanged += (s, e) => {
+                try
+                {
+                    var colorText = _backgroundColorBox.Text;
+                    if (!colorText.StartsWith("#"))
+                        colorText = "#" + colorText;
+
+                    var color = HexToColor(colorText);
+                    _backgroundColorPreview.Fill = new SolidColorBrush(
+                        Microsoft.UI.ColorHelper.FromArgb(255, color.R, color.G, color.B));
+                }
+                catch
+                {
+                    // Invalid color code - keep current preview
+                }
+            };
+
+            backgroundPanel.Children.Add(_backgroundColorBox);
+            backgroundPanel.Children.Add(_backgroundColorPreview);
+
+            // Create and configure Button (Generate QR Code)
             var generateQRButton = new Button
             {
                 Content = "Generate QR Code",
@@ -133,383 +162,288 @@ namespace QRGeneratorTool
             };
             generateQRButton.Click += OnGenerateQRClicked;
 
-            _qrCodeImage = new Image
+            // Create image to display QR code
+            _qrCodeImage = new Microsoft.UI.Xaml.Controls.Image
             {
                 Width = 300,
                 Height = 300,
-                Margin = new Thickness(0, 20, 0, 0),
+                Margin = new Thickness(0, 10, 0, 0),
                 Stretch = Stretch.Uniform
             };
 
-            _downloadButton = new Button
+            // Create download button
+            var downloadButton = new Button
             {
                 Content = "Download QR Code",
                 Width = 350,
                 Margin = new Thickness(0, 10, 0, 0),
-                IsEnabled = false
+                IsEnabled = false,
+                Name = "downloadButton"
             };
-            _downloadButton.Click += OnDownloadQRClicked;
+            downloadButton.Click += OnDownloadQRClicked;
 
+            // Add controls to StackPanel
             stack.Children.Add(_inputBox);
-            stack.Children.Add(colorGrid);
-            stack.Children.Add(_errorCorrectionComboBox);
+            stack.Children.Add(_errorLevelComboBox);
+            stack.Children.Add(foregroundPanel);
+            stack.Children.Add(backgroundPanel);
             stack.Children.Add(generateQRButton);
             stack.Children.Add(_qrCodeImage);
-            stack.Children.Add(_downloadButton);
+            stack.Children.Add(downloadButton);
 
+            // Set the content of UserControl
             this.Content = stack;
         }
 
-        private void OnFgColorButtonClicked(object sender, RoutedEventArgs e)
+        // Helper method to convert hex color string to Color
+        private Color HexToColor(string hex)
         {
-            // Make sure the popup has an XamlRoot
-            _popup.XamlRoot = this.XamlRoot;
-            if (_popup.XamlRoot == null)
+            hex = hex.Replace("#", "");
+
+            if (hex.Length == 6)
             {
-                ShowInlineMessage("Cannot open color picker: Control not properly loaded in UI");
-                return;
+                int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+                int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+                int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+                return Color.FromArgb(255, r, g, b);
             }
 
-            var colorPicker = new ColorPicker
-            {
-                Color = ToWindowsColor(_foregroundColor),
-                IsColorPreviewVisible = true,
-                IsColorSliderVisible = true,
-                IsColorChannelTextInputVisible = true,
-                IsHexInputVisible = true,
-                Width = 300,
-                MinWidth = 300
-            };
-
-            var btn1 = new Button
-            {
-                Content = "OK",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Width = 100,
-                Margin = new Thickness(0, 10, 0, 0),
-            };
-            btn1.Click += (s, args) =>
-            {
-                _foregroundColor = ToDrawingColor(colorPicker.Color);
-                UpdateColorButton(_fgColorButton, colorPicker.Color, "Foreground");
-                _popup.IsOpen = false; // Close the popup
-            };
-
-            var btn2 = new Button
-            {
-                Content = "Cancel",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Width = 100,
-                Margin = new Thickness(10, 10, 0, 0),
-            };
-            btn2.Click += (s, args) => _popup.IsOpen = false;
-
-            var stackPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-            };
-            stackPanel.Children.Add(btn1);
-            stackPanel.Children.Add(btn2);
-
-            var textBlock = new TextBlock
-            {
-                Text = "Select Foreground Color",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 10)
-            };
-
-            var stackPanel2 = new StackPanel
-            {
-                Orientation = Orientation.Vertical
-            };
-            stackPanel2.Children.Add(textBlock);
-            stackPanel2.Children.Add(colorPicker);
-            stackPanel2.Children.Add(stackPanel);
-
-            var border = new Border
-            {
-                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(10),
-                Width = 350,
-                Height = 350
-            };
-            border.Child = stackPanel2;
-
-            _popup.Child = border;
-            _popup.IsOpen = true;
-        }
-
-        private void OnBgColorButtonClicked(object sender, RoutedEventArgs e)
-        {
-            // Make sure the popup has an XamlRoot
-            _popup.XamlRoot = this.XamlRoot;
-            if (_popup.XamlRoot == null)
-            {
-                ShowInlineMessage("Cannot open color picker: Control not properly loaded in UI");
-                return;
-            }
-
-            var colorPicker = new ColorPicker
-            {
-                Color = ToWindowsColor(_backgroundColor),
-                IsColorPreviewVisible = true,
-                IsColorSliderVisible = true,
-                IsColorChannelTextInputVisible = true,
-                IsHexInputVisible = true,
-                Width = 300,
-                MinWidth = 300
-            };
-
-            var btn1 = new Button
-            {
-                Content = "OK",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Width = 100,
-                Margin = new Thickness(0, 10, 0, 0),
-            };
-            btn1.Click += (s, args) =>
-            {
-                _backgroundColor = ToDrawingColor(colorPicker.Color);
-                UpdateColorButton(_bgColorButton, colorPicker.Color, "Background");
-                _popup.IsOpen = false; // Close the popup
-            };
-
-            var btn2 = new Button
-            {
-                Content = "Cancel",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Width = 100,
-                Margin = new Thickness(10, 10, 0, 0),
-            };
-            btn2.Click += (s, args) => _popup.IsOpen = false;
-
-            var stackPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-            };
-            stackPanel.Children.Add(btn1);
-            stackPanel.Children.Add(btn2);
-
-            var textBlock = new TextBlock
-            {
-                Text = "Select Background Color",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 10)
-            };
-
-            var stackPanel2 = new StackPanel
-            {
-                Orientation = Orientation.Vertical
-            };
-            stackPanel2.Children.Add(textBlock);
-            stackPanel2.Children.Add(colorPicker);
-            stackPanel2.Children.Add(stackPanel);
-
-            var border = new Border
-            {
-                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(10),
-                Width = 350,
-                Height = 350
-            };
-            border.Child = stackPanel2;
-
-            _popup.Child = border;
-            _popup.IsOpen = true;
-        }
-
-        private void UpdateColorButton(Button button, Windows.UI.Color color, string type)
-        {
-            var hexColor = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-            var stackPanel = (StackPanel)button.Content;
-            var border = (Border)stackPanel.Children[0];
-            var textBlock = (TextBlock)stackPanel.Children[1];
-
-            border.Background = new SolidColorBrush(color);
-            textBlock.Text = $"{type}: {hexColor}";
+            return Color.Black; // Default
         }
 
         private void OnGenerateQRClicked(object sender, RoutedEventArgs e)
         {
             try
             {
-                var inputText = _inputBox.Text?.Trim() ?? "";
-                if (string.IsNullOrEmpty(inputText))
+                // Get inputs
+                var inputText = _inputBox.Text;
+                if (string.IsNullOrWhiteSpace(inputText))
                 {
-                    ShowInlineMessage("Please enter some text or URL.");
+                    ShowMessage("Please enter text or URL");
                     return;
                 }
 
-                var errorLevel = _errorCorrectionComboBox.SelectedItem.ToString();
-                var errorCorrectionLevel = _tool.GetErrorCorrectionLevel(errorLevel);
+                // Get selected error level
+                var selectedErrorLevel = _errorLevelComboBox.SelectedItem.ToString();
+
+                // Get colors
+                var foreColor = HexToColor(_foregroundColorBox.Text);
+                var backColor = HexToColor(_backgroundColorBox.Text);
 
                 // Generate QR code
-                _currentQRCodeBytes = _tool.GenerateQRCode(inputText, _foregroundColor, _backgroundColor, errorCorrectionLevel);
+                _currentQRCodeBytes = _tool.GenerateQRCode(
+                    inputText,
+                    foreColor,
+                    backColor,
+                    _tool.GetErrorCorrectionLevel(selectedErrorLevel));
 
                 // Display the QR code
-                var bitmapImage = new BitmapImage();
-                using (var stream = new InMemoryRandomAccessStream())
+                var image = new BitmapImage();
+                using (var stream = new MemoryStream(_currentQRCodeBytes))
                 {
-                    using (var writer = new DataWriter(stream.GetOutputStreamAt(0)))
-                    {
-                        writer.WriteBytes(_currentQRCodeBytes);
-                        writer.StoreAsync().GetResults();
-                    }
-                    bitmapImage.SetSource(stream);
+                    stream.Position = 0;
+                    image.SetSource(stream.AsRandomAccessStream());
                 }
+                _qrCodeImage.Source = image;
 
-                _qrCodeImage.Source = bitmapImage;
-                _downloadButton.IsEnabled = true;
+                // Enable download button
+                var downloadButton = FindName("downloadButton") as Button;
+                if (downloadButton != null)
+                {
+                    downloadButton.IsEnabled = true;
+                }
             }
             catch (Exception ex)
             {
-                ShowInlineMessage($"Error generating QR code: {ex.Message}");
+                ShowMessage($"Error generating QR code: {ex.Message}");
             }
         }
 
-        private async void OnDownloadQRClicked(object sender, RoutedEventArgs e)
+        private void OnDownloadQRClicked(object sender, RoutedEventArgs e)
         {
             if (_currentQRCodeBytes == null || _currentQRCodeBytes.Length == 0)
             {
-                ShowInlineMessage("No QR code has been generated yet.");
+                ShowMessage("No QR code to download. Please generate a QR code first.");
                 return;
             }
 
             try
             {
-                var savePicker = new FileSavePicker();
-                savePicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                savePicker.FileTypeChoices.Add("PNG Image", new List<string>() { ".png" });
-                savePicker.SuggestedFileName = "QRCode";
+                // Use a custom popup for saving
+                var savePopup = new Popup
+                {
+                    Child = CreateSavePopupContent(),
+                    Width = 400,
+                    Height = 200
+                };
 
-                // WinUI 3 requires initialization of the window handle for pickers
-                // Get the window handle from the XamlRoot
-                if (this.XamlRoot != null)
-                {
-                    // Find the window that contains this control
-                    var window = GetWindowForElement(this);
-                    if (window != null)
-                    {
-                        // Initialize the picker with the window handle
-                        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-                        WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
-                    }
-                    else
-                    {
-                        ShowInlineMessage("Could not access window for file picker.");
-                        return;
-                    }
-                }
-                else
-                {
-                    ShowInlineMessage("Cannot save file: Control not properly loaded in UI");
-                    return;
-                }
-
-                var file = await savePicker.PickSaveFileAsync();
-                if (file != null)
-                {
-                    await FileIO.WriteBytesAsync(file, _currentQRCodeBytes);
-                    ShowInlineMessage("QR code saved successfully!");
-                }
+                //savePopup.IsOpen = true;
             }
             catch (Exception ex)
             {
-                ShowInlineMessage($"Error saving QR code: {ex.Message}");
+                ShowMessage($"Error saving QR code: {ex.Message}");
             }
         }
 
-        // Helper method to find the window that contains an element
-        private Window GetWindowForElement(UIElement element)
+        private UIElement CreateSavePopupContent()
         {
-            return Window.Current;
+            var grid = new Grid
+            {
+                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(20)
+            };
+
+            var stack = new StackPanel
+            {
+                Spacing = 10
+            };
+
+            var title = new TextBlock
+            {
+                Text = "Save QR Code",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            var fileNameBox = new TextBox
+            {
+                Header = "File Name",
+                PlaceholderText = "Enter file name",
+                Text = "QRCode",
+                Width = 350
+            };
+
+            var buttonsPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Spacing = 10,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var cancelButton = new Button
+            {
+                Content = "Cancel",
+                Width = 100
+            };
+
+            var saveButton = new Button
+            {
+                Content = "Save",
+                Width = 100
+            };
+
+            cancelButton.Click += (s, e) => ((Popup)((FrameworkElement)grid.Parent).Parent).IsOpen = false;
+
+            saveButton.Click += (s, e) => {
+                try
+                {
+                    // Get the file name
+                    var fileName = fileNameBox.Text;
+                    if (string.IsNullOrWhiteSpace(fileName))
+                    {
+                        fileName = "QRCode";
+                    }
+
+                    // Ensure it has a .png extension
+                    if (!fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileName += ".png";
+                    }
+
+                    // Let Windows decide where to save the file
+                    // In a real app, you'd want to use FileSavePicker, but we're using a simpler approach here
+                    var downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    var filePath = System.IO.Path.Combine(downloadsPath, fileName);
+
+                    // Save the file
+                    File.WriteAllBytes(filePath, _currentQRCodeBytes);
+
+                    // Show success message
+                    ShowMessage($"QR code saved to {filePath}");
+
+                    // Close the popup
+                    ((Popup)((FrameworkElement)grid.Parent).Parent).IsOpen = false;
+                }
+                catch (Exception ex)
+                {
+                    ShowMessage($"Error saving file: {ex.Message}");
+                }
+            };
+
+            buttonsPanel.Children.Add(cancelButton);
+            buttonsPanel.Children.Add(saveButton);
+
+            stack.Children.Add(title);
+            stack.Children.Add(fileNameBox);
+            stack.Children.Add(buttonsPanel);
+
+            grid.Children.Add(stack);
+
+            return grid;
         }
 
-
-        // Use inline message display instead of popup for better compatibility
-        private void ShowInlineMessage(string message)
+        private void ShowMessage(string message)
         {
-            // Create message UI elements
-            var messageBox = new Border
+            // Since we can't use XamlRoot directly, we'll use a Popup instead
+            var popup = new Popup
             {
-                Background = new SolidColorBrush(Microsoft.UI.Colors.LightYellow),
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Orange),
+                Child = CreateMessagePopupContent(message),
+                Width = 400,
+                Height = 200
+            };
+
+            //popup.IsOpen = true;
+        }
+
+        private UIElement CreateMessagePopupContent(string message)
+        {
+            var grid = new Grid
+            {
+                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(10),
-                Margin = new Thickness(0, 5, 0, 5),
-                Width = 350,
-                HorizontalAlignment = HorizontalAlignment.Center
+                Padding = new Thickness(20)
+            };
+
+            var stack = new StackPanel
+            {
+                Spacing = 10
+            };
+
+            var title = new TextBlock
+            {
+                Text = "QR Code Generator",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 0, 0, 10)
             };
 
             var messageText = new TextBlock
             {
                 Text = message,
-                TextWrapping = TextWrapping.Wrap,
-                HorizontalAlignment = HorizontalAlignment.Center
+                TextWrapping = TextWrapping.Wrap
             };
 
-            messageBox.Child = messageText;
-
-            // Find stack panel to add message to
-            var stackPanel = this.Content as StackPanel;
-            if (stackPanel != null)
+            var okButton = new Button
             {
-                // Look for existing message
-                bool messageExists = false;
-                for (int i = 0; i < stackPanel.Children.Count; i++)
-                {
-                    if (stackPanel.Children[i] is Border border &&
-                        border.Child is TextBlock)
-                    {
-                        // Replace existing message
-                        stackPanel.Children[i] = messageBox;
-                        messageExists = true;
-                        break;
-                    }
-                }
-
-                if (!messageExists)
-                {
-                    // Insert after input box
-                    int insertIndex = 1; // After input box
-                    stackPanel.Children.Insert(insertIndex, messageBox);
-                }
-
-                // Auto-remove message after 5 seconds
-                var timer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(5)
-                };
-                timer.Tick += (s, e) =>
-                {
-                    timer.Stop();
-                    if (stackPanel.Children.Contains(messageBox))
-                    {
-                        stackPanel.Children.Remove(messageBox);
-                    }
-                };
-                timer.Start();
-            }
-        }
-
-        private Windows.UI.Color ToWindowsColor(System.Drawing.Color color)
-        {
-            return new Windows.UI.Color
-            {
-                A = color.A,
-                R = color.R,
-                G = color.G,
-                B = color.B
+                Content = "OK",
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 10, 0, 0)
             };
-        }
 
-        private System.Drawing.Color ToDrawingColor(Windows.UI.Color color)
-        {
-            return System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+            okButton.Click += (s, e) => ((Popup)((FrameworkElement)grid.Parent).Parent).IsOpen = false;
+
+            stack.Children.Add(title);
+            stack.Children.Add(messageText);
+            stack.Children.Add(okButton);
+
+            grid.Children.Add(stack);
+
+            return grid;
         }
     }
 

@@ -24,7 +24,12 @@ namespace HashGeneratorTool
         private void InitializeUI()
         {
             // Creating StackPanel to hold other controls
-            var stack = new StackPanel { Spacing = 10, Padding = new Microsoft.UI.Xaml.Thickness(20) };
+            var stack = new StackPanel
+            {
+                Spacing = 10,
+                Padding = new Microsoft.UI.Xaml.Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
 
             // Create and configure TextBox (Input)
             _inputBox = new TextBox
@@ -36,9 +41,10 @@ namespace HashGeneratorTool
 
             _hashTypeComboBox = new ComboBox
             {
+                Header = "Hash Algorithm",
                 Width = 350,
                 Margin = new Microsoft.UI.Xaml.Thickness(0, 10, 0, 0),
-                ItemsSource = new string[] { "MD5", "SHA-1", "SHA-256" },
+                ItemsSource = new string[] { "MD5", "SHA1", "SHA256", "SHA224", "SHA512", "SHA384", "SHA3", "RIPEMD160" },
                 SelectedIndex = 0 // Default to MD5
             };
 

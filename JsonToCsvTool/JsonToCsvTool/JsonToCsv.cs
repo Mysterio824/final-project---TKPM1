@@ -77,7 +77,7 @@ namespace JsonToCsvTool
 
         private string EscapeCsvField(string field)
         {
-            if (field.Contains("\"") || field.Contains(",") || field.Contains("\n"))
+            if (field.Contains('"') || field.Contains(',') || field.Contains('\n'))
             {
                 field = field.Replace("\"", "\"\"");
                 return $"\"{field}\"";

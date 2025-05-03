@@ -96,13 +96,21 @@ public class DatabaseContextSeed(
                 Description = "Generate random string with the chars you want, uppercase or lowercase letters, numbers and/or symbols.",
                 Group = "Crypto",
                 IsPremium = false,
-                IsEnabled = true,
+                IsEnabled = false,
                 DllPath = "Tools/TokenGeneratorTool.dll"
+            },
+            new {
+                Name = "Hash text generator",
+                Description = "Hash a text string using the function you need : MD5, SHA1, SHA256, SHA224, SHA512, SHA384, SHA3 or RIPEMD160",
+                Group = "Crypto",
+                IsPremium = false,
+                IsEnabled = true,
+                DllPath = "Tools/HashGeneratorTool.dll"
             },
             new {
                 Name = "ASCII Art Text Generator",
                 Description = "Create ASCII art text with many fonts and styles.",
-                Group = "Crypto",
+                Group = "Text",
                 IsPremium = false,
                 IsEnabled = true,
                 DllPath = "Tools/ASCIIArtGeneratorTool.dll"
@@ -126,7 +134,7 @@ public class DatabaseContextSeed(
             new {
                 Name = "Currency Formatter",
                 Description = "Generate hashes with different algorithms (MD5, SHA1, SHA256, etc.).",
-                Group = "Converter",
+                Group = "Data",
                 IsPremium = false,
                 IsEnabled = true,
                 DllPath = "Tools/CurrencyFormatterTool.dll"
@@ -162,7 +170,7 @@ public class DatabaseContextSeed(
                 Description = "Convert JSON to CSV with automatic header detection.",
                 Group = "Development",
                 IsPremium = false,
-                IsEnabled = false,
+                IsEnabled = true,
                 DllPath = "Tools/JsonToCsvTool.dll"
             },
             new
@@ -189,7 +197,7 @@ public class DatabaseContextSeed(
                 Description = "Find the vendor and manufacturer of a device by its MAC address.",
                 Group = "Network",
                 IsPremium = false,
-                IsEnabled = false,
+                IsEnabled = true,
                 DllPath = "Tools/MacAddressLookupTool.dll"
             },
             new
@@ -248,7 +256,7 @@ public class DatabaseContextSeed(
             },
             new
             {
-                Name = "Text diff",
+                Name = "Text differentiator",
                 Description = "Compare two texts and see the differences between them.",
                 Group = "Text",
                 IsPremium = false,
@@ -263,16 +271,7 @@ public class DatabaseContextSeed(
                 IsPremium = false,
                 IsEnabled = true,
                 DllPath = "Tools/UuidGeneratorTool.dll"
-            },
-            new
-            {
-                Name = "Hash text",
-                Description = "Hash a text string using the function you need : MD5, SHA1, SHA256, SHA224, SHA512, SHA384, SHA3 or RIPEMD160",
-                Group = "Crypto",
-                IsPremium = false,
-                IsEnabled = false,
-                DllPath = "Tools/HashGeneratorTool.dll"
-            },
+            }
         };
 
         foreach (var t in tools)

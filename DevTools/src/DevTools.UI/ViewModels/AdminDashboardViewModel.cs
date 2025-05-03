@@ -403,17 +403,21 @@ namespace DevTools.UI.ViewModels
             try
             {
                 if (tool == null) return;
-
                 IsLoading = true;
                 ErrorMessage = string.Empty;
-
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "enable");
-
                 if (success)
                 {
+                    // Update the property directly
                     tool.IsEnabled = true;
-                    OnPropertyChanged(nameof(Tools));
-                    await LoadToolsAsync();
+
+                    // Force UI refresh for this specific tool
+                    var index = Tools.IndexOf(tool);
+                    if (index >= 0)
+                    {
+                        Tools.RemoveAt(index);
+                        Tools.Insert(index, tool);
+                    }
                 }
                 else
                 {
@@ -436,17 +440,21 @@ namespace DevTools.UI.ViewModels
             try
             {
                 if (tool == null) return;
-
                 IsLoading = true;
                 ErrorMessage = string.Empty;
-
                 var success = await _toolService.UpdateToolStatusAsync(tool.Id, "disable");
-
                 if (success)
                 {
+                    // Update the property directly
                     tool.IsEnabled = false;
-                    OnPropertyChanged(nameof(Tools));
-                    await LoadToolsAsync();
+
+                    // Force UI refresh for this specific tool
+                    var index = Tools.IndexOf(tool);
+                    if (index >= 0)
+                    {
+                        Tools.RemoveAt(index);
+                        Tools.Insert(index, tool);
+                    }
                 }
                 else
                 {

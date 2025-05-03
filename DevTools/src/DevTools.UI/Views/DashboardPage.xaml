@@ -28,23 +28,19 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <!-- Tool Header with Icon -->
-                <Grid Grid.Row="0" Height="48" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12">
+                <Grid Grid.Row="0" Height="48" Background="OliveDrab" Padding="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <!-- Symbol -->
                     <TextBlock Grid.Column="0" Text="{x:Bind SymbolGlyph}" FontFamily="Segoe MDL2 Assets" 
-                               FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                               FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"
+                               Foreground="White"/>
                     <!-- Name -->
                     <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="16"
-                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                    <!-- Premium Badge -->
-                    <Border Grid.Column="2" Background="Gold" CornerRadius="10" Padding="6,2" 
-                            Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="PRO" FontSize="10" FontWeight="Bold" Foreground="Black"/>
-                    </Border>
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Foreground="White"/>
                 </Grid>
                 <!-- Group Name -->
                 <TextBlock Grid.Row="1" Text="{x:Bind GroupName}" FontSize="12" Opacity="0.7" 
@@ -54,7 +50,17 @@
                            TextTrimming="CharacterEllipsis" VerticalAlignment="Top"/>
                 <!-- Tool Footer -->
                 <Grid Grid.Row="3" Padding="12,8">
-                    <Button x:Name="FavoriteButton" Background="Transparent" BorderThickness="0"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Premium Badge -->
+                    <Border Grid.Column="0" Background="Gold" CornerRadius="10" Padding="6,8" 
+                            Visibility="{x:Bind IsPremium, Converter={StaticResource BoolToVisibilityConverter}}"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="Premium" FontSize="10" FontWeight="Bold" Foreground="Black"/>
+                    </Border>
+                    <Button Grid.Column="1" x:Name="FavoriteButton" Background="Transparent" BorderThickness="0"
                             Click="FavoriteButton_Click" HorizontalAlignment="Right"
                             Tag="{x:Bind Id}">
                         <FontIcon x:Name="FavoriteIcon" Glyph="&#xEB51;" 
@@ -297,10 +303,10 @@
                 <GridView x:Name="ToolsGridView" ItemsSource="{Binding FilteredTools}" 
                           ItemTemplate="{StaticResource ToolItemTemplate}"
                           IsItemClickEnabled="True" ItemClick="ToolsGridView_ItemClick"
-                          Padding="16" Visibility="{Binding IsToolDetailMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                          Padding="16"  Visibility="{Binding IsToolDetailMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="4"/>
+                            <ItemsWrapGrid Orientation="Horizontal"/>
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                 </GridView>

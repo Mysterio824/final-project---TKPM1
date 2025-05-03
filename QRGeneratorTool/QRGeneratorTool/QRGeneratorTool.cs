@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml.Controls;
+﻿using DevTools.UI.Models;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,91 +7,276 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace QRGeneratorTool
 {
-    public interface ITool
-    {
-        object Execute(object input);
-        UserControl GetUI();
-    }
-    public class QRGeneratorTool : ITool, INotifyPropertyChanged
+    class QRGeneratorTool : ITool
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        // Reed-Solomon error correction levels
         public enum ErrorCorrectionLevel
         {
-            L, // Low - 7% recovery
-            M, // Medium - 15% recovery
-            Q, // Quartile - 25% recovery
-            H  // High - 30% recovery
+            Low,        // 7% of codewords can be restored
+            Medium,     // 15% of codewords can be restored
+            Quartile,   // 25% of codewords can be restored
+            High        // 30% of codewords can be restored
         }
 
-        // Generate QR Code using a simple implementation
-        public byte[] GenerateQRCode(string input, System.Drawing.Color foregroundColor,
-                                    System.Drawing.Color backgroundColor, ErrorCorrectionLevel errorCorrectionLevel)
+        // QR Code version (size)
+        private const int QRVersion = 5; // Version 5 (37x37 modules)
+        private const int ModulesPerSide = 37; // Version 5 has 37x37 modules
+
+        // Generate QR code as byte array
+        public byte[] GenerateQRCode(string input, Color foregroundColor, Color backgroundColor, ErrorCorrectionLevel errorLevel)
         {
-            // Create a QR code using our custom generator
-            var qrCode = new SimpleQRCodeGenerator(errorCorrectionLevel);
-            var matrix = qrCode.EncodeText(input);
+            // Create matrix for QR code (true = black, false = white)
+            bool[,] qrMatrix = GenerateQRMatrix(input, errorLevel);
 
-            // Create a bitmap from the QR code matrix
-            int size = matrix.GetLength(0);
-            int scale = 5; // Scale factor to make QR code larger
-            int imageSize = size * scale;
-
-            // Create a blank bitmap with the specified size
-            using (var bitmap = new System.Drawing.Bitmap(imageSize, imageSize))
+            // Create a bitmap with the QR code
+            using (var bitmap = new Bitmap(ModulesPerSide * 8, ModulesPerSide * 8))
             {
                 using (var g = System.Drawing.Graphics.FromImage(bitmap))
                 {
-                    g.Clear(backgroundColor); // Fill with background color
-
-                    // Draw each module (pixel) of the QR code
-                    for (int y = 0; y < size; y++)
+                    // Fill background
+                    using (var brush = new SolidBrush(backgroundColor))
                     {
-                        for (int x = 0; x < size; x++)
+                        g.FillRectangle(brush, 0, 0, bitmap.Width, bitmap.Height);
+                    }
+
+                    // Draw QR modules
+                    using (var brush = new SolidBrush(foregroundColor))
+                    {
+                        for (int y = 0; y < ModulesPerSide; y++)
                         {
-                            if (matrix[y, x])
+                            for (int x = 0; x < ModulesPerSide; x++)
                             {
-                                // Draw a filled rectangle for each "true" value in the matrix
-                                using (var brush = new System.Drawing.SolidBrush(foregroundColor))
+                                if (qrMatrix[x, y])
                                 {
-                                    g.FillRectangle(brush, x * scale, y * scale, scale, scale);
+                                    g.FillRectangle(brush, x * 8, y * 8, 8, 8);
                                 }
                             }
                         }
                     }
                 }
 
-                // Convert the bitmap to a byte array
-                using (var ms = new MemoryStream())
+                // Convert bitmap to byte array
+                using (var stream = new MemoryStream())
                 {
-                    bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                    return ms.ToArray();
+                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                    return stream.ToArray();
                 }
             }
         }
 
+        // Generate QR matrix (simplified implementation)
+        private bool[,] GenerateQRMatrix(string input, ErrorCorrectionLevel errorLevel)
+        {
+            bool[,] matrix = new bool[ModulesPerSide, ModulesPerSide];
+
+            // Add finder patterns (the three large squares in corners)
+            AddFinderPattern(matrix, 0, 0);
+            AddFinderPattern(matrix, ModulesPerSide - 7, 0);
+            AddFinderPattern(matrix, 0, ModulesPerSide - 7);
+
+            // Add alignment pattern (for version 5+)
+            AddAlignmentPattern(matrix, 28, 28);
+
+            // Add timing patterns (the lines connecting finder patterns)
+            for (int i = 8; i < ModulesPerSide - 8; i++)
+            {
+                matrix[i, 6] = i % 2 == 0;
+                matrix[6, i] = i % 2 == 0;
+            }
+
+            // Generate data from input string
+            byte[] data = Encoding.UTF8.GetBytes(input);
+
+            // Add data to QR code (simplified - in reality this involves complex encoding)
+            int dataIndex = 0;
+            // Simple data filling pattern - zigzag from bottom right
+            for (int i = ModulesPerSide - 1; i >= 0; i -= 2)
+            {
+                // Even columns move up, odd columns move down
+                if (i % 4 == 0)
+                {
+                    for (int j = ModulesPerSide - 1; j >= 0; j--)
+                    {
+                        if (!IsReservedModule(i, j) && dataIndex < data.Length * 8)
+                        {
+                            matrix[i, j] = GetBit(data, dataIndex++);
+                        }
+                        if (!IsReservedModule(i - 1, j) && dataIndex < data.Length * 8)
+                        {
+                            matrix[i - 1, j] = GetBit(data, dataIndex++);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < ModulesPerSide; j++)
+                    {
+                        if (!IsReservedModule(i, j) && dataIndex < data.Length * 8)
+                        {
+                            matrix[i, j] = GetBit(data, dataIndex++);
+                        }
+                        if (!IsReservedModule(i - 1, j) && dataIndex < data.Length * 8)
+                        {
+                            matrix[i - 1, j] = GetBit(data, dataIndex++);
+                        }
+                    }
+                }
+            }
+
+            // Apply a mask pattern (to avoid patterns that make scanning difficult)
+            ApplyMask(matrix);
+
+            return matrix;
+        }
+
+        // Check if a module is reserved (part of finder patterns, etc.)
+        private bool IsReservedModule(int x, int y)
+        {
+            // Check if out of bounds
+            if (x < 0 || y < 0 || x >= ModulesPerSide || y >= ModulesPerSide)
+                return true;
+
+            // Finder patterns (including separator)
+            if ((x < 9 && y < 9) ||
+                (x >= ModulesPerSide - 9 && y < 9) ||
+                (x < 9 && y >= ModulesPerSide - 9))
+                return true;
+
+            // Alignment pattern
+            if (x >= 28 - 2 && x <= 28 + 2 && y >= 28 - 2 && y <= 28 + 2)
+                return true;
+
+            // Timing patterns
+            if (x == 6 || y == 6)
+                return true;
+
+            return false;
+        }
+
+        // Get a bit from byte array
+        private bool GetBit(byte[] data, int bitIndex)
+        {
+            int byteIndex = bitIndex / 8;
+            int bitInByte = bitIndex % 8;
+
+            if (byteIndex >= data.Length)
+                return false;
+
+            return ((data[byteIndex] >> (7 - bitInByte)) & 1) == 1;
+        }
+
+        // Add finder pattern to matrix
+        private void AddFinderPattern(bool[,] matrix, int offsetX, int offsetY)
+        {
+            // Outer border
+            for (int i = 0; i < 7; i++)
+            {
+                matrix[offsetX + i, offsetY] = true;
+                matrix[offsetX + i, offsetY + 6] = true;
+                matrix[offsetX, offsetY + i] = true;
+                matrix[offsetX + 6, offsetY + i] = true;
+            }
+
+            // Inner square
+            for (int i = 0; i < 5; i++)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    matrix[offsetX + 1 + i, offsetY + 1 + j] = (i == 0 || i == 4 || j == 0 || j == 4);
+                }
+            }
+
+            // Center square
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    matrix[offsetX + 2 + i, offsetY + 2 + j] = true;
+                }
+            }
+
+            // Add separator (white space around finder patterns)
+            for (int i = 0; i < 8; i++)
+            {
+                if (offsetX + i < ModulesPerSide && offsetY + 7 < ModulesPerSide)
+                    matrix[offsetX + i, offsetY + 7] = false;
+                if (offsetX + 7 < ModulesPerSide && offsetY + i < ModulesPerSide)
+                    matrix[offsetX + 7, offsetY + i] = false;
+            }
+        }
+
+        // Add alignment pattern
+        private void AddAlignmentPattern(bool[,] matrix, int centerX, int centerY)
+        {
+            // Outer border
+            for (int i = -2; i <= 2; i++)
+            {
+                matrix[centerX + i, centerY - 2] = true;
+                matrix[centerX + i, centerY + 2] = true;
+                matrix[centerX - 2, centerY + i] = true;
+                matrix[centerX + 2, centerY + i] = true;
+            }
+
+            // Inner pattern
+            matrix[centerX, centerY] = true;
+            matrix[centerX - 1, centerY - 1] = false;
+            matrix[centerX, centerY - 1] = false;
+            matrix[centerX + 1, centerY - 1] = false;
+            matrix[centerX - 1, centerY] = false;
+            matrix[centerX + 1, centerY] = false;
+            matrix[centerX - 1, centerY + 1] = false;
+            matrix[centerX, centerY + 1] = false;
+            matrix[centerX + 1, centerY + 1] = false;
+        }
+
+        // Apply mask pattern to the QR code
+        private void ApplyMask(bool[,] matrix)
+        {
+            // Use mask pattern 0: (x + y) mod 2 == 0
+            for (int y = 0; y < ModulesPerSide; y++)
+            {
+                for (int x = 0; x < ModulesPerSide; x++)
+                {
+                    // Skip reserved areas
+                    if (IsReservedModule(x, y))
+                        continue;
+
+                    // Apply mask formula - toggle bit if formula is true
+                    if ((x + y) % 2 == 0)
+                    {
+                        matrix[x, y] = !matrix[x, y];
+                    }
+                }
+            }
+        }
+
+        // Helper method to convert ErrorCorrectionLevel string to enum
         public ErrorCorrectionLevel GetErrorCorrectionLevel(string level)
         {
             switch (level)
             {
                 case "Low":
-                    return ErrorCorrectionLevel.L;
+                    return ErrorCorrectionLevel.Low;
                 case "Medium":
-                    return ErrorCorrectionLevel.M;
+                    return ErrorCorrectionLevel.Medium;
                 case "Quartile":
-                    return ErrorCorrectionLevel.Q;
+                    return ErrorCorrectionLevel.Quartile;
                 case "High":
-                    return ErrorCorrectionLevel.H;
+                    return ErrorCorrectionLevel.High;
                 default:
-                    return ErrorCorrectionLevel.M;
+                    return ErrorCorrectionLevel.Medium; // Default to Medium
             }
         }
 
+        // ITool implementation
         public object Execute(object input)
         {
             return input;
@@ -100,186 +286,11 @@ namespace QRGeneratorTool
         {
             return new QRGeneratorToolUI(this);
         }
-    }
 
-    // Simple QR Code generator implementation to remove dependency on ZXing
-    public class SimpleQRCodeGenerator
-    {
-        private readonly QRGeneratorTool.ErrorCorrectionLevel _errorLevel;
-
-        // Reed-Solomon coefficients for error correction
-        private static readonly int[][] REED_SOLOMON_COEFFICIENTS = {
-        // L - 7%
-        new[] { 1, 1 },
-        // M - 15%
-        new[] { 1, 25, 55 },
-        // Q - 25%
-        new[] { 1, 33, 59, 84, 93 },
-        // H - 30%
-        new[] { 1, 39, 71, 89, 107, 111 }
-    };
-
-        public SimpleQRCodeGenerator(QRGeneratorTool.ErrorCorrectionLevel errorLevel)
+        // INotifyPropertyChanged implementation
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            _errorLevel = errorLevel;
-        }
-
-        public bool[,] EncodeText(string text)
-        {
-            // Simple implementation - for production use, consider using a library or more robust algorithm
-            // This is a simplified version that creates a QR-code-like pattern
-            byte[] data = Encoding.UTF8.GetBytes(text);
-
-            // Determine size based on data length (real QR codes use a more complex algorithm)
-            int size = Math.Max(21, (int)Math.Ceiling(Math.Sqrt(data.Length * 8 + 100)));
-            // Make sure size is odd for proper alignment patterns
-            size = size % 2 == 0 ? size + 1 : size;
-
-            // Create the matrix
-            bool[,] matrix = new bool[size, size];
-
-            // Add finder patterns (the three large squares in corners)
-            AddFinderPattern(matrix, 0, 0);
-            AddFinderPattern(matrix, size - 7, 0);
-            AddFinderPattern(matrix, 0, size - 7);
-
-            // Add alignment pattern (bottom right corner)
-            AddAlignmentPattern(matrix, size - 9, size - 9);
-
-            // Add timing patterns (the lines connecting finder patterns)
-            for (int i = 8; i < size - 8; i++)
-            {
-                matrix[i, 6] = i % 2 == 0;
-                matrix[6, i] = i % 2 == 0;
-            }
-
-            // Encode data into the QR code
-            EncodeData(matrix, data);
-
-            // Apply a simple version of Reed-Solomon error correction
-            ApplyErrorCorrection(matrix);
-
-            return matrix;
-        }
-
-        private void AddFinderPattern(bool[,] matrix, int offsetX, int offsetY)
-        {
-            // Outer square
-            for (int y = 0; y < 7; y++)
-            {
-                for (int x = 0; x < 7; x++)
-                {
-                    if (x == 0 || x == 6 || y == 0 || y == 6 || (x >= 2 && x <= 4 && y >= 2 && y <= 4))
-                    {
-                        matrix[offsetY + y, offsetX + x] = true;
-                    }
-                }
-            }
-        }
-
-        private void AddAlignmentPattern(bool[,] matrix, int centerX, int centerY)
-        {
-            for (int y = -2; y <= 2; y++)
-            {
-                for (int x = -2; x <= 2; x++)
-                {
-                    bool isOuterRing = Math.Abs(x) == 2 || Math.Abs(y) == 2;
-                    bool isCenter = x == 0 && y == 0;
-
-                    int posX = centerX + x;
-                    int posY = centerY + y;
-
-                    if (posX >= 0 && posX < matrix.GetLength(1) &&
-                        posY >= 0 && posY < matrix.GetLength(0))
-                    {
-                        matrix[posY, posX] = isOuterRing || isCenter;
-                    }
-                }
-            }
-        }
-
-        private void EncodeData(bool[,] matrix, byte[] data)
-        {
-            int size = matrix.GetLength(0);
-            int index = 0;
-            int bitCount = 0;
-
-            // Start from bottom right, going up in zig-zag
-            for (int right = size - 1; right >= 0; right -= 2)
-            {
-                // Going up if from right side, going down if from left side
-                bool goingUp = right % 4 != 0;
-
-                for (int vertical = 0; vertical < size; vertical++)
-                {
-                    int y = goingUp ? size - 1 - vertical : vertical;
-
-                    for (int xOffset = 0; xOffset < 2; xOffset++)
-                    {
-                        int x = right - xOffset;
-
-                        // Skip reserved areas (finder patterns, etc.)
-                        if (x < 0 || IsReservedArea(x, y, size))
-                        {
-                            continue;
-                        }
-
-                        // Place data bits
-                        if (index < data.Length)
-                        {
-                            bool bit = (data[index] & (1 << (7 - bitCount))) != 0;
-                            matrix[y, x] = bit;
-
-                            bitCount++;
-                            if (bitCount == 8)
-                            {
-                                bitCount = 0;
-                                index++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private bool IsReservedArea(int x, int y, int size)
-        {
-            // Check if coordinates are in finder patterns
-            bool inTopLeftFinder = x < 8 && y < 8;
-            bool inTopRightFinder = x >= size - 8 && y < 8;
-            bool inBottomLeftFinder = x < 8 && y >= size - 8;
-
-            // Check if in alignment pattern area
-            bool inAlignmentPattern = x >= size - 11 && x <= size - 7 &&
-                                      y >= size - 11 && y <= size - 7;
-
-            // Check if on timing patterns
-            bool onTimingPattern = (x == 6) || (y == 6);
-
-            return inTopLeftFinder || inTopRightFinder || inBottomLeftFinder ||
-                   inAlignmentPattern || onTimingPattern;
-        }
-
-        private void ApplyErrorCorrection(bool[,] matrix)
-        {
-            // Get error correction coefficients based on level
-            int[] coefficients = REED_SOLOMON_COEFFICIENTS[(int)_errorLevel];
-
-            // This is a simplified version that just adds some patterns based on coefficients
-            // Real Reed-Solomon would be much more complex
-            int size = matrix.GetLength(0);
-
-            for (int i = 0; i < coefficients.Length; i++)
-            {
-                int coefficient = coefficients[i];
-                int x = (coefficient % (size - 16)) + 8;
-                int y = ((coefficient * 3) % (size - 16)) + 8;
-
-                if (!IsReservedArea(x, y, size))
-                {
-                    matrix[y, x] = !matrix[y, x]; // Flip bit for error correction pattern
-                }
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

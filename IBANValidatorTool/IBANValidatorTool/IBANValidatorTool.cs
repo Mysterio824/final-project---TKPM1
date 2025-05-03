@@ -71,21 +71,39 @@ namespace IBANValidatorTool
             }
 
             // Perform mod 97 on the numeric IBAN
-            // We need to handle large numbers, so we do modulo on chunks
+            // Process chunks of 9 digits at a time to avoid overflow
             string numericString = numericIBAN.ToString();
+
+            // Process much smaller chunks to avoid integer overflow
+            int chunkSize = 6; // Process 6 digits at a time instead of 9
             int remainder = 0;
 
-            // Process chunks of 9 digits at a time to avoid overflow
-            for (int i = 0; i < numericString.Length; i += 9)
+            for (int i = 0; i < numericString.Length; i += chunkSize)
             {
-                int chunkSize = Math.Min(9, numericString.Length - i);
-                string chunk = remainder + numericString.Substring(i, chunkSize);
-                remainder = int.Parse(chunk) % 97;
+                int currentChunkSize = Math.Min(chunkSize, numericString.Length - i);
+                string currentChunk = remainder + numericString.Substring(i, currentChunkSize);
+
+                // Try to parse safely, handling potential overflow
+                if (long.TryParse(currentChunk, out long longValue))
+                {
+                    remainder = (int)(longValue % 97);
+                }
+                else
+                {
+                    // If it's still too large for long, process digit by digit
+                    remainder = int.Parse(remainder.ToString());
+                    for (int j = 0; j < currentChunkSize; j++)
+                    {
+                        int digit = int.Parse(numericString[i + j].ToString());
+                        remainder = (remainder * 10 + digit) % 97;
+                    }
+                }
             }
 
             // If the remainder is 1, the IBAN is valid
             return remainder == 1;
         }
+
 
         private string FormatIBAN(string iban)
         {

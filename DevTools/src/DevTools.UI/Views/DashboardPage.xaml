@@ -20,7 +20,7 @@
         <DataTemplate x:Key="ToolItemTemplate" x:DataType="model:Tool">
             <Grid Width="200" Height="240" Margin="8" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
                   BorderBrush="{ThemeResource SystemControlBackgroundListMediumBrush}" BorderThickness="1"
-                  CornerRadius="8" Tapped="ToolItem_Click">
+                  CornerRadius="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>

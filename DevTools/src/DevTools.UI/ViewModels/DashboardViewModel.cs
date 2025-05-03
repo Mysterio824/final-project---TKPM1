@@ -470,7 +470,7 @@ namespace DevTools.UI.ViewModels
                 var (success, error) = await _accountService.RequestPremiumUpgradeAsync();
                 if (success)
                 {
-                    ErrorMessage = "Premium request submitted successfully!";
+                    ErrorMessage = "Premium request submitted successfully! Please logout and login again to get the full access!";
                 }
                 else
                 {

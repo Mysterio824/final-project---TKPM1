@@ -3,6 +3,7 @@ using DevTools.UI.Services;
 using DevTools.UI.Utils;
 using DevTools.UI.Views;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -94,9 +95,15 @@ namespace DevTools.UI.ViewModels
                 var user = await _authService.RegisterAsync(Username, Email, Password);
                 if (user != null)
                 {
-                    var app = Application.Current as App;
-                    app.CurrentUser = user;
-                    _navigationService.NavigateTo(typeof(DashboardPage));
+                    ContentDialog verifyDialog = new ContentDialog
+                    {
+                        Title = "Verify account",
+                        Content = "To officially become a user, check your email and click the link from DevTools Support to verify email.",
+                        CloseButtonText = "Ok",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+                    ContentDialogResult result = await verifyDialog.ShowAsync();
+                    _navigationService.NavigateTo(typeof(LoginPage));
                 }
                 else
                 {

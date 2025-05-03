@@ -45,18 +45,7 @@ namespace DevTools.UI.Views
 
             // Setup ViewModel action handlers
             ViewModel.ShowMessage = ShowMessage;
-            ViewModel.ShowPremiumRequired = async () =>
-            {
-                Debug.WriteLine("?");
-                var dialog = new ContentDialog
-                {
-                    Title = "Premium Required",
-                    Content = "This tool is only available to premium users.",
-                    CloseButtonText = "OK"
-                };
-
-                await dialog.ShowAsync();
-            };
+            ViewModel.ShowPremiumRequired = async () => ShowPremiumUpgradeDialog();
             ViewModel.ShowToolUnavailable = () => ShowToolUnavailableMessage();
 
             // Initialize UI
@@ -171,14 +160,14 @@ namespace DevTools.UI.Views
         {
             if (e.ClickedItem is Tool tool)
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
-                {
-                    ShowPremiumUpgradeDialog();
-                    return;
-                }
                 if (!tool.IsEnabled)
                 {
                     ShowToolUnavailableMessage();
+                    return;
+                }
+                if (tool.IsPremium && !ViewModel.IsPremium)
+                {
+                    ShowPremiumUpgradeDialog();
                     return;
                 }
                 // Set the active tool
@@ -422,16 +411,17 @@ namespace DevTools.UI.Views
         {
             if (e.ClickedItem is Tool tool)
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
-                {
-                    ShowPremiumUpgradeDialog();
-                    return;
-                }
                 if (!tool.IsEnabled)
                 {
                     ShowToolUnavailableMessage();
                     return;
                 }
+                if (tool.IsPremium && !ViewModel.IsPremium)
+                {
+                    ShowPremiumUpgradeDialog();
+                    return;
+                }
+       
                 // Clear search and select the tool
                 SearchBox.Text = "";
                 SearchSuggestionBox.Visibility = Visibility.Collapsed;
@@ -492,6 +482,7 @@ namespace DevTools.UI.Views
                 {
                     ViewModel.AddToFavoritesCommand.Execute(tool);
                 }
+                ViewModel.LoadToolGroupsWithToolsCommand.Execute(null);
             }
         }
 
@@ -526,16 +517,17 @@ namespace DevTools.UI.Views
         {
             if (sender is FrameworkElement element && element.DataContext is Tool tool)
             {
-                if (tool.IsPremium && !ViewModel.IsPremium)
-                {
-                    ShowPremiumUpgradeDialog();
-                    return;
-                }
                 if (!tool.IsEnabled)
                 {
                     ShowToolUnavailableMessage();
                     return;
                 }
+                if (tool.IsPremium && !ViewModel.IsPremium)
+                {
+                    ShowPremiumUpgradeDialog();
+                    return;
+                }
+                
                 // Set the active tool
                 ViewModel.ActiveToolContent = tool;
 

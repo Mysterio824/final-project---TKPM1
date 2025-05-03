@@ -85,7 +85,7 @@ namespace DevTools.UI
                 ServerCertificateCustomValidationCallback = (message, cert, chain, error) => true
             });
             builder.AddSingleton(this);
-            builder.AddSingleton<AuthHandler>();
+            builder.AddTransient<AuthHandler>();
             builder.AddSingleton<AuthService>();
             builder.AddSingleton<ToolService>();
             builder.AddSingleton<AccountService>();

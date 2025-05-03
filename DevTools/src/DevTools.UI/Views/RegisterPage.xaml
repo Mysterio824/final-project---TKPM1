@@ -152,61 +152,63 @@
                     <!-- Header -->
                     <StackPanel Grid.Row="0" Margin="0,0,0,24">
                         <TextBlock Text="Create your account" 
-                                   Style="{StaticResource TitleTextBlockStyle}" 
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,8"/>
+                               Style="{StaticResource TitleTextBlockStyle}" 
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"/>
                         <TextBlock Text="Please fill the form below to get started"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="14"/>
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               FontSize="14"/>
                     </StackPanel>
 
                     <!-- Form -->
                     <ScrollViewer Grid.Row="1" 
-                                  VerticalScrollBarVisibility="Auto" 
-                                  VerticalScrollMode="Auto">
+                              VerticalScrollBarVisibility="Auto" 
+                              VerticalScrollMode="Auto">
                         <StackPanel>
                             <!-- Username Field -->
                             <TextBlock Text="Username" Style="{StaticResource FormLabelStyle}"/>
                             <TextBox x:Name="UsernameTextBox"
-                                     Text="{x:Bind ViewModel.Username, Mode=TwoWay}" 
-                                     Style="{StaticResource ModernInputBoxStyle}"
-                                     PlaceholderText="Choose a username"/>
+                                 Text="{x:Bind ViewModel.Username, Mode=TwoWay}" 
+                                 Style="{StaticResource ModernInputBoxStyle}"
+                                 PlaceholderText="Choose a username"/>
 
                             <!-- Email Field -->
                             <TextBlock Text="Email address" Style="{StaticResource FormLabelStyle}"/>
                             <TextBox x:Name="EmailTextBox"
-                                     Text="{x:Bind ViewModel.Email, Mode=TwoWay}" 
-                                     Style="{StaticResource ModernInputBoxStyle}"
-                                     PlaceholderText="name@example.com"/>
+                                 Text="{x:Bind ViewModel.Email, Mode=TwoWay}" 
+                                 Style="{StaticResource ModernInputBoxStyle}"
+                                 PlaceholderText="name@example.com"/>
 
                             <!-- Password Field -->
                             <TextBlock Text="Password" Style="{StaticResource FormLabelStyle}"/>
                             <PasswordBox x:Name="PasswordBox"
-                                        Password="{x:Bind ViewModel.Password, Mode=TwoWay}" 
-                                        Style="{StaticResource ModernPasswordBoxStyle}"
-                                        PlaceholderText="Create a secure password"/>
+                                         IsPasswordRevealButtonEnabled="False"
+                                    Password="{x:Bind ViewModel.Password, Mode=TwoWay}" 
+                                    Style="{StaticResource ModernPasswordBoxStyle}"
+                                    PlaceholderText="Create a secure password"/>
 
-                            <!-- Error Message -->
+                            <!-- Error Message (Message Area) -->
                             <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" 
-                                       Style="{StaticResource ErrorMessageStyle}"
-                                       Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                   Style="{StaticResource ErrorMessageStyle}"
+                                   Visibility="{x:Bind ViewModel.IsErrorMessageVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                                   Margin="0,10,0,0"/>
 
                             <!-- Submit Button with Loading State -->
                             <Grid Margin="0,12,0,0">
                                 <Button Content="Create account" 
-                                        Command="{x:Bind ViewModel.RegisterCommand}" 
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                    Command="{x:Bind ViewModel.RegisterCommand}" 
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
                                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        IsEnabled="False"
-                                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    IsEnabled="False"
+                                    Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <StackPanel Orientation="Horizontal">
                                         <ProgressRing IsActive="True" 
-                                                      Width="16" 
-                                                      Height="16"
-                                                      Foreground="White"
-                                                      Margin="0,0,8,0"/>
+                                                  Width="16" 
+                                                  Height="16"
+                                                  Foreground="White"
+                                                  Margin="0,0,8,0"/>
                                         <TextBlock Text="Creating account..."/>
                                     </StackPanel>
                                 </Button>
@@ -216,13 +218,13 @@
                             <Grid Margin="0,16,0,0">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="Already have an account?" 
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               VerticalAlignment="Center"/>
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                           VerticalAlignment="Center"/>
                                     <HyperlinkButton Content="Sign in" 
-                                                     x:Name="LoginLink"
-                                                     Margin="4,0,0,0"
-                                                     Padding="4,0"
-                                                     FontWeight="SemiBold"/>
+                                                 x:Name="LoginLink"
+                                                 Margin="4,0,0,0"
+                                                 Padding="4,0"
+                                                 FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

@@ -204,7 +204,7 @@ namespace DevTools.UI.Views
                 }
                 else
                 {
-                    Frame.Navigate(typeof(LoginPage));
+                    ViewModel.NavigateToLogin();
                 }
             }
         }

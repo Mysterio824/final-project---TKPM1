@@ -23,6 +23,7 @@ namespace DevTools.UI.ViewModels
         private string _email;
         private string _password;
         private string _errorMessage;
+        private bool _isErrorMessageVisible;
         private bool _isLoading;
 
         public string Username
@@ -60,6 +61,16 @@ namespace DevTools.UI.ViewModels
             get => _errorMessage;
             set => SetProperty(ref _errorMessage, value);
         }
+        public bool IsErrorMessageVisible
+        {
+            get => _isErrorMessageVisible;
+            private set
+            {
+                _isErrorMessageVisible = value;
+                OnPropertyChanged();
+            }
+        }
+
 
         public bool IsLoading
         {
@@ -84,7 +95,6 @@ namespace DevTools.UI.ViewModels
                                              !string.IsNullOrWhiteSpace(Email) &&
                                              !string.IsNullOrWhiteSpace(Password) &&
                                              !IsLoading;
-
         private async Task ExecuteRegisterAsync()
         {
             try
@@ -95,14 +105,9 @@ namespace DevTools.UI.ViewModels
                 var user = await _authService.RegisterAsync(Username, Email, Password);
                 if (user != null)
                 {
-                    ContentDialog verifyDialog = new ContentDialog
-                    {
-                        Title = "Verify account",
-                        Content = "To officially become a user, check your email and click the link from DevTools Support to verify email.",
-                        CloseButtonText = "Ok",
-                        DefaultButton = ContentDialogButton.Primary
-                    };
-                    ContentDialogResult result = await verifyDialog.ShowAsync();
+                    ErrorMessage = "To officially become a user, check your email and click the link from DevTools Support to verify email. Navigating to Login Page";
+                    IsErrorMessageVisible = true;
+                    await Task.Delay(5000);
                     _navigationService.NavigateTo(typeof(LoginPage));
                 }
                 else
